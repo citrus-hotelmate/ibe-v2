@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 50 10% 96%;
+    --foreground: 208 20% 17%;
+  
+    --card: 0 0% 100%;
+    --card-foreground: 208 20% 17%;
+  
+    --popover: 0 0% 100%;
+    --popover-foreground: 208 20% 17%;
+  
+    /* Black for light mode buttons */
+    --primary: 0 0% 0%;                    /* black */
+    --primary-foreground: 0 0% 100%;
+  
+    --secondary: 50 10% 90%;
+    --secondary-foreground: 208 20% 17%;
+  
+    --muted: 50 10% 90%;
+    --muted-foreground: 208 20% 17%;
+  
+    --accent: 50 10% 90%;
+    --accent-foreground: 208 20% 17%;
+  
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+  
+    --border: 50 10% 85%;
+    --input: 50 10% 85%;
+  
+    --ring: 220 100% 60%;                 /* match primary (#3b82f6) */
+    --radius: 0.5rem;
+
+    --button-color: var(--primary); /* fallback */
+  }
+  
+
+  .dark {
+    --background: 210 24% 12%;
+    --foreground: 210 16% 95%;
+  
+    --card: 210 24% 12%;
+    --card-foreground: 210 16% 95%;
+  
+    --popover: 210 24% 12%;
+    --popover-foreground: 210 16% 95%;
+  
+    --primary: 0 0% 100%;                 /* white for dark mode */
+    --primary-foreground: 0 0% 100%;
+  
+    --secondary: 210 10% 15%;
+    --secondary-foreground: 210 16% 95%;
+  
+    --muted: 210 10% 15%;
+    --muted-foreground: 210 16% 70%;
+  
+    --accent: 210 10% 15%;
+    --accent-foreground: 210 16% 95%;
+  
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+  
+    --border: 210 10% 15%;
+    --input: 210 10% 15%;
+  
+    --ring: 220 100% 65%;                /* match primary */
+    --radius: 0.5rem;
+
+    --button-color: var(--primary); /* fallback */
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+}
+
+
+/* Tailwind's global styles (e.g., globals.css) */
+.blur-overlay {
+  color: rgb(219, 212, 212); /* match original text */
+  filter: blur(3px);
+  mask-image: linear-gradient(to bottom, transparent 55%, black 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 55%, black 100%);
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.mask-fade {
+  -webkit-mask-image: linear-gradient(to bottom, white , transparent 100%);
+  mask-image: linear-gradient(to bottom, white , transparent 100%);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Hide Google Translate top banner and iframe aggressively */
+body > .goog-te-banner-frame.skiptranslate,
+body > .skiptranslate,
+iframe.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  position: absolute !important;
+  top: -9999px !important;
+}
+
+body {
+  top: 0 !important;
+  position: static !important;
+}
+
+.goog-te-gadget img {
+  display: none !important;
+}
+
+#google_translate_element,
+.goog-te-gadget,
+.goog-te-combo {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+
+/* Utility class for dynamic button styling */
+.btn-dynamic {
+  background-color: hsl(var(--button-color)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
