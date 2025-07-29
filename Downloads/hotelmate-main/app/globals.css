@@ -1,0 +1,327 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 50 10% 96%;
+    --foreground: 208 20% 17%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 208 20% 17%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 208 20% 17%;
+    
+    /* Orange Theme using #ff9100 */
+    --primary: 33 100% 50%;               /* #ff9100 converted to HSL */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 50 10% 90%;
+    --secondary-foreground: 208 20% 17%;
+    
+    --muted: 50 10% 90%;
+    --muted-foreground: 208 20% 17%;
+    
+    --accent: 33 100% 95%;                /* Light orange accent based on #ff9100 */
+    --accent-foreground: 33 100% 30%;     /* Darker orange for contrast */
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 50 10% 85%;
+    --input: 50 10% 85%;
+    
+    --ring: 33 100% 50%;                  /* Match primary orange #ff9100 */
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --background: 210 24% 12%;
+    --foreground: 210 16% 95%;
+    
+    --card: 210 24% 12%;
+    --card-foreground: 210 16% 95%;
+    
+    --popover: 210 24% 12%;
+    --popover-foreground: 210 16% 95%;
+    
+    /* Orange for dark mode - slightly brighter for better contrast */
+    --primary: 33 100% 55%;              /* Slightly brighter #ff9100 for dark mode */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 210 10% 15%;
+    --secondary-foreground: 210 16% 95%;
+    
+    --muted: 210 10% 15%;
+    --muted-foreground: 210 16% 70%;
+    
+    --accent: 33 80% 20%;                /* Dark orange accent for dark mode */
+    --accent-foreground: 33 100% 80%;    /* Light orange text */
+    
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 210 10% 15%;
+    --input: 210 10% 15%;
+    
+    --ring: 33 100% 55%;                 /* Match primary orange for dark mode */
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom overlay styles */
+.blur-overlay {
+  color: rgb(219, 212, 212); /* match original text */
+  filter: blur(3px);
+  mask-image: linear-gradient(to bottom, transparent 55%, black 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 55%, black 100%);
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+.mask-fade {
+  -webkit-mask-image: linear-gradient(to bottom, white, transparent 100%);
+  mask-image: linear-gradient(to bottom, white, transparent 100%);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Hide unwanted date range picker elements */
+.rdrDefinedRangesWrapper {
+  display: none !important;
+}
+
+.rdrDateDisplayWrapper {
+  display: none !important;
+}
+
+/* Orange theme for date range picker using #ff9100 */
+.rdr-date-range-picker .rdrDayInRange {
+  background: #ff9100;
+  color: white;
+}
+
+.rdr-date-range-picker .rdrDayStartEdge {
+  background: #ff9100;
+  color: white;
+}
+
+.rdr-date-range-picker .rdrDayEndEdge {
+  background: #ff9100;
+  color: white;
+}
+
+.rdr-date-range-picker .rdrSelected {
+  background: #ff9100;
+  color: white;
+}
+
+.rdr-date-range-picker .rdrInRange {
+  background: #ff9100;
+  color: white;
+}
+
+.rdr-date-range-picker .rdrStartEdge {
+  background: #ff9100;
+  color: white;
+}
+
+.rdr-date-range-picker .rdrEndEdge {
+  background: #ff9100;
+  color: white;
+}
+
+.rdr-date-range-picker .rdrDayHovered {
+  background: #ffb347;
+  color: white;
+}
+
+/* More specific targeting for react-date-range */
+.rdrCalendarWrapper .rdrDayInRange {
+  background: #ff9100;
+  color: white;
+}
+
+.rdrCalendarWrapper .rdrSelected {
+  background: #ff9100;
+  color: white;
+}
+
+.rdrCalendarWrapper .rdrInRange {
+  background: #ff9100;
+  color: white;
+}
+
+.rdrCalendarWrapper .rdrStartEdge {
+  background: #ff9100;
+  color: white;
+}
+
+.rdrCalendarWrapper .rdrEndEdge {
+  background: #ff9100;
+  color: white;
+}
+
+/* Enhanced Google Translate CSS for URL Management */
+
+/* Hide Google Translate banner and fix layout issues */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+.goog-te-menu-frame {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  border: 1px solid #ccc !important;
+  border-radius: 8px !important;
+}
+
+/* Hide the powered by Google text */
+.goog-logo-link {
+  display: none !important;
+}
+
+.goog-te-gadget {
+  color: transparent !important;
+  font-size: 0 !important;
+}
+
+.goog-te-gadget > span > a {
+  display: none !important;
+}
+
+.goog-te-gadget .goog-te-combo {
+  color: #666 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  padding: 4px !important;
+  background: white !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Prevent Google Translate from affecting body margin and layout */
+body {
+  top: 0 !important;
+  position: static !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Hide Google Translate elements completely */
+#google_translate_element {
+  width: 0 !important;
+  height: 0 !important;
+  position: fixed !important;
+  left: -99999px !important;
+  top: -99999px !important;
+  z-index: -99999 !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide any Google Translate popups or overlays */
+.goog-te-spinner-pos,
+.goog-te-spinner,
+.goog-te-ftab,
+.goog-te-ftab-float {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Force hide Google Translate iframe */
+.skiptranslate iframe,
+.goog-te-ftab iframe {
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  border: none !important;
+  position: absolute !important;
+  left: -99999px !important;
+  top: -99999px !important;
+}
+
+/* Prevent elements marked as notranslate from being affected */
+.notranslate {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+  transform: none !important;
+}
+
+/* Additional security for URL cleaning */
+.goog-te-combo option {
+  display: none !important;
+}
+
+.goog-te-combo:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Hide any Google Translate attribution */
+.goog-te-gadget span,
+.goog-te-gadget a {
+  display: none !important;
+}
+
+/* Ensure no Google Translate UI is visible */
+[id^="google_translate_element"] * {
+  visibility: hidden !important;
+  display: none !important;
+}
+
+/* Override any Google Translate CSS that might interfere with layout */
+html[translate="yes"] {
+  translate: yes !important;
+}
+
+/* Fix any potential z-index issues */
+.goog-te-menu-frame {
+  z-index: -1 !important;
+}
+
+/* Prevent Google Translate from creating scrollbars */
+.goog-te-menu2 {
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Additional cleanup for better URL management */
+body.translated-ltr,
+body.translated-rtl {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Hide translation progress indicators */
+.goog-te-ftab-float {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -99999px !important;
+}
+
+/* Ensure clean state when translations are reset */
+[class*="trans-"] {
+  transition: none !important;
+}
