@@ -13,7 +13,7 @@ const HotelImage = ({ image, title }: { image: string; title: string }) => (
     <img 
       src={image} 
       alt={title}
-      className="w-full h-full object-cover"
+      className="w-full h-full object-contain"
     />
   </div>
 );
@@ -34,12 +34,12 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
 
   return (
     <div
-      className="p-8 h-full"
+      className="md:p-4 lg:p-4 sm:p-6 h-full"
       style={{
-        background: "linear-gradient(to bottom, #e1d9d3 3%, #eeeeec 20%, #efedea 15%)",
+        background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 90%, #efedea 0%)",
       }}
     >
-      <h3 className="text-lg font-semibold text-card-foreground mb-1 ">
+      <h3 className="text-base md:text-lg font-semibold text-card-foreground mb-1">
         {title}
       </h3>
       <div className="flex items-center gap-1 mb-0">
@@ -47,12 +47,12 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
         <span className="text-sm text-muted-foreground">{location}</span>
       </div>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-[2px] sm:gap-1">
           {renderStars()}
         </div>
         <div className="text-right">
-          <span className="relative inline-block text-5xl font-semibold text-card-foreground font-sans">
-            <span className="absolute -left-3 -top-1 text-xl font-normal">$</span>
+          <span className="relative inline-block text-3xl md:text-4xl lg:text-5xl font-semibold text-card-foreground font-sans">
+            <span className="absolute -left-2 md:-left-3 -top-1 text-sm md:text-base font-normal">$</span>
             <span>{price}</span>
           </span>
         </div>
@@ -63,7 +63,7 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
 
 const hotelCard = ({ title, location, image, rating, price }: hotelCardProps) => {
   return (
-    <div className="rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full aspect-[3/4] max-w-xs">
+    <div className="rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full max-w-xs mb-4 lg:mb-0 2xl:mb-0 md:mb-0">
       <HotelImage image={image} title={title} />
       <HotelDetails title={title} location={location} rating={rating} price={price} />
     </div>
