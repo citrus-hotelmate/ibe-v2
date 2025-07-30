@@ -23,7 +23,7 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
     return Array.from({ length: 5 }, (_, index) => (
       <Star
         key={index}
-        className={`w-4 h-4 ${
+        className={`w-5 h-5 ${
           index < rating 
             ? "fill-[#ff9100] text-[#ff9100]" 
             : "fill-none text-muted-foreground"
@@ -34,16 +34,16 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
 
   return (
     <div
-      className="p-6 h-full"
+      className="p-8 h-full"
       style={{
         background: "linear-gradient(to bottom, #e1d9d3 3%, #eeeeec 20%, #efedea 15%)",
       }}
     >
-      <h3 className="text-lg font-semibold text-card-foreground mb-1">
+      <h3 className="text-lg font-semibold text-card-foreground mb-1 ">
         {title}
       </h3>
-      <div className="flex items-center gap-1 mb-4">
-        <MapPin className="w-4 h-4 text-[#ff9100]" />
+      <div className="flex items-center gap-1 mb-0">
+        <MapPin className="w-7 h-5 text-[#ff9100]" />
         <span className="text-sm text-muted-foreground">{location}</span>
       </div>
       <div className="flex items-center justify-between">
@@ -51,7 +51,7 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
           {renderStars()}
         </div>
         <div className="text-right">
-          <span className="relative inline-block text-3xl font-semibold text-card-foreground font-sans">
+          <span className="relative inline-block text-5xl font-semibold text-card-foreground font-sans">
             <span className="absolute -left-3 -top-1 text-xl font-normal">$</span>
             <span>{price}</span>
           </span>
@@ -63,7 +63,7 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
 
 const hotelCard = ({ title, location, image, rating, price }: hotelCardProps) => {
   return (
-    <div className="rounded-[2.5rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full aspect-[3/4] max-w-xs">
+    <div className="rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full aspect-[3/4] max-w-xs">
       <HotelImage image={image} title={title} />
       <HotelDetails title={title} location={location} rating={rating} price={price} />
     </div>

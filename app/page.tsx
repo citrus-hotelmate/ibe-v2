@@ -76,7 +76,7 @@ function PropertyListings({
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 ">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 2xl:gap-3">
         {properties.map((property) => {
           return (
             <div className="w-full max-w-xs mx-auto" key={property.id}>
