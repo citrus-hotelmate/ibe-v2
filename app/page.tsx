@@ -8,6 +8,7 @@ import { useCurrency } from "@/components/currency-context"
 import { CurrencySelector } from "@/components/currency-selector"
 import { getAllHotels } from '@/controllers/adminController';
 import HotelCard from "@/components/hotelCards";
+import { Hotel } from 'lucide-react';
 
 interface Hotel {
   hotelID: number;
@@ -86,6 +87,7 @@ function PropertyListings({
                 image={property.image}
                 rating={property.rating}
                 price={property.lowestRate}
+                onClick={() => onHotelClick(property.hotelCode)} 
               />
             </div>
           );
@@ -184,11 +186,13 @@ export default function Home() {
     }
   };
 
-  const handleHotelClick = (hotelCode: number) => {
-    console.log('Navigating to hotel with code:', hotelCode); // Debug log
-    router.push(`/hotel?hotelCode=${hotelCode}`);
-  };
 
+
+const handleHotelClick = (hotelCode: number) => {
+  router.push(`/hotel/${hotelCode}`);
+  console.log(`Navigating to hotel with code: ${hotelCode}`); // Debug log
+  
+};
   const handleSearch = (destinationInput: string, hotelNameInput: string) => {
     const searchType: SearchParams['searchType'] =
       destinationInput && hotelNameInput

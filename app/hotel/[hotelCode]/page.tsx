@@ -1,7 +1,12 @@
+// Import FeaturedAccommodationCard at the top
 "use client";
 
+import FeaturedAccommodationCard from "@/components/featuredAccommodationCard";
+import { getHotelRoomFeaturesByHotelId } from "@/controllers/hotelRoomFeatureController";
+import { HotelRoomFeature } from "@/types/hotelRoomFeature";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,51 +32,18 @@ import { useBooking } from "@/components/booking-context";
 import { cn } from "@/lib/utils";
 import { GuestSelector } from "@/components/guest-selector";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
+import { HotelResponse } from "@/types/admin";
+import { getAllHotels } from "@/controllers/adminController";
 
-// Types for the API response
-interface HotelRoomImage {
-    imageID: number;
-    hotelID: number;
-    hotelRoomTypeID: number;
-    imageURL: string;
-    description: string;
-    isMain: boolean;
-    finAct: boolean;
-    base64Image?: string;
-}
-
-interface HotelRoomType {
-    hotelRoomTypeID: number;
-    hotelID: number;
-    roomType: string;
-    adultSpace: number;
-    childSpace: number;
-    noOfRooms: number;
-}
-
-interface RoomFeature {
-    roomFeatureID: number;
-    featureCategory: string;
-    featureName: string;
-}
-
-interface HotelRoomFeatureResponse {
-    hotelRoomFeatureID: number;
-    hotelID: number;
-    roomFeatureID: number;
-    roomFeature: RoomFeature;
-    hotelRoomTypeID: number;
-    hotelRoomType: HotelRoomType;
-    isTrue: boolean;
-    hotelRoomTypeImage: HotelRoomImage[];
-}
 
 export default function LandingPage() {
+    const params = useParams();
+    const hotelCode = Array.isArray(params?.hotelCode) ? params.hotelCode[0] : params?.hotelCode;
     const router = useRouter();
     const { bookingDetails, updateBookingDetails } = useBooking();
-    const [hotelData, setHotelData] = useState<any>(null);
+    const [hotelData, setHotelData] = useState<HotelResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeatureResponse[]>([]);
+    const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
     const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
     const [dateRange, setDateRange] = useState<{
         from: Date | undefined;
@@ -80,7 +52,7 @@ export default function LandingPage() {
         from: bookingDetails.checkIn || undefined,
         to: bookingDetails.checkOut || undefined,
     });
-    
+
     useEffect(() => {
         const fetchHotelDetails = async () => {
             setIsLoading(true);
@@ -110,7 +82,7 @@ export default function LandingPage() {
 
                 // Handle both array and single object responses
                 const hotel = Array.isArray(data) ? data[0] : data;
-                setHotelData(hotel);
+                setHotelData([hotel]);
                 localStorage.setItem("hotelData", JSON.stringify(hotel));
             } catch (err) {
                 console.error("Error during hotel fetch:", err);
@@ -122,26 +94,42 @@ export default function LandingPage() {
         fetchHotelDetails();
     }, []);
 
+    useEffect(() => {
+        const fetchHotelInfo = async () => {
+            try {
+                const allHotels = await getAllHotels({
+                    token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || '',
+                });
+
+                const matchedHotel = allHotels.find(
+                    (h) => h.hotelCode.toString() === hotelCode
+                );
+
+                if (matchedHotel) {
+                    setHotelData([matchedHotel]);
+                    localStorage.setItem('hotelData', JSON.stringify(matchedHotel));
+                }
+            } catch (error) {
+                console.error("Error fetching hotel by hotelCode:", error);
+            }
+        };
+
+        if (hotelCode) {
+            fetchHotelInfo();
+        }
+    }, [hotelCode]);
+
+    console.log('hotel hotelDate', hotelData)
+
     // Fetch room features and images
     useEffect(() => {
         const fetchRoomFeatures = async () => {
             try {
-                const res = await fetch(
-                    "https://api.hotelmate.app/api/HotelRoomFeature/hotel-id/1",
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTYwN2I5OWMtOTVhMy00YzA2LWEzMjQtOWM4ZmYyZTg0YzJlIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiSWJlVXNlciIsImZ1bGxOYW1lIjoiSUJFIFVzZXIiLCJlbWFpbCI6ImliZXVzZXJAc29tZXRoaW5nLmNvbSIsIm5iZiI6MTc0ODc1NjQ2MywiZXhwIjoyNTM0MDIyODEwMDAsImlzcyI6IkhvdGVsTWF0ZUlzc3VlciIsImF1ZCI6IkhvdGVsTWF0ZU1hbmFnZXIifQ.oDMnqcxsVic1Pke47zwo3f4qyA0v6Fu6UnNDbjskST0`,
-                        },
-                    }
-                );
+                const hotelId = hotelData?.[0]?.hotelID;
+                if (!hotelId) return;
 
-                if (!res.ok) {
-                    console.error("Failed to fetch room features:", res.status, res.statusText);
-                    return;
-                }
-
-                const data: HotelRoomFeatureResponse[] = await res.json();
+                const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || '';
+                const data = await getHotelRoomFeaturesByHotelId(hotelId, token);
                 console.log("Fetched room features:", data);
                 setRoomFeatures(data);
 
@@ -152,7 +140,6 @@ export default function LandingPage() {
                     const roomTypeId = feature.hotelRoomTypeID;
 
                     if (!roomMap.has(roomTypeId)) {
-                        // Find the main image or first available image
                         const mainImage = feature.hotelRoomTypeImage?.find(img => img.isMain) ||
                             feature.hotelRoomTypeImage?.[0];
 
@@ -164,13 +151,11 @@ export default function LandingPage() {
                             totalRooms: feature.hotelRoomType.noOfRooms,
                             image: mainImage?.imageURL || mainImage?.base64Image,
                             features: [],
-                            // Generate a mock price based on room type and capacity
                             price: generateMockPrice(feature.hotelRoomType.roomType, feature.hotelRoomType.adultSpace),
                             rating: generateMockRating(),
                         });
                     }
 
-                    // Add features to the room
                     if (feature.isTrue && feature.roomFeature) {
                         const room = roomMap.get(roomTypeId);
                         room.features.push({
@@ -180,7 +165,6 @@ export default function LandingPage() {
                     }
                 });
 
-                // Filter to only show specific room type IDs: 1, 7, 8, and 11
                 const allowedRoomTypeIds = [1, 7, 8, 11];
                 const filteredRooms = Array.from(roomMap.values()).filter(room =>
                     allowedRoomTypeIds.includes(room.id)
@@ -193,15 +177,19 @@ export default function LandingPage() {
             }
         };
 
-        fetchRoomFeatures();
-    }, []);
+        if (hotelData.length > 0 && hotelData[0].hotelID) {
+            fetchRoomFeatures();
+        }
+    }, [hotelData]);
+
+    console.log("Featured Rooms:", featuredRooms);
 
     // Helper function to generate mock prices based on room type
     const generateMockPrice = (roomType: string, adultSpace: number): number => {
         const basePrice = 150;
         const typeMultiplier = roomType.toLowerCase().includes('suite') ? 1.8 :
             roomType.toLowerCase().includes('deluxe') ? 1.5 :
-            roomType.toLowerCase().includes('premium') ? 1.3 : 1.0;
+                roomType.toLowerCase().includes('premium') ? 1.3 : 1.0;
         const capacityMultiplier = adultSpace > 2 ? 1.2 : 1.0;
         return Math.round(basePrice * typeMultiplier * capacityMultiplier);
     };
@@ -313,8 +301,8 @@ export default function LandingPage() {
     // Get hotel name with fallback
     const getHotelName = () => {
         if (isLoading) return "Loading...";
-        if (!hotelData) return "Hotel Name Unavailable";
-        return hotelData.hotelName;
+        if (!hotelData || !Array.isArray(hotelData)) return "Hotel Name Unavailable";
+        return hotelData[0]?.hotelName || "Hotel Name Unavailable";
     };
 
     return (
@@ -433,7 +421,7 @@ export default function LandingPage() {
                             </div>
 
                             {/* Search Button - LOCKED WIDTH */}
-                            <div className="flex-shrink-0 w-[60px] flex flex-col justify-end">
+                            <div className="flex-shrink-0 w-[60px] flex items-end sm:items-center justify-center">
                                 <Button
                                     onClick={handleSearchClick}
                                     className="w-[60px] h-[44px] flex justify-center items-center"
@@ -456,58 +444,12 @@ export default function LandingPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {/* Dynamic Room Cards */}
                     {featuredRooms.length > 0 ? (
-                        featuredRooms.map((room, index) => (
-                            <div key={room.id} className="rounded-3xl bg-card text-card-foreground shadow-md overflow-hidden">
-                                <div className="h-80 w-full relative">
-                                    {room.image ? (
-                                        room.image.startsWith('data:') ? (
-                                            <Image
-                                                src={room.image}
-                                                alt={room.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <Image
-                                                src={room.image}
-                                                alt={room.name}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        ) 
-                                    ) : (
-                                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                                            <Mountain className="h-12 w-12 text-muted-foreground" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-4">
-                                    <h3 className="font-semibold text-lg mb-2">
-                                        {room.name}
-                                    </h3>
-                                    <div className="flex items-center text-sm text-muted-foreground mb-2">
-                                        <Users className="h-4 w-4 mr-1 text-primary" />
-                                        <span className="notranslate">{room.adultCapacity}</span> Adults{room.childCapacity > 0 && (
-                                            <>, <span className="notranslate">{room.childCapacity}</span> Children</>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center mb-2">
-                                        {renderStarRating(room.rating)}
-                                    </div>
-                                    {room.features.length > 0 && (
-                                        <div className="text-xs text-muted-foreground mb-2">
-                                            {room.features.slice(0, 2).map((feature: any, idx: number) => (
-                                                <span key={idx}>
-                                                    {feature.name}{idx < Math.min(room.features.length, 2) - 1 && ', '}
-                                                </span>
-                                            ))}
-                                            {room.features.length > 2 && '...'}
-                                        </div>
-                                    )}
-                                    <div className="text-right text-lg font-bold">
-                                        <span className="notranslate">${room.price}</span>
-                                    </div>
-                                </div>
-                            </div>
+                        featuredRooms.map((room) => (
+                            <FeaturedAccommodationCard
+                                key={room.id}
+                                room={room}
+                                renderStarRating={renderStarRating}
+                            />
                         ))
                     ) : (
                         // Fallback content while loading

@@ -6,6 +6,7 @@ interface hotelCardProps {
   image: string;
   rating: number;
   price: number;
+  onClick?: () => void; 
 }
 
 const HotelImage = ({ image, title }: { image: string; title: string }) => (
@@ -18,7 +19,7 @@ const HotelImage = ({ image, title }: { image: string; title: string }) => (
   </div>
 );
 
-const HotelDetails = ({ title, location, rating, price }: { title: string; location: string; rating: number; price: number }) => {
+const HotelDetails = ({ title, location, rating, price,  }: { title: string; location: string; rating: number; price: number }) => {
   const renderStars = () => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
@@ -34,9 +35,10 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
 
   return (
     <div
+    
       className="md:p-4 lg:p-4 sm:p-6 h-full"
       style={{
-        background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 90%, #efedea 0%)",
+        background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
       }}
     >
       <h3 className="text-base md:text-lg font-semibold text-card-foreground mb-1">
@@ -61,9 +63,9 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
   );
 };
 
-const hotelCard = ({ title, location, image, rating, price }: hotelCardProps) => {
+const hotelCard = ({ title, location, image, rating, price , onClick}: hotelCardProps) => {
   return (
-    <div className="rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full max-w-xs mb-4 lg:mb-0 2xl:mb-0 md:mb-0">
+    <div onClick={onClick} className="rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full max-w-xs mb-4 lg:mb-0 2xl:mb-0 md:mb-0">
       <HotelImage image={image} title={title} />
       <HotelDetails title={title} location={location} rating={rating} price={price} />
     </div>
