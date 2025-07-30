@@ -101,6 +101,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     fetchHotels();
   }, []);
 
+  console.log('All Hotels:', allHotels); // Debug log
+   // Debug log
+
   // Generate destination suggestions
   useEffect(() => {
     if (!destinationInput.trim()) {
@@ -111,6 +114,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
 
     const input = destinationInput.toLowerCase().trim();
     const newSuggestions: Suggestion[] = [];
+
+    console.log('Destination Input:', destinationInput); // Debug log
+    console.log('newSuggestions before:', newSuggestions); // Debug log
 
     // Get all unique destinations from API data
     const uniqueDestinations = getUniqueDestinations();
@@ -129,6 +135,8 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       }));
 
     newSuggestions.push(...matchingDestinations);
+    console.log('Destination Suggestions:', matchingDestinations); // Debug lo
+    console.log('Destination Suggestions:', newSuggestions); // Debug log
 
     setDestinationSuggestions(newSuggestions);
     setShowDestinationSuggestions(newSuggestions.length > 0);
@@ -146,11 +154,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     const input = hotelNameInput.toLowerCase().trim();
     const newSuggestions: Suggestion[] = [];
 
-    // Add hotel suggestions
-    const hotelSuggestions = hotels
+    console.log('Hotel Name Input:', hotelNameInput); // Debug log
+    console.log('newSuggestions before:', newSuggestions); // Debug log
+
+    // Add hotel suggestions (match with .startsWith like destination)
+    const hotelSuggestions = allHotels
       .filter(hotel =>
-        hotel.hotelName.toLowerCase().includes(input) &&
-        hotel.finAct === true
+        hotel.hotelName.toLowerCase().startsWith(input) 
       )
       .slice(0, 8)
       .map(hotel => ({
@@ -161,11 +171,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       }));
 
     newSuggestions.push(...hotelSuggestions);
+    console.log('Hotel Suggestionswwwwwwwwww:', hotelSuggestions); // Debug log
+    console.log('Hotel Suggestions:', newSuggestions); // Debug log
 
     setHotelSuggestions(newSuggestions);
     setShowHotelSuggestions(newSuggestions.length > 0);
     setSelectedHotelIndex(-1);
-  }, [hotelNameInput, hotels]);
+  }, [hotelNameInput, allHotels]);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -244,18 +256,26 @@ export function SearchBar({ onSearch }: SearchBarProps) {
 
   const handleDestinationSuggestionSelect = (suggestion: Suggestion) => {
     setDestinationInput(suggestion.text);
-    setShowDestinationSuggestions(false);
-    setSelectedDestinationIndex(-1);
-    
+
+    setTimeout(() => {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setSelectedDestinationIndex(-1);
+    }, 50);
+
     // Trigger search with combined input
     onSearch?.(suggestion.text, hotelNameInput);
   };
 
   const handleHotelSuggestionSelect = (suggestion: Suggestion) => {
     setHotelNameInput(suggestion.text);
-    setShowHotelSuggestions(false);
-    setSelectedHotelIndex(-1);
-    
+
+    setTimeout(() => {
+      setHotelSuggestions([]);
+      setShowHotelSuggestions(false);
+      setSelectedHotelIndex(-1);
+    }, 50);
+
     // Trigger search with combined input
     onSearch?.(destinationInput, suggestion.text);
   };
@@ -283,14 +303,22 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     setDestinationInput('');
     setDestinationSuggestions([]);
     setShowDestinationSuggestions(false);
+    setSelectedDestinationIndex(-1);
     destinationInputRef.current?.focus();
+
+    // Reset hotels to full list
+    setHotels(allHotels);
   };
 
   const clearHotelName = () => {
     setHotelNameInput('');
     setHotelSuggestions([]);
     setShowHotelSuggestions(false);
+    setSelectedHotelIndex(-1);
     hotelInputRef.current?.focus();
+
+    // Reset hotels to full list
+    setHotels(allHotels);
   };
 
   return (
