@@ -74,19 +74,20 @@ function PropertyListings({
   return (
     <div className="px-6 py-4">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold ">{title}</h2>
+        <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-8 px-6 py-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 ">
         {properties.map((property) => {
           return (
-            <HotelCard
-              key={property.id}
-              title={property.type}
-              location={property.location}
-              image={property.image}
-              rating={property.rating}
-              price={property.lowestRate}
-            />
+            <div className="w-full max-w-xs mx-auto" key={property.id}>
+              <HotelCard
+                title={property.type}
+                location={property.location}
+                image={property.image}
+                rating={property.rating}
+                price={property.lowestRate}
+              />
+            </div>
           );
         })}
       </div>
@@ -213,8 +214,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#e2e0df]">
       <Header />
-      <div className="max-w-[1880px] ">
-        <div className="flex justify-center items-center p-4 gap-4">
+      <div className="w-full px-2 sm:px-4  mx-auto">
+        <div className="flex flex-col sm:flex-row justify-center items-center p-4 gap-4">
           <SearchBar onSearch={handleSearch} />
         </div>
 

@@ -63,7 +63,7 @@ const HotelDetails = ({ title, location, rating, price }: { title: string; locat
 
 const hotelCard = ({ title, location, image, rating, price }: hotelCardProps) => {
   return (
-    <div className="rounded-[2.5rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-72 h-96.5">
+    <div className="rounded-[2.5rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full aspect-[3/4] max-w-xs">
       <HotelImage image={image} title={title} />
       <HotelDetails title={title} location={location} rating={rating} price={price} />
     </div>
