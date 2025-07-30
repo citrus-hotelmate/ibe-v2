@@ -1,13 +1,9 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Users, Minus, Plus } from "lucide-react";
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Users, Minus, Plus } from "lucide-react"
 
 interface RoomGuestSelectorProps {
   adults: number;
@@ -34,16 +30,14 @@ export function RoomGuestSelector({
   childAges: propChildAges,
   onChildAgesChange,
 }: RoomGuestSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [childAges, setChildAges] = useState<number[]>(
-    propChildAges ?? Array(children).fill(childAgeLower)
-  );
+  const [open, setOpen] = useState(false)
+  const [childAges, setChildAges] = useState<number[]>(propChildAges ?? Array(children).fill(childAgeLower));
 
   const handleAdultChange = (change: number) => {
     const maxAdults = Math.min(maxGuests - children, maxAdult);
     const newValue = Math.max(1, Math.min(maxAdults, adults + change));
     onChange(newValue, children, childAges);
-  };
+  }
 
   const handleChildrenChange = (change: number) => {
     const maxChildren = Math.min(maxGuests - adults, maxChild);
@@ -59,9 +53,9 @@ export function RoomGuestSelector({
     setChildAges(updatedAges);
     onChange(adults, newValue, updatedAges);
     if (onChildAgesChange) onChildAgesChange(updatedAges);
-  };
+  }
 
-  const totalGuests = adults + children;
+  const totalGuests = adults + children
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -69,11 +63,8 @@ export function RoomGuestSelector({
         <Button variant="outline" className="w-full justify-start">
           <Users className="mr-2 h-4 w-4" />
           <span>
-            {totalGuests} {totalGuests === 1 ? "Guest" : "Guests"} ({adults}{" "}
-            {adults === 1 ? "Adult" : "Adults"}
-            {children > 0 &&
-              `, ${children} ${children === 1 ? "Child" : "Children"}`}
-            )
+            {totalGuests} {totalGuests === 1 ? "Guest" : "Guests"} ({adults} {adults === 1 ? "Adult" : "Adults"}
+            {children > 0 && `, ${children} ${children === 1 ? "Child" : "Children"}`})
           </span>
         </Button>
       </PopoverTrigger>
@@ -84,9 +75,7 @@ export function RoomGuestSelector({
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Adults</p>
-              <p className="text-sm text-muted-foreground">
-                Ages above {childAgeUpper}
-              </p>
+              <p className="text-sm text-muted-foreground">Ages above {childAgeUpper}</p>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -159,9 +148,7 @@ export function RoomGuestSelector({
                 }}
               >
                 {Array.from({ length: 17 }, (_, i) => i + 1).map((optAge) => (
-                  <option key={optAge} value={optAge}>
-                    {optAge}
-                  </option>
+                  <option key={optAge} value={optAge}>{optAge}</option>
                 ))}
               </select>
             </div>
@@ -173,5 +160,5 @@ export function RoomGuestSelector({
         </div>
       </PopoverContent>
     </Popover>
-  );
+  )
 }

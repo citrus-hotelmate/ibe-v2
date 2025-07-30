@@ -41,7 +41,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   .then((res) => res.json())
   .then((data) => {
     if (data && data.rates) {
-      const currencyList = Object.entries(data.rates).map(([code, rate]) => ({ code, rate: Number(rate) }))
+      const currencyList = Object.entries(data.rates).map(([code, rate]) => ({ code, rate }))
       setCurrencies(currencyList)
       setRates(data.rates)
     }

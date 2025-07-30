@@ -17,9 +17,11 @@ export function CurrencySelector() {
 
   return (
     <Select value={currency} onValueChange={setCurrency}>
-      <SelectTrigger className="w-[140px] h-8 text-sm">
+      <SelectTrigger className="w-[110px] h-9.3 text-sm flex items-center justify-between px-3 border rounded-md shadow-sm bg-white hover:bg-gray-50">
         <SelectValue placeholder="Currency">
-          {selectedLabel}
+          <div className="flex items-center gap-2">
+            <span>{selectedLabel}</span>
+          </div>
         </SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[300px] overflow-auto">

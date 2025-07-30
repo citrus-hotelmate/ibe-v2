@@ -5,15 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Users, Minus, Plus } from "lucide-react"
 import { useBooking } from "@/components/booking-context"
 
-export function GuestSelector({
-  defaultAdults = 2,
-  defaultChildren = 0,
-  defaultRooms = 1,
-}: {
-  defaultAdults?: number;
-  defaultChildren?: number;
-  defaultRooms?: number;
-}) {
+export function GuestSelector() {
   const { bookingDetails, updateBookingDetails } = useBooking()
   const [open, setOpen] = useState(false)
 
@@ -23,13 +15,8 @@ export function GuestSelector({
       bookingDetails.children == null &&
       bookingDetails.rooms == null
     ) {
-      updateBookingDetails({
-        adults: defaultAdults,
-        children: defaultChildren,
-        rooms: defaultRooms,
-      });
+      updateBookingDetails({ adults: 2, children: 0, rooms: 1 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const adults = bookingDetails.adults != null ? bookingDetails.adults : 2;
