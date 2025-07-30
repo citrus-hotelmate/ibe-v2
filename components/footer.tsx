@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Facebook, Instagram, Twitter, Linkedin, Mail, Phone, MapPin } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
+import { getAllHotels } from "@/controllers/adminController";
+import { HotelResponse } from "@/types/admin";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export function Footer() {
+export function Footer({ hotelName }: { hotelName?: string }) {
   const currentYear = new Date().getFullYear();
   const pathname = usePathname();
 
@@ -17,15 +17,39 @@ export function Footer() {
     address: "",
   });
 
+  const params = useParams();
+  const hotelCodeFromParams = Array.isArray(params?.hotelCode)
+    ? params.hotelCode[0]
+    : params?.hotelCode;
+
   useEffect(() => {
     const fetchContact = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/API/GetHotelDetail.aspx`);
-        const data = await res.json();
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+        const hotels: HotelResponse[] = await getAllHotels({ token });
+
+        let matchedHotel = hotels[0];
+        let code: string | null = null;
+        const storedHotel = localStorage.getItem("hotelData");
+        if (storedHotel) {
+          try {
+            const parsed = JSON.parse(storedHotel);
+            code = parsed?.hotelCode?.toString() || null;
+          } catch (e) {
+            console.error("Failed to parse hotelData from localStorage", e);
+          }
+        }
+        code = hotelCodeFromParams || code;
+        if (code) {
+          matchedHotel = hotels.find(h => h.hotelCode?.toString() === code) || hotels[0];
+        } else if (hotelName) {
+          matchedHotel = hotels.find(h => h.hotelName === hotelName) || hotels[0];
+        }
+
         setContact({
-          email: data.Email || "",
-          phone: data.Phone || "",
-          address: data.Address || "",
+          email: matchedHotel.hotelEmail || "",
+          phone: matchedHotel.hotelPhone || "",
+          address: matchedHotel.city || "",
         });
       } catch (err) {
         console.error("Failed to fetch hotel contact info", err);
@@ -33,7 +57,10 @@ export function Footer() {
     };
 
     fetchContact();
-  }, []);
+  }, [hotelCodeFromParams, hotelName]);
+// Debug log
+
+  console.log("Footer contact info:", contact); // Debug log
 
   return (
     <footer className="bg-white border-t notranslate">
@@ -79,7 +106,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground notranslate">
           <p className="notranslate">
-            &copy; {currentYear} {pathname === "/" ? "HotelMateIBE" : "CitrusIBE"}. All rights reserved.
+            &copy; {currentYear} {pathname === "/" ? "HotelMateIBE" : hotelName || "CitrusIBE"}. All rights reserved.
           </p>
         </div>
       </div>

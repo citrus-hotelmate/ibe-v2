@@ -69,6 +69,20 @@ export default function RootLayout({
         };
     }, []);
 
+    const [hotelName, setHotelName] = useState<string | null>(null);
+
+    useEffect(() => {
+        const storedHotelData = localStorage.getItem("hotelData");
+        if (storedHotelData) {
+            try {
+                const parsed = JSON.parse(storedHotelData);
+                setHotelName(parsed.hotelName || null);
+            } catch (error) {
+                console.error("Error parsing hotelData from localStorage", error);
+            }
+        }
+    }, []);
+
     return (
         <html lang="en" suppressHydrationWarning>
             <head>
@@ -88,7 +102,7 @@ export default function RootLayout({
                         <BookingProvider>
                             <div className="flex flex-col min-h-screen" suppressHydrationWarning>
                                 <main className="flex-1">{children}</main>
-                                <Footer />
+                                <Footer hotelName={hotelName || undefined} />
                             </div>
                             
                             {/* Client-only floating buttons */}
