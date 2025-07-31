@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Facebook, Instagram, Twitter, Linkedin, Mail, Phone, MapPin } from "lucide-react";
 import { usePathname, useParams } from "next/navigation";
-import { getAllHotels } from "@/controllers/adminController";
-import { HotelResponse } from "@/types/admin";
+import { getAllHotels } from "@/controllers/ibeController";
+import { Hotel } from "@/types/ibe";
 
 export function Footer({ hotelName }: { hotelName?: string }) {
   const currentYear = new Date().getFullYear();
@@ -17,6 +17,10 @@ export function Footer({ hotelName }: { hotelName?: string }) {
     address: "",
   });
 
+  const [hotelDisplayName, setHotelDisplayName] = useState("");
+
+  const [hotelDataVersion, setHotelDataVersion] = useState(0);
+
   const params = useParams();
   const hotelCodeFromParams = Array.isArray(params?.hotelCode)
     ? params.hotelCode[0]
@@ -26,7 +30,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
     const fetchContact = async () => {
       try {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-        const hotels: HotelResponse[] = await getAllHotels({ token });
+        const hotels: Hotel[] = await getAllHotels({ token });
 
         let matchedHotel = hotels[0];
         let code: string | null = null;
@@ -51,16 +55,38 @@ export function Footer({ hotelName }: { hotelName?: string }) {
           phone: matchedHotel.hotelPhone || "",
           address: matchedHotel.city || "",
         });
+        setHotelDisplayName(matchedHotel.hotelName || "");
       } catch (err) {
         console.error("Failed to fetch hotel contact info", err);
       }
     };
 
     fetchContact();
-  }, [hotelCodeFromParams, hotelName]);
+  }, [hotelCodeFromParams, hotelName, hotelDataVersion]);
 // Debug log
 
   console.log("Footer contact info:", contact); // Debug log
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setHotelDataVersion(prev => prev + 1);
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Trigger manually in the same tab when localStorage changes
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function (key, value) {
+      originalSetItem.apply(this, [key, value]);
+      if (key === "hotelData") {
+        handleStorageChange();
+      }
+    };
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   return (
     <footer className="bg-white border-t notranslate">
@@ -106,7 +132,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
 
         <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground notranslate">
           <p className="notranslate">
-            &copy; {currentYear} {pathname === "/" ? "HotelMateIBE" : hotelName || "CitrusIBE"}. All rights reserved.
+            &copy; {currentYear} {pathname === "/" ? "HotelMateIBE" : hotelDisplayName || "CitrusIBE"}. All rights reserved.
           </p>
         </div>
       </div>
