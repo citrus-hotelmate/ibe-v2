@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -196,12 +197,10 @@ const LanguageSelector: React.FC = () => {
                     <Button 
                         variant="outline" 
                         size="sm"
-                        className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-200 shadow-lg notranslate"
+                        className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-200 shadow-lg notranslate flex items-center justify-center rounded-full w-10 h-10"
                         disabled={!isTranslateReady}
                     >
-                        <span className="mr-1">{currentLanguage.flag}</span>
-                        <span className="hidden sm:inline text-sm">{currentLanguage.name}</span>
-                        <span className="sm:hidden text-xs">{currentLanguage.code.toUpperCase()}</span>
+                        <Globe className="h-4 w-4 text-black" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 

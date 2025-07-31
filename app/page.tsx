@@ -84,25 +84,46 @@ function PropertyListings({
 }) {
   return (
     <div className="px-6 py-4">
+      <div className="border-t border-gray-300 mb-6"></div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const el = document.getElementById(`scroll-${title}`);
+              if (el) el.scrollBy({ left: -300, behavior: 'smooth' });
+            }}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+          >
+            ‹
+          </button>
+          <button
+            onClick={() => {
+              const el = document.getElementById(`scroll-${title}`);
+              if (el) el.scrollBy({ left: 300, behavior: 'smooth' });
+            }}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+          >
+            ›
+          </button>
+        </div>
       </div>
-      <div className="w-full max-w-[1600px] mx-auto">
-        <div className="grid grid-cols-[repeat(auto-fill,_minmax(220px,_1fr))] gap-4">
-          {properties.map((property) => {
-            return (
-              <div className=" " key={property.id}>
-                <HotelCard
-                  title={property.type}
-                  location={property.location}
-                  image={property.image}
-                  rating={property.rating}
-                  price={property.lowestRate}
-                  onClick={() => onHotelClick(property.slug)} 
-                />
-              </div>
-            );
-          })}
+
+      <div className="w-full max-w-[1920px] mx-auto overflow-x-auto scroll-smooth scrollbar-hide" id={`scroll-${title}`}>
+        <div className="grid grid-cols-[repeat(auto-fill,_minmax(270px,_1fr))] gap-3">
+          {properties.map((property) => (
+            <div key={property.id} className="">
+              <HotelCard
+                title={property.type}
+                location={property.location}
+                image={property.image}
+                rating={property.rating}
+                price={property.lowestRate}
+                onClick={() => onHotelClick(property.slug)}
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -244,7 +265,7 @@ const handleHotelClick = (slug: string) => {
     <main className="min-h-screen bg-[#e2e0df]">
       <Navbar />
       {/* <Header /> */}
-      <HeroSection />
+      {/* <HeroSection /> */}
       {/* <div className="relative z-20 -mt-20 flex justify-center px-4">
         <SearchBar onSearch={handleSearch} />
       </div> */}

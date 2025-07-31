@@ -16,18 +16,15 @@ export default function Navbar() {
         </Button>
 
         {/* Login button and selectors on the right */}
-        <div className="flex items-center gap-4">
-          <Button className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-full" asChild>
+        <div className="flex items-center gap-3">
+          <Button 
+            className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-full"
+            asChild
+          >
             <Link href="/login">Login</Link>
           </Button>
-          <div className="hidden md:flex items-center gap-4">
-            <div className="w-[130px]">
-              <LanguageSelector />
-            </div>
-            <div className="w-[140px]">
-              <CurrencySelector />
-            </div>
-          </div>
+          <LanguageSelector />
+          <CurrencySelector />
         </div>
       </div>
     </nav>

@@ -3,6 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCurrency } from "./currency-context"
 import { usePathname } from "next/navigation"
+import { CircleDollarSign } from "lucide-react"
 
 export function CurrencySelector() {
   const { currency, setCurrency, currencies } = useCurrency()
@@ -17,11 +18,9 @@ export function CurrencySelector() {
 
   return (
     <Select value={currency} onValueChange={setCurrency}>
-      <SelectTrigger className="w-[110px] h-9.3 text-sm flex items-center justify-between px-3 border rounded-md shadow-sm bg-white hover:bg-gray-50">
+      <SelectTrigger className="w-20 h-10 flex items-center justify-center rounded-full bg-white shadow hover:bg-gray-50 border">
         <SelectValue placeholder="Currency">
-          <div className="flex items-center gap-2">
-            <span>{selectedLabel}</span>
-          </div>
+          <CircleDollarSign className="h-6 w-6 text-black mx-auto" />
         </SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[300px] overflow-auto">
