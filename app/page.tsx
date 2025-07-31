@@ -124,7 +124,7 @@ export default function Home() {
 
   const filterHotels = (hotels: Hotel[], params: SearchParams): Hotel[] => {
     if (params.searchType === 'none') {
-      return hotels.slice(0, 6);
+      return hotels;
     }
 
     let filtered = hotels;
@@ -172,18 +172,18 @@ export default function Home() {
         const decodedImage = rawImage && hotel.hotelImage?.isMain
           ? decodeURIComponent(rawImage)
           : null;
-        const imageUrl = decodedImage ? decodedImage.split('?')[0] : null;
+        const imageUrl = decodedImage ? decodedImage.split('?')[0] : '';
 
         return {
           id: hotel.hotelID,
           type: hotel.hotelName,
-          location: hotel.city || hotel.hotelAddress,
+          location: (hotel.city || hotel.hotelAddress || 'Unknown').trim(),
           price: "",
           nights: 2,
           rating: hotel.starCatgeory,
           occupancy: "",
           amenities: [],
-          image: imageUrl || '',
+          image: imageUrl,
           hotelCode: hotel.hotelCode,
           lowestRate: hotel.lowestRate || 0,
           slug: slugify(hotel.hotelName),

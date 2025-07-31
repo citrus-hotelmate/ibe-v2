@@ -15,7 +15,7 @@ const HotelImage = ({ image, title }: { image: string; title: string }) => (
       <img 
         src={image} 
         alt={title}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-cover"
       />
     ) : null}
   </div>
