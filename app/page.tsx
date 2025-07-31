@@ -77,21 +77,23 @@ function PropertyListings({
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6  lg:gap-4 2xl:gap-4">
-        {properties.map((property) => {
-          return (
-            <div className=" " key={property.id}>
-              <HotelCard
-                title={property.type}
-                location={property.location}
-                image={property.image}
-                rating={property.rating}
-                price={property.lowestRate}
-                onClick={() => onHotelClick(property.hotelCode)} 
-              />
-            </div>
-          );
-        })}
+      <div className="w-full max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-[repeat(auto-fill,_minmax(220px,_1fr))] gap-4">
+          {properties.map((property) => {
+            return (
+              <div className=" " key={property.id}>
+                <HotelCard
+                  title={property.type}
+                  location={property.location}
+                  image={property.image}
+                  rating={property.rating}
+                  price={property.lowestRate}
+                  onClick={() => onHotelClick(property.hotelCode)} 
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -166,7 +168,7 @@ export default function Home() {
         rating: hotel.starCatgeory,
         occupancy: "",
         amenities: [],
-        image: (hotel as any).hotelImage?.imageFileName || '',
+        image: hotel.hotelImage?.imageFileName ? decodeURIComponent(hotel.hotelImage.imageFileName) : '',
         hotelCode: hotel.hotelCode,
         lowestRate: hotel.lowestRate || 0,
       }));
@@ -218,7 +220,7 @@ const handleHotelClick = (hotelCode: number) => {
   return (
     <main className="min-h-screen bg-[#e2e0df]">
       <Header />
-      <div className="w-full px-2 sm:px-4  mx-auto">
+      <div className="w-full max-w-[1920px] mx-auto px-4">
         <div className="flex flex-col sm:flex-row justify-center items-center p-4 gap-4">
           <SearchBar onSearch={handleSearch} />
         </div>

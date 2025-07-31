@@ -10,7 +10,7 @@ interface hotelCardProps {
 }
 
 const HotelImage = ({ image, title }: { image: string; title: string }) => (
-  <div className="relative h-64 overflow-hidden">
+  <div className="relative aspect-[4/3] overflow-hidden">
     <img 
       src={image} 
       alt={title}
@@ -35,8 +35,7 @@ const HotelDetails = ({ title, location, rating, price,  }: { title: string; loc
 
   return (
     <div
-    
-      className="md:p-4 lg:p-4 sm:p-6 h-full"
+      className="p-4 sm:p-5 md:p-6 h-full"
       style={{
         background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
       }}
