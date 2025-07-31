@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, Building2, X } from 'lucide-react';
+import { Search, MapPin, Building2, X, Users } from 'lucide-react';
 import { getAllHotels } from '@/controllers/adminController';
 import { HotelResponse } from '@/types/admin';
 
@@ -65,6 +65,11 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   const hotelRef = useRef<HTMLDivElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
   const hotelInputRef = useRef<HTMLInputElement>(null);
+
+  const [showGuestDropdown, setShowGuestDropdown] = useState(false);
+  const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
+  const [rooms, setRooms] = useState(1);
 
   // Extract unique destinations from hotels data
   const getUniqueDestinations = (): string[] => {
@@ -187,6 +192,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       }
       if (hotelRef.current && !hotelRef.current.contains(event.target as Node)) {
         setShowHotelSuggestions(false);
+      }
+      if (
+        !event.target ||
+        !(event.target instanceof Node) ||
+        (event.target && !event.target.closest('.guest-dropdown') && !event.target.closest('.guest-dropdown-toggle'))
+      ) {
+        setShowGuestDropdown(false);
       }
     };
 
@@ -322,12 +334,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   };
 
   return (
-    <div className="flex items-center bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow duration-200 w-full max-w-2xl">
-      {/* Destination Input */}
-      <div ref={destinationRef} className="relative flex-1">
-        <div className="flex flex-col px-6 py-3 border-r border-gray-200">
-          <label className="text-xs font-medium text-gray-900 mb-1">Where</label>
-          <div className="flex items-center">
+    <div className="w-full max-w-4xl mx-auto bg-white/70  rounded-3xl shadow-xl  flex items-center border border-white/30 overflow-visible relative z-10">
+      {/* City or Destination */}
+      <div className="flex-1 px-4 py-2 relative" ref={destinationRef}>
+        <div className="flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-[#ff9100]" />
+          <div>
+            <div className="text-sm text-gray-500 font-medium">City or Destination</div>
             <input
               ref={destinationInputRef}
               type="text"
@@ -336,46 +349,37 @@ export function SearchBar({ onSearch }: SearchBarProps) {
               onChange={(e) => setDestinationInput(e.target.value)}
               onKeyDown={handleDestinationKeyDown}
               onFocus={() => destinationInput && setShowDestinationSuggestions(destinationSuggestions.length > 0)}
-              className="w-full text-sm placeholder-gray-400 focus:outline-none bg-transparent"
+              className="text-gray-900 font-semibold bg-transparent focus:outline-none"
             />
-            {destinationInput && (
-              <button
-                onClick={clearDestination}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors ml-2"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
         </div>
-
-        {/* Destination Suggestions Dropdown */}
-        {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 overflow-hidden">
+        {showDestinationSuggestions && (
+          <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
             {destinationSuggestions.map((suggestion, index) => (
-              <button
+              <li
                 key={suggestion.id}
-                onClick={() => handleDestinationSuggestionSelect(suggestion)}
-                className={`w-full flex items-center px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150 ${
-                  index === selectedDestinationIndex ? 'bg-gray-50' : ''
+                className={`cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-[#ff9100]/10 ${
+                  index === selectedDestinationIndex ? 'bg-[#ff9100]/20' : ''
                 }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleDestinationSuggestionSelect(suggestion);
+                }}
               >
                 {suggestion.icon}
-                <span className="ml-3 text-sm text-gray-900">{suggestion.text}</span>
-                <span className="ml-auto text-xs text-gray-500 capitalize">
-                  {suggestion.type}
-                </span>
-              </button>
+                <span>{suggestion.text}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
 
       {/* Hotel Name Input */}
-      <div ref={hotelRef} className="relative flex-1">
-        <div className="flex flex-col px-6 py-3">
-          <label className="text-xs font-medium text-gray-900 mb-1">Hotel name</label>
-          <div className="flex items-center">
+      <div className="flex-1 px-4 py-2 relative" ref={hotelRef}>
+        <div className="flex items-center gap-3">
+          <Building2 className="w-5 h-5 text-[#ff9100]" />
+          <div>
+            <div className="text-sm text-gray-500 font-medium">Hotel Name</div>
             <input
               ref={hotelInputRef}
               type="text"
@@ -384,36 +388,68 @@ export function SearchBar({ onSearch }: SearchBarProps) {
               onChange={(e) => setHotelNameInput(e.target.value)}
               onKeyDown={handleHotelKeyDown}
               onFocus={() => hotelNameInput && setShowHotelSuggestions(hotelSuggestions.length > 0)}
-              className="w-full text-sm placeholder-gray-400 focus:outline-none bg-transparent"
+              className="text-gray-900 font-semibold bg-transparent focus:outline-none"
             />
-            {hotelNameInput && (
-              <button
-                onClick={clearHotelName}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors ml-2"
+          </div>
+        </div>
+        {showHotelSuggestions && (
+          <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {hotelSuggestions.map((suggestion, index) => (
+              <li
+                key={suggestion.id}
+                className={`cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-[#ff9100]/10 ${
+                  index === selectedHotelIndex ? 'bg-[#ff9100]/20' : ''
+                }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleHotelSuggestionSelect(suggestion);
+                }}
               >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+                {suggestion.icon}
+                <span>{suggestion.text}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Guest & Rooms */}
+      <div className="flex-1 px-4 py-2 relative">
+        <div
+          className="flex items-center gap-3 cursor-pointer guest-dropdown-toggle"
+          onClick={() => setShowGuestDropdown(prev => !prev)}
+        >
+          <Users className="w-5 h-5 text-[#ff9100]" />
+          <div>
+            <div className="text-sm text-gray-500 font-medium">Guest & Rooms</div>
+            <div className="text-gray-400 font-medium">{adults} Adults, {rooms} Room{rooms > 1 ? 's' : ''}</div>
           </div>
         </div>
 
-        {/* Hotel Suggestions Dropdown */}
-        {showHotelSuggestions && hotelSuggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 overflow-hidden">
-            {hotelSuggestions.map((suggestion, index) => (
-              <button
-                key={suggestion.id}
-                onClick={() => handleHotelSuggestionSelect(suggestion)}
-                className={`w-full flex items-center px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150 ${
-                  index === selectedHotelIndex ? 'bg-gray-50' : ''
-                }`}
-              >
-                {suggestion.icon}
-                <span className="ml-3 text-sm text-gray-900">{suggestion.text}</span>
-                <span className="ml-auto text-xs text-gray-500 capitalize">
-                  {suggestion.type}
-                </span>
-              </button>
+        {showGuestDropdown && (
+          <div className="absolute right-0 z-50 mt-2 bg-white border border-gray-300 rounded-xl shadow-lg p-4 w-64 guest-dropdown">
+            {[
+              { label: 'Adults', desc: 'Ages 13 or above', value: adults, setter: setAdults },
+              { label: 'Children', desc: 'Ages 2–12', value: children, setter: setChildren },
+              { label: 'Rooms', desc: 'Number of rooms', value: rooms, setter: setRooms },
+            ].map(({ label, desc, value, setter }) => (
+              <div key={label} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div>
+                  <div className="font-medium text-sm text-gray-800">{label}</div>
+                  <div className="text-xs text-gray-500">{desc}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setter(Math.max(0, value - 1))}
+                    className="w-6 h-6 rounded-full border border-gray-300 text-gray-600 flex items-center justify-center"
+                  >−</button>
+                  <span className="w-4 text-center">{value}</span>
+                  <button
+                    onClick={() => setter(value + 1)}
+                    className="w-6 h-6 rounded-full border border-gray-300 text-gray-600 flex items-center justify-center"
+                  >+</button>
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -422,9 +458,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       {/* Search Button */}
       <button
         onClick={handleSearch}
-        className="bg-orange-500 text-white px-8 py-4 rounded-full hover:bg-orange-600 transition-colors duration-200 font-medium text-sm mx-2"
+        className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-4 rounded-2xl ml-4 mr-1"
       >
-        Search
+        <Search className="w-5 h-5" />
       </button>
     </div>
   );

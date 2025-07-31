@@ -10,7 +10,7 @@ interface hotelCardProps {
 }
 
 const HotelImage = ({ image, title }: { image: string; title: string }) => (
-  <div className="relative aspect-[4/3] overflow-hidden">
+  <div className="relative aspect-[4/4] overflow-hidden">
     {image ? (
       <img 
         src={image} 

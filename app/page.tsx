@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
+import HeroSection from '@/components/hero-section';
+import Navbar from '@/components/navbar';
 import { SearchBar } from '@/components/search-bar';
 import { useCurrency } from "@/components/currency-context"
 import { CurrencySelector } from "@/components/currency-selector"
@@ -165,6 +167,7 @@ export default function Home() {
 
       console.log('Fetched Hotels:', allHotels); // Debug log
 
+
       const filteredHotels = filterHotels(allHotels, params);
 
       const transformedProperties: PropertyListing[] = filteredHotels.map((hotel) => {
@@ -235,13 +238,17 @@ const handleHotelClick = (slug: string) => {
     fetchHotels(params);
   };
 
+
+
   return (
     <main className="min-h-screen bg-[#e2e0df]">
-      <Header />
+      <Navbar />
+      {/* <Header /> */}
+      <HeroSection />
+      {/* <div className="relative z-20 -mt-20 flex justify-center px-4">
+        <SearchBar onSearch={handleSearch} />
+      </div> */}
       <div className="w-full max-w-[1920px] mx-auto px-4">
-        <div className="flex flex-col sm:flex-row justify-center items-center p-4 gap-4">
-          <SearchBar onSearch={handleSearch} />
-        </div>
 
         {loading ? (
           <div className="flex justify-center items-center py-20">
