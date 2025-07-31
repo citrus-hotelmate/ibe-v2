@@ -6,7 +6,7 @@ import Header from '@/components/header';
 import { SearchBar } from '@/components/search-bar';
 import { useCurrency } from "@/components/currency-context"
 import { CurrencySelector } from "@/components/currency-selector"
-import { getAllHotels } from '@/controllers/adminController';
+import { getAllHotels } from '@/controllers/ibeController';
 import HotelCard from "@/components/hotelCards";
 import { Hotel } from 'lucide-react';
 
@@ -42,6 +42,10 @@ interface Hotel {
   isOnTrial: null;
   planId: null;
   lowestRate: number;
+  hotelImage?: {
+    imageFileName?: string;
+    isMain?: boolean;
+  };
 }
 
 interface PropertyListing {
@@ -52,6 +56,7 @@ interface PropertyListing {
   image: string;
   hotelCode: number;
   lowestRate: number;
+  slug: string;
 }
 
 interface SearchParams {
@@ -59,6 +64,9 @@ interface SearchParams {
   hotelName: string;
   searchType: 'destinations' | 'hotel name' | 'both' | 'none';
 }
+
+const slugify = (name: string) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 // Your exact UI PropertyListings component with click functionality
 function PropertyListings({
@@ -70,7 +78,7 @@ function PropertyListings({
   title: string;
   destination: string;
   properties: PropertyListing[];
-  onHotelClick: (hotelCode: number) => void;
+  onHotelClick: (slug: string) => void;
 }) {
   return (
     <div className="px-6 py-4">
@@ -88,7 +96,7 @@ function PropertyListings({
                   image={property.image}
                   rating={property.rating}
                   price={property.lowestRate}
-                  onClick={() => onHotelClick(property.hotelCode)} 
+                  onClick={() => onHotelClick(property.slug)} 
                 />
               </div>
             );
@@ -159,19 +167,30 @@ export default function Home() {
 
       const filteredHotels = filterHotels(allHotels, params);
 
-      const transformedProperties: PropertyListing[] = filteredHotels.map((hotel) => ({
-        id: hotel.hotelID,
-        type: hotel.hotelName,
-        location: hotel.city || hotel.hotelAddress,
-        price: "",
-        nights: 2,
-        rating: hotel.starCatgeory,
-        occupancy: "",
-        amenities: [],
-        image: hotel.hotelImage?.imageFileName ? decodeURIComponent(hotel.hotelImage.imageFileName) : '',
-        hotelCode: hotel.hotelCode,
-        lowestRate: hotel.lowestRate || 0,
-      }));
+      const transformedProperties: PropertyListing[] = filteredHotels.map((hotel) => {
+        const rawImage = hotel.hotelImage?.imageFileName;
+        const decodedImage = rawImage && hotel.hotelImage?.isMain
+          ? decodeURIComponent(rawImage)
+          : null;
+        const imageUrl = decodedImage ? decodedImage.split('?')[0] : null;
+
+        return {
+          id: hotel.hotelID,
+          type: hotel.hotelName,
+          location: hotel.city || hotel.hotelAddress,
+          price: "",
+          nights: 2,
+          rating: hotel.starCatgeory,
+          occupancy: "",
+          amenities: [],
+          image: imageUrl || '',
+          hotelCode: hotel.hotelCode,
+          lowestRate: hotel.lowestRate || 0,
+          slug: slugify(hotel.hotelName),
+        };
+      });
+
+      console.log('Transformed Properties:', transformedProperties); // Debug log
 
       const groupedByCity: { [key: string]: PropertyListing[] } = {};
       transformedProperties.forEach((property) => {
@@ -190,10 +209,9 @@ export default function Home() {
 
 
 
-const handleHotelClick = (hotelCode: number) => {
-  router.push(`/hotel/${hotelCode}`);
-  console.log(`Navigating to hotel with code: ${hotelCode}`); // Debug log
-  
+const handleHotelClick = (slug: string) => {
+  router.push(`/hotels/${slug}`);
+  console.log(`Navigating to hotel with slug: ${slug}`);
 };
   const handleSearch = (destinationInput: string, hotelNameInput: string) => {
     const searchType: SearchParams['searchType'] =

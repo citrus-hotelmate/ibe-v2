@@ -11,14 +11,17 @@ interface hotelCardProps {
 
 const HotelImage = ({ image, title }: { image: string; title: string }) => (
   <div className="relative aspect-[4/3] overflow-hidden">
-    <img 
-      src={image} 
-      alt={title}
-      className="w-full h-full object-contain"
-    />
+    {image ? (
+      <img 
+        src={image} 
+        alt={title}
+        className="w-full h-full object-contain"
+      />
+    ) : null}
   </div>
 );
 
+console.log("HotelImage component rendered with image:", HotelImage);
 const HotelDetails = ({ title, location, rating, price,  }: { title: string; location: string; rating: number; price: number }) => {
   const renderStars = () => {
     return Array.from({ length: 5 }, (_, index) => (

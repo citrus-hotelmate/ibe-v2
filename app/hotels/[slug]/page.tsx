@@ -32,16 +32,19 @@ import { useBooking } from "@/components/booking-context";
 import { cn } from "@/lib/utils";
 import { GuestSelector } from "@/components/guest-selector";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
-import { HotelResponse } from "@/types/admin";
-import { getAllHotels } from "@/controllers/adminController";
+import { Hotel } from "@/types/ibe";
+import { getAllHotels } from "@/controllers/ibeController";
 
+
+const slugify = (name: string) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export default function LandingPage() {
     const params = useParams();
-    const hotelCode = Array.isArray(params?.hotelCode) ? params.hotelCode[0] : params?.hotelCode;
+    const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
     const router = useRouter();
     const { bookingDetails, updateBookingDetails } = useBooking();
-    const [hotelData, setHotelData] = useState<HotelResponse[]>([]);
+    const [hotelData, setHotelData] = useState<Hotel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
     const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
@@ -102,7 +105,7 @@ export default function LandingPage() {
                 });
 
                 const matchedHotel = allHotels.find(
-                    (h) => h.hotelCode.toString() === hotelCode
+                    (h) => slugify(h.hotelName) === slug
                 );
 
                 if (matchedHotel) {
@@ -110,14 +113,14 @@ export default function LandingPage() {
                     localStorage.setItem('hotelData', JSON.stringify(matchedHotel));
                 }
             } catch (error) {
-                console.error("Error fetching hotel by hotelCode:", error);
+                console.error("Error fetching hotel by slug:", error);
             }
         };
 
-        if (hotelCode) {
+        if (slug) {
             fetchHotelInfo();
         }
-    }, [hotelCode]);
+    }, [slug]);
 
     console.log('hotel hotelDate', hotelData)
 

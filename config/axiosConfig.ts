@@ -1,6 +1,7 @@
 import axios from "axios";
 
 export const Admin = "Admin";
+export const Ibe = "Ibe";
 export const HotelRoomFeature = "HotelRoomFeature";
 
 
