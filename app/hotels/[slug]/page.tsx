@@ -197,68 +197,72 @@ export default function LandingPage() {
                 </h1>
             </div>
 
-            {/* Hero Section */}
-            {(() => {
-              // Carousel images
-              const images = [
-                "/rooms/gary-meulemans-aAgFJnedkJc-unsplash.jpg",
-                "/rooms/hotel-room.jpg",
-                "/rooms/khanh-do-bvN15iQgqog-unsplash.jpg",
-                "/rooms/yosuke-ota-0R1GMsc2E7w-unsplash.jpg",
-                "/rooms/yu-yi-tsai-UX_Pn1L2FkQ-unsplash.jpg"
-              ];
-              // Manual carousel state
-              const [currentIndex, setCurrentIndex] = useState(0);
-              const scrollRefLocal = useRef<HTMLDivElement>(null);
-              // Use local ref for transform-based carousel
-              // Handler for next image
-              const handleNext = () => {
-                setCurrentIndex((prev) => (prev + 1) % images.length);
-              };
-              return (
-                <div className="relative h-[70vh] max-w-[98rem] w-full mx-auto mt-[-35px] mb-6 rounded-[3rem] overflow-hidden z-15 group">
-                  <div
-                    ref={scrollRefLocal}
-                    className="flex h-full w-full transition-transform duration-500"
-                    style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-                  >
-                    {images.map((img, index) => (
-                      <div key={index} className="flex-shrink-0 w-full h-full">
-                        <Image
-                          src={img}
-                          alt={`Hotel Image ${index + 1}`}
-                          width={1600}
-                          height={700}
-                          className="object-cover w-full h-full"
-                          priority={index === 0}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={handleNext}
-                    className="hidden group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 right-4"
-                  >
-                    <ArrowRight className="text-white w-8 h-8 drop-shadow-lg" />
-                  </button>
+            {/* Hero + SearchBar Wrapper */}
+            <div className="relative w-full flex flex-col items-center">
 
-                  {/* Subtle top glass overlay with fade-out mask */}
-                  <div className="absolute inset-0 z-30 pointer-events-none">
-                      <div className="w-full h-full bg-white/10 backdrop-blur-md mask-fade" />
-                  </div>
-                  {/* Google Translate Language Selector */}
-                  <div className="absolute top-4 right-4 z-40">
-                      <LanguageSelector />
-                  </div>
-                </div>
-              );
-            })()}
+              {/* Hero Section */}
+              {(() => {
+                // Carousel images
+                const images = [
+                  "/rooms/gary-meulemans-aAgFJnedkJc-unsplash.jpg",
+                  "/rooms/hotel-room.jpg",
+                  "/rooms/khanh-do-bvN15iQgqog-unsplash.jpg",
+                  "/rooms/yosuke-ota-0R1GMsc2E7w-unsplash.jpg",
+                  "/rooms/yu-yi-tsai-UX_Pn1L2FkQ-unsplash.jpg"
+                ];
+                const [currentIndex, setCurrentIndex] = useState(0);
+                const scrollRefLocal = useRef<HTMLDivElement>(null);
+                const handleNext = () => {
+                  setCurrentIndex((prev) => (prev + 1) % images.length);
+                };
+                return (
+                  <div className="relative h-[70vh] max-w-[98rem] w-full mx-auto mt-[-35px] mb-6 rounded-[3rem] overflow-hidden z-15 group">
+                    <div
+                      ref={scrollRefLocal}
+                      className="flex h-full w-full transition-transform duration-500"
+                      style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                    >
+                      {images.map((img, index) => (
+                        <div key={index} className="flex-shrink-0 w-full h-full">
+                          <Image
+                            src={img}
+                            alt={`Hotel Image ${index + 1}`}
+                            width={1600}
+                            height={700}
+                            className="object-cover w-full h-full"
+                            priority={index === 0}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleNext}
+                      className="hidden group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 right-4"
+                    >
+                      <ArrowRight className="text-white w-8 h-8 drop-shadow-lg" />
+                    </button>
 
-            {/* Search Bar */}
-            <div className="mx-auto px-4 -mt-16 relative z-30 mb-0 max-w-5xl w-full">
-                <SearchBar onSearch={(destination, hotelName) => {
+                    {/* Subtle top glass overlay with fade-out mask */}
+                    <div className="absolute inset-0 z-30 pointer-events-none">
+                        <div className="w-full h-full bg-white/10 backdrop-blur-md mask-fade" />
+                    </div>
+                    {/* Google Translate Language Selector */}
+                    <div className="absolute top-4 right-4 z-40">
+                        <LanguageSelector />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Floating Search Bar */}
+              <div className="absolute -bottom-[7px] w-full max-w-5xl px-4 z-40 drop-shadow-xl">
+                <SearchBar
+                  onSearch={(destination, hotelName) => {
                     console.log('Search triggered with:', destination, hotelName);
-                }} />
+                  }}
+                />
+              </div>
+
             </div>
 
             {/* Travel & Experiences Tabs */}
