@@ -111,7 +111,7 @@ function PropertyListings({
       </div>
 
       <div className="w-full max-w-[1920px] mx-auto overflow-x-auto scroll-smooth scrollbar-hide" id={`scroll-${title}`}>
-        <div className="grid grid-cols-[repeat(auto-fill,_minmax(270px,_1fr))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,_minmax(252px,_1fr))] gap-3">
           {properties.map((property) => (
             <div key={property.id} className="">
               <HotelCard
@@ -234,8 +234,8 @@ export default function Home() {
 
 
 const handleHotelClick = (slug: string) => {
-  router.push(`/hotels/${slug}`);
-  console.log(`Navigating to hotel with slug: ${slug}`);
+  window.open(`/hotels/${slug}`, '_blank', 'noopener,noreferrer');
+  console.log(`Opening hotel with slug in new tab: ${slug}`);
 };
   const handleSearch = (destinationInput: string, hotelNameInput: string) => {
     const searchType: SearchParams['searchType'] =

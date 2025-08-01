@@ -20,11 +20,10 @@ interface FeaturedRoom {
 
 interface Props {
     room: FeaturedRoom;
-    renderStarRating: (rating: number) => JSX.Element[];
 }
 
 const FeaturedAccommodationImage = ({ image, name }: { image?: string; name: string }) => (
-    <div className="relative aspect-[4/4] overflow-hidden">
+    <div className="relative aspect-[4/3.7] overflow-hidden">
         {image ? (
             image.startsWith("data:") ? (
                 <Image
@@ -51,24 +50,25 @@ const FeaturedAccommodationImage = ({ image, name }: { image?: string; name: str
 
 const FeaturedAccommodationDetails = ({
     room,
-    renderStarRating,
 }: {
     room: FeaturedRoom;
-    renderStarRating: (rating: number) => JSX.Element[];
 }) => (
     <div
-        className="p-4 sm:p-5 md:p-6 "
+        className=" sm:p-5 md:p-5 font-urbanist"
         style={{
             background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
         }}
     >
         <h3 className="font-semibold text-lg mb-2">{room.name}</h3>
-        <div className="flex items-center text-sm text-muted-foreground mb-2">
+        <div className="flex items-center text-sm mb-2">
             <Users className="h-4 w-4 mr-1 text-primary" />
-            <span className="notranslate">{room.adultCapacity}</span> Adults
+            <span className="notranslate text-[#8f8f73]">{room.adultCapacity}</span>
+            <span className="text-[#8f8f73]">&nbsp;Adults</span>
             {room.childCapacity > 0 && (
                 <>
-                    , <span className="notranslate">{room.childCapacity}</span> Children
+                    <span className="text-[#8f8f73]">,&nbsp;</span>
+                    <span className="notranslate text-[#8f8f73]">{room.childCapacity}</span>
+                    <span className="text-[#8f8f73]">&nbsp;Children</span>
                 </>
             )}
         </div>
@@ -84,25 +84,22 @@ const FeaturedAccommodationDetails = ({
                 {room.features.length > 3 && "..."}
             </div>
         )}
-        <div className="mt-auto flex items-center justify-between font-bold text-3xl md:text-4xl lg:text-5xl relative">
-            {/* Stars on the left */}
-            <div className="flex items-center text-orange-500 text-base md:text-lg lg:text-xl">
-                {renderStarRating(room.rating)}
-            </div>
+        <div className="mt-auto flex items-center justify-end text-3xl md:text-4xl lg:text-5xl relative">
             {/* Price on the right */}
-            <div className="relative inline-block">
-                <span className="absolute -left-3 -top-1 text-sm md:text-base font-normal">$</span>
-                <span className="notranslate">{room.price}</span>
+            <div className="relative inline-block font-urbanist">
+                <span className="absolute -left-5 -top-1 text-lg md:text-3xl font-semibold">$</span>
+                <span className="notranslate font-medium">{room.price}</span>
             </div>
         </div>
     </div>
 );
 
-const FeaturedAccommodationCard = ({ room, renderStarRating }: Props) => {
+
+const FeaturedAccommodationCard = ({ room }: Props) => {
     return (
         <div className="rounded-[3rem] bg-card text-card-foreground shadow-md overflow-hidden w-full max-w-xs mb-4 md:mb-0 lg:mb-0 2xl:mb-0 flex flex-col">
             <FeaturedAccommodationImage image={room.image} name={room.name} />
-            <FeaturedAccommodationDetails room={room} renderStarRating={renderStarRating} />
+            <FeaturedAccommodationDetails room={room} />
         </div>
     );
 };

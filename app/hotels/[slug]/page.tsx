@@ -3,7 +3,7 @@
 import FeaturedAccommodationCard from "@/components/featuredAccommodationCard";
 import { getHotelRoomFeaturesByHotelId } from "@/controllers/hotelRoomFeatureController";
 import { HotelRoomFeature } from "@/types/hotelRoomFeature";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import Image from "next/image";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
 import { Hotel } from "@/types/ibe";
 import { getAllHotels } from "@/controllers/ibeController";
-import { ArrowRight, Star, StarHalf } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Star, StarHalf } from "lucide-react";
 import { useBooking } from "@/components/booking-context";
 import { SearchBar } from "@/components/search-bar";
 
@@ -28,7 +28,9 @@ export default function LandingPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
     const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
+// Removed auto-scrolling and transition effect for hero image carousel.
 
     useEffect(() => {
         const fetchHotelInfo = async () => {
@@ -101,13 +103,13 @@ export default function LandingPage() {
                         });
                     }
 
-                    if (feature.isTrue && feature.roomFeature) {
-                        const room = roomMap.get(roomTypeId);
-                        room.features.push({
-                            category: feature.roomFeature.featureCategory,
-                            name: feature.roomFeature.featureName,
-                        });
-                    }
+                    // if (feature.isTrue && feature.roomFeature) {
+                    //     const room = roomMap.get(roomTypeId);
+                    //     room.features.push({
+                    //         category: feature.roomFeature.featureCategory,
+                    //         name: feature.roomFeature.featureName,
+                    //     });
+                    // }
                 });
 
                 // Remove allowedRoomTypeIds filter to display all rooms
@@ -188,25 +190,61 @@ export default function LandingPage() {
             </div>
 
             {/* Hero Section */}
-            <div className="relative h-[70vh] mx-8 mt-[-35px] mb-6 rounded-[3rem] overflow-hidden z-10">
-                <Image
-                    src="/rooms/hotel-room.jpg"
-                    alt="Hotel Room"
-                    fill
-                    className="object-cover"
-                    priority
-                />
+            {(() => {
+              // Carousel images
+              const images = [
+                "/rooms/gary-meulemans-aAgFJnedkJc-unsplash.jpg",
+                "/rooms/hotel-room.jpg",
+                "/rooms/khanh-do-bvN15iQgqog-unsplash.jpg",
+                "/rooms/yosuke-ota-0R1GMsc2E7w-unsplash.jpg",
+                "/rooms/yu-yi-tsai-UX_Pn1L2FkQ-unsplash.jpg"
+              ];
+              // Manual carousel state
+              const [currentIndex, setCurrentIndex] = useState(0);
+              const scrollRefLocal = useRef<HTMLDivElement>(null);
+              // Use local ref for transform-based carousel
+              // Handler for next image
+              const handleNext = () => {
+                setCurrentIndex((prev) => (prev + 1) % images.length);
+              };
+              return (
+                <div className="relative h-[70vh] max-w-[98rem] w-full mx-auto mt-[-35px] mb-6 rounded-[3rem] overflow-hidden z-15 group">
+                  <div
+                    ref={scrollRefLocal}
+                    className="flex h-full w-full transition-transform duration-500"
+                    style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                  >
+                    {images.map((img, index) => (
+                      <div key={index} className="flex-shrink-0 w-full h-full">
+                        <Image
+                          src={img}
+                          alt={`Hotel Image ${index + 1}`}
+                          width={1600}
+                          height={700}
+                          className="object-cover w-full h-full"
+                          priority={index === 0}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleNext}
+                    className="hidden group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 right-4"
+                  >
+                    <ArrowRight className="text-white w-8 h-8 drop-shadow-lg" />
+                  </button>
 
-                {/* Subtle top glass overlay with fade-out mask */}
-                <div className="absolute inset-0 z-30 pointer-events-none">
-                    <div className="w-full h-full bg-white/10 backdrop-blur-md mask-fade" />
+                  {/* Subtle top glass overlay with fade-out mask */}
+                  <div className="absolute inset-0 z-30 pointer-events-none">
+                      <div className="w-full h-full bg-white/10 backdrop-blur-md mask-fade" />
+                  </div>
+                  {/* Google Translate Language Selector */}
+                  <div className="absolute top-4 right-4 z-40">
+                      <LanguageSelector />
+                  </div>
                 </div>
-
-                {/* Google Translate Language Selector */}
-                <div className="absolute top-4 right-4 z-40">
-                    <LanguageSelector />
-                </div>
-            </div>
+              );
+            })()}
 
             {/* Search Bar */}
             <div className="mx-auto px-4 -mt-16 relative z-30 mb-0 max-w-5xl w-full">
@@ -237,22 +275,30 @@ export default function LandingPage() {
             </div>
 
             {/* Featured Accommodations */}
-            <div className=" px-8 py-10">
+            <div className=" px-10 py-10">
                 <div className="text-center mb-12">
                     <h2 className="font-urbanist text-xl md:text-3xl lg:text-3xl font-semi-bold tracking-tight text-foreground">
                         Featured Accommodation
                     </h2>
                 </div>
-                <div className="grid grid-cols-[repeat(auto-fill,_minmax(270px,_1fr))] gap-3">
+                <div className="grid grid-cols-[repeat(auto-fill,_minmax(252px,_1fr))] gap-3">
                     {featuredRooms.length > 0 && (
-                        featuredRooms.map((room) => (
+                        <>
+                        {featuredRooms.map((room) => (
                             <div key={room.id} className="flex justify-center">
                                 <FeaturedAccommodationCard
                                     room={room}
-                                    renderStarRating={renderStarRating}
                                 />
                             </div>
-                        ))
+                        ))}
+                        <div className="rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden w-full max-w-xs mb-4 md:mb-0 lg:mb-0 2xl:mb-0 flex flex-col justify-center items-center p-6 font-urbanist relative">
+                            <h3 className="text-2xl font-bold mb-2 font-urbanist">{getHotelName()}</h3>
+                            <p className="mb-4 text-center font-urbanist">Your perfect stay awaits</p>
+                            <div className="absolute bottom-4 right-4 rounded-full bg-white w-14 h-14 flex items-center justify-center">
+                                <ArrowUpRight className="text-[#ff9100] w-7 h-7" />
+                            </div>
+                        </div>
+                        </>
                     )}
                 </div>
             </div>

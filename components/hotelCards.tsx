@@ -10,7 +10,7 @@ interface hotelCardProps {
 }
 
 const HotelImage = ({ image, title }: { image: string; title: string }) => (
-  <div className="relative aspect-[4/4] overflow-hidden">
+  <div className="relative aspect-[4/3.7] overflow-hidden">
     {image ? (
       <img 
         src={image} 
@@ -43,20 +43,20 @@ const HotelDetails = ({ title, location, rating, price,  }: { title: string; loc
         background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
       }}
     >
-      <h3 className="text-base md:text-lg font-semibold text-card-foreground mb-1">
+      <h3 className="text-base md:text-lg font-semibold text-card-foreground mb-1 font-urbanist">
         {title}
       </h3>
       <div className="flex items-center gap-1 mb-0">
         <MapPin className="w-7 h-5 text-[#ff9100]" />
-        <span className="text-sm text-muted-foreground">{location}</span>
+        <span className="text-sm text-muted-foreground font-urbanist text-[#8f8f73]">{location}</span>
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[2px] sm:gap-1">
           {renderStars()}
         </div>
-        <div className="text-right">
-          <span className="relative inline-block text-3xl md:text-4xl lg:text-5xl font-semibold text-card-foreground font-sans">
-            <span className="absolute -left-2 md:-left-3 -top-1 text-sm md:text-base font-normal">$</span>
+        <div className="text-right font-urbanist">
+          <span className="relative inline-block text-3xl md:text-4xl lg:text-5xl font-semibold text-card-foreground font-urbanist">
+            <span className="absolute -left-5 -top-1 text-lg md:text-3xl font-semibold">$</span>
             <span>{price}</span>
           </span>
         </div>
