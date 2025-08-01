@@ -41,6 +41,7 @@ export interface Hotel {
   lastUpdatedBy_UserGUID: string;
   starCatgeory: number;
   cM_PropertyID: string;
+  hotelDesc: string;
   isCMActive: boolean;
   hotelDate: string;
   isOnTrial: boolean;

@@ -180,6 +180,15 @@ export default function LandingPage() {
         return hotelData[0]?.hotelName || "Hotel Name Unavailable";
     };
 
+    // Components for orange card
+    const HotelNameDisplay = ({ name }: { name: string }) => (
+      <h3 className="text-2xl font-bold font-urbanist">{name}</h3>
+    );
+
+    const HotelDescriptionDisplay = ({ description }: { description: string }) => (
+      <p className="text-base font-urbanist mt-1">{description}</p>
+    );
+
     console.log("Hotel Name wwwwwwwwwww:", getHotelName());
 
     return (
@@ -302,8 +311,8 @@ export default function LandingPage() {
                     ))}
                     <div className="flex-grow min-w-[252px] rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300">
                       <div className="self-start">
-                        <h3 className="text-2xl font-bold font-urbanist">{getHotelName()}</h3>
-                        <p className="text-base font-urbanist mt-1">Your perfect stay awaits</p>
+                        <HotelNameDisplay name={getHotelName()} />
+                        <HotelDescriptionDisplay description="Your perfect stay awaits" />
                       </div>
                       <div className="absolute bottom-4 right-4 rounded-full bg-white w-14 h-14 flex items-center justify-center">
                         <ArrowUpRight className="text-[#ff9100] w-7 h-7" />

@@ -16,7 +16,7 @@ export default function Navbar() {
             <Image
               src="/logo-01.png"
               alt="Logo"
-              width={330}
+              width={130}
               height={60}
               className="rounded-md"
             />

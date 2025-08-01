@@ -14,10 +14,12 @@ const HotelImage = ({
   image,
   title,
   onWishlistClick,
+  isWishlisted,
 }: {
   image: string;
   title: string;
   onWishlistClick: () => void;
+  isWishlisted: boolean;
 }) => (
   <div className="relative aspect-[4/3.7] overflow-hidden">
     {image && (
@@ -30,12 +32,15 @@ const HotelImage = ({
         e.stopPropagation(); // Prevent triggering card click
         onWishlistClick();
       }}
-      className="absolute top-5 right-5 w-8 h-8 text-gray-600 opacity-90 hover:text-red-500 transition"
+      className={`absolute top-5 right-5 w-6 h-6 transition ${
+        isWishlisted ? "text-red-500" : "text-gray-600 opacity-90 "
+      }`}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
-        fill="currentColor"
+        fill={isWishlisted ? "currentColor" : "none"}
+        stroke="currentColor"
       >
         <path d="M12 21s-6-4.35-9-8.33C.52 9.28 2.24 4 6.5 4c1.74 0 3.41 1.01 4.5 2.09C12.09 5.01 13.76 4 15.5 4 19.76 4 21.48 9.28 18 12.67 15 16.65 12 21 12 21z" />
       </svg>
@@ -107,18 +112,23 @@ const hotelCard = ({
   price,
   onClick,
 }: hotelCardProps) => {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
   // Function to handle adding to wishlist
   const handleAddToWishlist = () => {
-    const hotel = { title, location, image, rating, price };
     const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
 
-    // Avoid duplicates
-    if (!wishlist.some((h: any) => h.title === title)) {
-      wishlist.push(hotel);
-      localStorage.setItem("wishlist", JSON.stringify(wishlist));
-      alert(`${title} added to wishlist!`);
+    if (!isWishlisted) {
+      const hotel = { title, location, image, rating, price };
+      if (!wishlist.some((h: any) => h.title === title)) {
+        wishlist.push(hotel);
+        localStorage.setItem("wishlist", JSON.stringify(wishlist));
+      }
+      setIsWishlisted(true);
     } else {
-      alert(`${title} is already in wishlist!`);
+      const updatedWishlist = wishlist.filter((h: any) => h.title !== title);
+      localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+      setIsWishlisted(false);
     }
   };
 
@@ -127,7 +137,12 @@ const hotelCard = ({
       onClick={onClick}
       className="rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full max-w-xs mb-4 lg:mb-0"
     >
-      <HotelImage image={image} title={title} onWishlistClick={handleAddToWishlist} />
+      <HotelImage
+        image={image}
+        title={title}
+        onWishlistClick={handleAddToWishlist}
+        isWishlisted={isWishlisted}
+      />
       <HotelDetails
         title={title}
         location={location}
