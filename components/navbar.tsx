@@ -1,28 +1,38 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector"
 import { CurrencySelector } from "@/components/currency-selector"
+import { SearchBar } from "@/components/search-bar"
+import { CircleUserRound } from "lucide-react"
 
 export default function Navbar() {
   return (
-    <nav className="w-full px-6 py-4" style={{ backgroundColor: "#e2e0df" }}>
-      <div className="flex items-center justify-between">
-        {/* Menu button on the left */}
-        <Button
-          variant="ghost"
-          className="bg-white/60 hover:bg-white/80 text-gray-800 px-4 py-2 rounded-full font-medium"
-        >
-          Menu
-        </Button>
+    <nav className="w-full px-6 py-4 relative" style={{ backgroundColor: "#e2e0df" }}>
+      <div className="flex justify-center w-full relative">
+        {/* Left Logo */}
+        <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center">
+          <Link href="/">
+            <Image
+              src="/favicon.ico"
+              alt="Logo"
+              width={60}
+              height={60}
+              className="rounded-md"
+            />
+          </Link>
+        </div>
 
-        {/* Login button and selectors on the right */}
-        <div className="flex items-center gap-3">
-          <Button 
-            className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-full"
-            asChild
-          >
-            <Link href="/login">Login</Link>
-          </Button>
+        {/* Centered SearchBar */}
+        <div className="max-w-4xl w-full">
+          <SearchBar />
+        </div>
+
+        {/* Right side - absolute positioned to avoid pushing the search bar */}
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+          <Link href="/login">
+            <CircleUserRound className="w-9 h-9 text-black hover:text-gray-700" />
+          </Link>
           <LanguageSelector />
           <CurrencySelector />
         </div>

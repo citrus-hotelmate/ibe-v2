@@ -28,6 +28,14 @@ export default function LandingPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
     const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
+    // Track window width for responsive grid calculations
+    const [windowWidth, setWindowWidth] = useState<number>(typeof window !== "undefined" ? window.innerWidth : 0);
+    // Listen to window resize for grid calculations
+    useEffect(() => {
+      const handleResize = () => setWindowWidth(window.innerWidth);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, []);
     const scrollRef = useRef<HTMLDivElement>(null);
 
 // Removed auto-scrolling and transition effect for hero image carousel.
@@ -281,26 +289,24 @@ export default function LandingPage() {
                         Featured Accommodation
                     </h2>
                 </div>
-                <div className="grid grid-cols-[repeat(auto-fill,_minmax(252px,_1fr))] gap-3">
-                    {featuredRooms.length > 0 && (
-                        <>
-                        {featuredRooms.map((room) => (
-                            <div key={room.id} className="flex justify-center">
-                                <FeaturedAccommodationCard
-                                    room={room}
-                                />
-                            </div>
-                        ))}
-                        <div className="rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden w-full max-w-xs mb-4 md:mb-0 lg:mb-0 2xl:mb-0 flex flex-col justify-center items-center p-6 font-urbanist relative">
-                            <h3 className="text-2xl font-bold mb-2 font-urbanist">{getHotelName()}</h3>
-                            <p className="mb-4 text-center font-urbanist">Your perfect stay awaits</p>
-                            <div className="absolute bottom-4 right-4 rounded-full bg-white w-14 h-14 flex items-center justify-center">
-                                <ArrowUpRight className="text-[#ff9100] w-7 h-7" />
-                            </div>
-                        </div>
-                        </>
-                    )}
-                </div>
+                {featuredRooms.length > 0 && (
+                  <div className="flex flex-wrap gap-4">
+                    {featuredRooms.map((room) => (
+                      <div key={room.id} className="flex-none w-[252px]">
+                        <FeaturedAccommodationCard room={room} />
+                      </div>
+                    ))}
+                    <div className="flex-grow min-w-[252px] rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300">
+                      <div className="self-start">
+                        <h3 className="text-2xl font-bold font-urbanist">{getHotelName()}</h3>
+                        <p className="text-base font-urbanist mt-1">Your perfect stay awaits</p>
+                      </div>
+                      <div className="absolute bottom-4 right-4 rounded-full bg-white w-14 h-14 flex items-center justify-center">
+                        <ArrowUpRight className="text-[#ff9100] w-7 h-7" />
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
         </div>
     );

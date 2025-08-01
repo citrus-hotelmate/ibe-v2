@@ -264,11 +264,6 @@ const handleHotelClick = (slug: string) => {
   return (
     <main className="min-h-screen bg-[#e2e0df]">
       <Navbar />
-      {/* <Header /> */}
-      {/* <HeroSection /> */}
-      {/* <div className="relative z-20 -mt-20 flex justify-center px-4">
-        <SearchBar onSearch={handleSearch} />
-      </div> */}
       <div className="w-full max-w-[1920px] mx-auto px-4">
 
         {loading ? (
