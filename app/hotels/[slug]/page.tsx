@@ -237,7 +237,7 @@ export default function LandingPage() {
             </div>
 
             {/* Featured Accommodations */}
-            <div className="container mx-auto px-4 py-10">
+            <div className=" px-8 py-10">
                 <div className="text-center mb-12">
                     <h2 className="font-urbanist text-xl md:text-3xl lg:text-3xl font-semi-bold tracking-tight text-foreground">
                         Featured Accommodation

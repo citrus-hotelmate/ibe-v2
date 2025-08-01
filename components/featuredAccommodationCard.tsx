@@ -57,7 +57,7 @@ const FeaturedAccommodationDetails = ({
     renderStarRating: (rating: number) => JSX.Element[];
 }) => (
     <div
-        className="p-4 flex flex-col flex-1"
+        className="p-4 sm:p-5 md:p-6 "
         style={{
             background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
         }}
@@ -72,7 +72,7 @@ const FeaturedAccommodationDetails = ({
                 </>
             )}
         </div>
-        <div className="flex items-center mb-2">{renderStarRating(room.rating)}</div>
+        {/* Star rating moved to bottom row, inline with price */}
         {room.features.length > 0 && (
             <div className="text-xs text-muted-foreground mb-2 line-clamp-2">
                 {room.features.slice(0, 3).map((feature, idx) => (
@@ -84,9 +84,16 @@ const FeaturedAccommodationDetails = ({
                 {room.features.length > 3 && "..."}
             </div>
         )}
-        <div className="mt-auto text-right font-bold text-3xl md:text-4xl lg:text-5xl relative">
-            <span className="notranslate absolute -left-2 md:-left-3 -top-1">$</span>
-            <span className="notranslate">{room.price}</span>
+        <div className="mt-auto flex items-center justify-between font-bold text-3xl md:text-4xl lg:text-5xl relative">
+            {/* Stars on the left */}
+            <div className="flex items-center text-orange-500 text-base md:text-lg lg:text-xl">
+                {renderStarRating(room.rating)}
+            </div>
+            {/* Price on the right */}
+            <div className="relative inline-block">
+                <span className="absolute -left-3 -top-1 text-sm md:text-base font-normal">$</span>
+                <span className="notranslate">{room.price}</span>
+            </div>
         </div>
     </div>
 );
