@@ -340,7 +340,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-[#ff9100]" />
           <div>
-            <div className="text-sm text-gray-500 font-medium">City or Destination</div>
+            <div className="text-sm text-gray-500 font-medium font-urbanist ">City or Destination</div>
             <input
               ref={destinationInputRef}
               type="text"
@@ -349,7 +349,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
               onChange={(e) => setDestinationInput(e.target.value)}
               onKeyDown={handleDestinationKeyDown}
               onFocus={() => destinationInput && setShowDestinationSuggestions(destinationSuggestions.length > 0)}
-              className="text-gray-900 font-semibold bg-transparent focus:outline-none"
+              className="text-gray-900 font-semibold bg-transparent focus:outline-none font-urbanist notranslate"
             />
           </div>
         </div>
@@ -379,7 +379,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         <div className="flex items-center gap-3">
           <Building2 className="w-5 h-5 text-[#ff9100]" />
           <div>
-            <div className="text-sm text-gray-500 font-medium">Hotel Name</div>
+            <div className="text-sm text-gray-500 font-medium font-urbanist notranslate">Hotel Name</div>
             <input
               ref={hotelInputRef}
               type="text"
@@ -388,7 +388,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
               onChange={(e) => setHotelNameInput(e.target.value)}
               onKeyDown={handleHotelKeyDown}
               onFocus={() => hotelNameInput && setShowHotelSuggestions(hotelSuggestions.length > 0)}
-              className="text-gray-900 font-semibold bg-transparent focus:outline-none"
+              className="text-gray-900 font-semibold bg-transparent focus:outline-none font-urbanist notranslate"
             />
           </div>
         </div>
@@ -421,13 +421,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         >
           <Users className="w-5 h-5 text-[#ff9100]" />
           <div>
-            <div className="text-sm text-gray-500 font-medium">Guest & Rooms</div>
-            <div className="text-gray-400 font-medium">{adults} Adults, {rooms} Room{rooms > 1 ? 's' : ''}</div>
+            <div className="text-sm text-gray-500 font-medium font-urbanist notranslate">Guest & Rooms</div>
+            <div className="text-gray-400 font-medium font-urbanist notranslate">{adults} Adults, {rooms} Room{rooms > 1 ? 's' : ''}</div>
           </div>
         </div>
 
         {showGuestDropdown && (
-          <div className="absolute right-0 z-50 mt-2 bg-white border border-gray-300 rounded-xl shadow-lg p-4 w-64 guest-dropdown">
+          <div className="absolute right-0 z-50 mt-2 bg-white border border-gray-300 rounded-xl shadow-lg p-4 w-64 guest-dropdown font-urbanist notranslate">
             {[
               { label: 'Adults', desc: 'Ages 13 or above', value: adults, setter: setAdults },
               { label: 'Children', desc: 'Ages 2–12', value: children, setter: setChildren },

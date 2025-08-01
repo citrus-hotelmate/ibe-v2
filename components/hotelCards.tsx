@@ -80,12 +80,12 @@ const HotelDetails = ({
           "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
       }}
     >
-      <h3 className="text-base md:text-lg font-semibold mb-1 font-urbanist">
+      <h3 className="text-base md:text-lg font-semibold mb-1 font-urbanist notranslate">
         {title}
       </h3>
       <div className="flex items-center gap-1 mb-0">
         <MapPin className="w-7 h-5 text-[#ff9100]" />
-        <span className="text-sm text-[#8f8f73]">{location}</span>
+        <span className="text-sm text-[#8f8f73] notranslate">{location}</span>
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[2px] sm:gap-1">

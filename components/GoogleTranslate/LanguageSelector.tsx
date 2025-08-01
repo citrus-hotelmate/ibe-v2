@@ -150,17 +150,9 @@ const LanguageSelector: React.FC = () => {
             return;
         }
 
-        // Method 2: Hash method with reload (guaranteed to work)
-        console.log('🔗 Using hash method (with reload)');
-        
-        // Store flag that we just triggered translation
-        sessionStorage.setItem('justTranslated', 'true');
-        
-        // Set hash and reload
-        window.location.hash = `googtrans(en|${languageCode})`;
-        setTimeout(() => {
-            window.location.reload();
-        }, 100);
+        // Fallback: Use cookie method to apply translation without reload
+        document.cookie = `googtrans=/en/${languageCode};path=/;`;
+        console.log('🍪 Cookie method used to trigger translation without reload');
     };
 
     const resetToEnglish = () => {
@@ -174,10 +166,6 @@ const LanguageSelector: React.FC = () => {
         
         // Clear cookies
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        
-        // Navigate to clean URL
-        const cleanUrl = window.location.href.split('#')[0];
-        window.location.href = cleanUrl;
     };
 
     const handleLanguageSelect = (languageCode: string) => {
