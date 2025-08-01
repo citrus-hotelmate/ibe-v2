@@ -14,9 +14,9 @@ export default function Navbar() {
         <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center">
           <Link href="/">
             <Image
-              src="/favicon.ico"
+              src="/logo-01.png"
               alt="Logo"
-              width={60}
+              width={330}
               height={60}
               className="rounded-md"
             />
