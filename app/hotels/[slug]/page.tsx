@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link"
 import FeaturedAccommodationCard from "@/components/featuredAccommodationCard";
+import Navbar from "@/components/navbar";
 import { getHotelRoomFeaturesByHotelId } from "@/controllers/hotelRoomFeatureController";
 import { HotelRoomFeature } from "@/types/hotelRoomFeature";
 import { useState, useEffect, useRef } from "react";
@@ -110,14 +112,6 @@ export default function LandingPage() {
                             rating: generateMockRating(),
                         });
                     }
-
-                    // if (feature.isTrue && feature.roomFeature) {
-                    //     const room = roomMap.get(roomTypeId);
-                    //     room.features.push({
-                    //         category: feature.roomFeature.featureCategory,
-                    //         name: feature.roomFeature.featureName,
-                    //     });
-                    // }
                 });
 
                 // Remove allowedRoomTypeIds filter to display all rooms
@@ -192,8 +186,22 @@ export default function LandingPage() {
     console.log("Hotel Name wwwwwwwwwww:", getHotelName());
 
     return (
-        <div className="min-h-screen flex flex-col">
-            <div className="relative z-20 text-center mt-2">
+        <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#e2e0df" }}>
+          {/* <Navbar /> */}
+            {/* Logo - stays at the top-left */}
+            <div className="absolute left-12 top-12 flex items-center z-30">
+              <Link href="/">
+                <Image
+                  src="/logo-01.png"
+                  alt="Logo"
+                  width={130}
+                  height={60}
+                  className="rounded-md"
+                />
+              </Link>
+            </div>
+            {/* Hotel Name Section */}
+            <div className="relative z-20 text-center mt-10">
                 <h1 className="font-urbanist text-[80px] md:text-[80px] 2xl:text-[100px]  tracking-tight leading-tight relative inline-block notranslate">
                     {/* Unblurred main text */}
                     <span className="relative z-10 block">
@@ -256,9 +264,9 @@ export default function LandingPage() {
                         <div className="w-full h-full bg-white/10 backdrop-blur-md mask-fade" />
                     </div>
                     {/* Google Translate Language Selector */}
-                    <div className="absolute top-4 right-4 z-40">
+                    {/* <div className="absolute top-4 right-4 z-40">
                         <LanguageSelector />
-                    </div>
+                    </div> */}
                   </div>
                 );
               })()}
@@ -275,7 +283,7 @@ export default function LandingPage() {
             </div>
 
             {/* Travel & Experiences Tabs */}
-            <div className="mx-auto max-w-5xl w-full mt-16 text-center">
+            {/* <div className="mx-auto max-w-5xl w-full mt-16 text-center">
                 <h2 className="font-urbanist text-lg md:text-xl  mb-4">
                     Seamless travel & experiences
                 </h2>
@@ -293,26 +301,31 @@ export default function LandingPage() {
                         </button>
                     ))}
                 </div>
-            </div>
+            </div> */}
 
             {/* Featured Accommodations */}
-            <div className=" px-10 py-10">
+            <div className="w-full flex justify-center py-10 px-4">
+              <div className="w-full max-w-[98rem]">
                 <div className="text-center mb-12">
-                    <h2 className="font-urbanist text-xl md:text-3xl lg:text-3xl font-semi-bold tracking-tight text-foreground">
-                        Featured Accommodation
-                    </h2>
+                  <h2 className="font-urbanist text-xl md:text-3xl lg:text-3xl font-semi-bold tracking-tight text-foreground">
+                    Featured Accommodation
+                  </h2>
                 </div>
                 {featuredRooms.length > 0 && (
-                  <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-wrap md:flex-nowrap gap-6 w-full">
                     {featuredRooms.map((room) => (
-                      <div key={room.id} className="flex-none w-[252px]">
+                      <div key={room.id} className="w-[252px] flex-shrink-0">
                         <FeaturedAccommodationCard room={room} />
                       </div>
                     ))}
+
+                    {/* Orange Card - fills remaining space on desktop */}
                     <div className="flex-grow min-w-[252px] rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300">
                       <div className="self-start">
                         <HotelNameDisplay name={getHotelName()} />
-                        <HotelDescriptionDisplay description="Your perfect stay awaits" />
+                        <div className="text-base font-urbanist mt-1 overflow-y-auto max-h-32 pr-1">
+                          {hotelData[0]?.hotelDesc || "Your perfect stay awaits"}
+                        </div>
                       </div>
                       <div className="absolute bottom-4 right-4 rounded-full bg-white w-14 h-14 flex items-center justify-center">
                         <ArrowUpRight className="text-[#ff9100] w-7 h-7" />
@@ -320,6 +333,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 )}
+              </div>
             </div>
         </div>
     );

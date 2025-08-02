@@ -11,7 +11,7 @@ export default function Navbar() {
     <nav className="w-full px-6 py-4 relative" style={{ backgroundColor: "#e2e0df" }}>
       <div className="flex justify-center w-full relative">
         {/* Left Logo */}
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center">
+        <div className="absolute left-6 top-12 -translate-y-1/2 flex items-center">
           <Link href="/">
             <Image
               src="/logo-01.png"
@@ -25,8 +25,10 @@ export default function Navbar() {
 
         {/* Centered SearchBar */}
 
+        
+
         {/* Right side - absolute positioned to avoid pushing the search bar */}
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+        <div className="absolute right-6 top-12 -translate-y-1/2 flex items-center gap-3">
           <Link href="/login">
             <CircleUserRound className="w-9 h-9 text-black hover:text-gray-700" />
           </Link>
