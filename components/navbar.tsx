@@ -24,9 +24,6 @@ export default function Navbar() {
         </div>
 
         {/* Centered SearchBar */}
-        <div className="max-w-4xl w-full">
-          <SearchBar />
-        </div>
 
         {/* Right side - absolute positioned to avoid pushing the search bar */}
         <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">

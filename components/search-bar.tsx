@@ -50,6 +50,19 @@ interface SearchBarProps {
   onSearch?: (destinationInput: string, hotelNameInput: string) => void;
 }
 
+
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+
 export function SearchBar({ onSearch }: SearchBarProps) {
   const [destinationInput, setDestinationInput] = useState('');
   const [hotelNameInput, setHotelNameInput] = useState('');
@@ -70,6 +83,18 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(1);
+
+
+
+
+  // Debounced values to prevent too many calls
+  const debouncedCity = useDebounce(destinationInput, 300);
+  const debouncedHotel = useDebounce(hotelNameInput, 300);
+
+  // Call onSearch whenever inputs change
+  useEffect(() => {
+    onSearch?.(debouncedCity.trim(), debouncedHotel.trim());
+  }, [debouncedCity, debouncedHotel]);
 
   // Extract unique destinations as objects with city and country
   const getUniqueDestinations = (): { city: string; country: string }[] => {
@@ -153,40 +178,44 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   }, [destinationInput, hotels]);
 
   // Generate hotel suggestions
-  useEffect(() => {
-    if (!hotelNameInput.trim()) {
-      setHotelSuggestions([]);
-      setShowHotelSuggestions(false);
-      return;
-    }
+useEffect(() => {
+  if (!hotelNameInput.trim()) {
+    setHotelSuggestions([]);
+    setShowHotelSuggestions(false);
+    return;
+  }
 
-    const input = hotelNameInput.toLowerCase().trim();
-    const newSuggestions: Suggestion[] = [];
+  const input = hotelNameInput.toLowerCase().trim();
+  const newSuggestions: Suggestion[] = [];
 
-    console.log('Hotel Name Input:', hotelNameInput); // Debug log
-    console.log('newSuggestions before:', newSuggestions); // Debug log
+  console.log('Hotel Name Input:', hotelNameInput); // Debug
 
-    // Add hotel suggestions (match with .startsWith like destination)
-    const hotelSuggestions = allHotels
-      .filter(hotel =>
-        hotel.hotelName.toLowerCase().startsWith(input) 
+  // Filter hotels by city first (only after a city is selected)
+  const cityFilteredHotels = destinationInput
+    ? allHotels.filter(hotel =>
+        hotel.city?.toLowerCase() === destinationInput.toLowerCase()
       )
-      .slice(0, 8)
-      .map(hotel => ({
-        id: `hotel-${hotel.hotelID}`,
-        text: hotel.hotelName,
-        type: 'hotel' as const,
-        icon: <Building2 className="w-4 h-4 text-gray-500" />
-      }));
+    : allHotels;
 
-    newSuggestions.push(...hotelSuggestions);
-    console.log('Hotel Suggestionswwwwwwwwww:', hotelSuggestions); // Debug log
-    console.log('Hotel Suggestions:', newSuggestions); // Debug log
+  // Filter hotel names starting with the typed letters
+  const hotelSuggestionsFiltered = cityFilteredHotels
+    .filter(hotel =>
+      hotel.hotelName.toLowerCase().startsWith(input)
+    )
+    .slice(0, 8) // Limit suggestions
+    .map(hotel => ({
+      id: `hotel-${hotel.hotelID}`,
+      text: hotel.hotelName,
+      type: 'hotel' as const,
+      icon: <Building2 className="w-4 h-4 text-gray-500" />
+    }));
 
-    setHotelSuggestions(newSuggestions);
-    setShowHotelSuggestions(newSuggestions.length > 0);
-    setSelectedHotelIndex(-1);
-  }, [hotelNameInput, allHotels]);
+  newSuggestions.push(...hotelSuggestionsFiltered);
+
+  setHotelSuggestions(newSuggestions);
+  setShowHotelSuggestions(newSuggestions.length > 0);
+  setSelectedHotelIndex(-1);
+}, [hotelNameInput, allHotels, destinationInput]);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -270,18 +299,22 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     }
   };
 
-  const handleDestinationSuggestionSelect = (suggestion: Suggestion) => {
-    setDestinationInput(suggestion.text);
+const handleDestinationSuggestionSelect = (suggestion: Suggestion) => {
+  // Extract city (text before the comma)
+  const cityOnly = suggestion.text.split(',')[0].trim();
 
-    setTimeout(() => {
-      setDestinationSuggestions([]);
-      setShowDestinationSuggestions(false);
-      setSelectedDestinationIndex(-1);
-    }, 50);
+  // Show only city in the input field
+  setDestinationInput(cityOnly);
 
-    // Trigger search with combined input
-    onSearch?.(suggestion.text, hotelNameInput);
-  };
+  // Close the dropdown
+  setTimeout(() => {
+    setDestinationSuggestions([]);
+    setShowDestinationSuggestions(false);
+    setSelectedDestinationIndex(-1);
+  }, 50);
+
+  // ❌ Do NOT auto-search here
+};
 
   const handleHotelSuggestionSelect = (suggestion: Suggestion) => {
     setHotelNameInput(suggestion.text);
@@ -296,24 +329,19 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     onSearch?.(destinationInput, suggestion.text);
   };
 
-  const handleSearch = () => {
-    const combinedSearch = `${destinationInput} ${hotelNameInput}`.trim();
-    if (combinedSearch) {
+ const handleSearch = () => {
+  const city = destinationInput.trim();
+  const hotel = hotelNameInput.trim();
 
+  // Only trigger search if at least one field is filled
+  if (city || hotel) {
+    onSearch?.(city, hotel);
+  }
 
-      // Filter hotels by destination and hotel name, and exclude hotels without a valid city
-      const filteredHotels = allHotels.filter(hotel =>
-        hotel.city && hotel.city.trim() && // Ensure the hotel has a valid city
-        (destinationInput ? hotel.city.toLowerCase() === destinationInput.toLowerCase() : true) &&
-        (hotelNameInput ? hotel.hotelName.toLowerCase().includes(hotelNameInput.toLowerCase()) : true)
-      );
-      
-      setHotels(filteredHotels);
-      setShowDestinationSuggestions(false);
-      setShowHotelSuggestions(false);
-      onSearch?.(destinationInput, hotelNameInput);
-    }
-  };
+  // Hide suggestions
+  setShowDestinationSuggestions(false);
+  setShowHotelSuggestions(false);
+};
 
   const clearDestination = () => {
     setDestinationInput('');

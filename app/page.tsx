@@ -141,42 +141,111 @@ export default function Home() {
     searchType: 'none'
   });
 
+
+
+
+  const [allHotels, setAllHotels] = useState<Hotel[]>([]);
+
+  // Fetch all hotels once
+  useEffect(() => {
+    const fetchInitialHotels = async () => {
+      setLoading(true);
+      try {
+        const hotels = await getAllHotels({ token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || '' });
+        setAllHotels(hotels);
+        filterAndSetHotels(hotels, '', '');
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialHotels();
+  }, []);
+
+  // Filter hotels whenever user types
+  const filterAndSetHotels = (hotels: Hotel[], city: string, hotelName: string) => {
+    const filtered = hotels.filter(hotel => {
+      const hotelCity = (hotel.city || '').toLowerCase();
+      const hotelNameLower = hotel.hotelName.toLowerCase();
+
+      const cityMatch = city ? hotelCity.startsWith(city.toLowerCase()) : true;
+      const hotelMatch = hotelName ? hotelNameLower.includes(hotelName.toLowerCase()) : true;
+
+      return cityMatch && hotelMatch;
+    });
+
+    const transformed = filtered.map(hotel => ({
+      id: hotel.hotelID,
+      type: hotel.hotelName,
+      location: hotel.city || hotel.hotelAddress || 'Unknown',
+      rating: hotel.starCatgeory,
+      image: hotel.hotelImage?.imageFileName || '',
+      hotelCode: hotel.hotelCode,
+      lowestRate: hotel.lowestRate || 0,
+      slug: slugify(hotel.hotelName),
+    }));
+
+    // Group by city
+    const grouped: { [key: string]: PropertyListing[] } = {};
+    transformed.forEach(prop => {
+      const cityKey = prop.location || 'Unknown';
+      if (!grouped[cityKey]) grouped[cityKey] = [];
+      grouped[cityKey].push(prop);
+    });
+
+    setPropertiesByCity(grouped);
+  };
+
+  const handleSearch = (city: string, hotel: string) => {
+    filterAndSetHotels(allHotels, city, hotel);
+    setSearchParams({
+      destination: city,
+      hotelName: hotel,
+      searchType:
+        city && hotel
+          ? "both"
+          : city
+          ? "destinations"
+          : hotel
+          ? "hotel name"
+          : "none",
+    });
+  };
+
+
   useEffect(() => {
     fetchHotels();
   }, []);
 
   const filterHotels = (hotels: Hotel[], params: SearchParams): Hotel[] => {
-    if (params.searchType === 'none') {
-      return hotels;
-    }
+    const city = params.destination.toLowerCase().trim();
+    const hotelName = params.hotelName.toLowerCase().trim();
 
-    let filtered = hotels;
+    return hotels.filter((hotel) => {
+      const hotelCity = (hotel.city || '').toLowerCase();
+      const hotelCountry = (hotel.country || '').toLowerCase();
+      const hotelFullLocation = `${hotelCity} ${hotelCountry}`.trim();
+      const hotelNameLower = hotel.hotelName.toLowerCase();
 
-    if (params.searchType === 'destinations') {
-      // Destination only - filter by location
-      filtered = filtered.filter(hotel => {
-        const location = `${hotel.city} ${hotel.country}`.toLowerCase();
-        return location.includes(params.destination.toLowerCase());
-      });
-    } else if (params.searchType === 'hotel name') {
-      // Hotel name only - filter by name
-      filtered = filtered.filter(hotel =>
-        hotel.hotelName.toLowerCase().includes(params.hotelName.toLowerCase())
-      );
-    } else if (params.searchType === 'both') {
-      // Both criteria - hotel must match name AND (have matching location OR have no location data)
-      filtered = filtered.filter(hotel => {
-        const location = `${hotel.city} ${hotel.country}`.toLowerCase();
-        const locationMatches = location.includes(params.destination.toLowerCase());
-        const nameMatches = hotel.hotelName.toLowerCase().includes(params.hotelName.toLowerCase());
+      // Case 1: City only
+      if (city && !hotelName) {
+        return hotelCity === city; // exact city match
+      }
 
-        // For BOTH search: hotel must match name AND (have matching location OR have no location data)
-        const hasLocationData = hotel.city && hotel.country;
-        return nameMatches && (!hasLocationData || locationMatches);
-      });
-    }
+      // Case 2: Hotel name only
+      if (!city && hotelName) {
+        return hotelNameLower.includes(hotelName);
+      }
 
-    return filtered;
+      // Case 3: Both city and hotel name
+      if (city && hotelName) {
+        return hotelCity === city && hotelNameLower.includes(hotelName);
+      }
+
+      // Case 4: Nothing entered
+      return true;
+    });
   };
 
   const fetchHotels = async (params: SearchParams = { destination: '', hotelName: '', searchType: 'none' }) => {
@@ -233,31 +302,11 @@ export default function Home() {
 
 
 
-const handleHotelClick = (slug: string) => {
-  window.open(`/hotels/${slug}`, '_blank', 'noopener,noreferrer');
-  console.log(`Opening hotel with slug in new tab: ${slug}`);
-};
-  const handleSearch = (destinationInput: string, hotelNameInput: string) => {
-    const searchType: SearchParams['searchType'] =
-      destinationInput && hotelNameInput
-        ? 'both'
-        : destinationInput
-        ? 'destinations'
-        : hotelNameInput
-        ? 'hotel name'
-        : 'none';
-
-    const params: SearchParams = {
-      destination: destinationInput,
-      hotelName: hotelNameInput,
-      searchType
-    };
-    console.log('Search Params:', params);
-
-    setSearchParams(params);
-    // updateDisplayTitle(params); (Removed)
-    fetchHotels(params);
+  const handleHotelClick = (slug: string) => {
+    window.open(`/hotels/${slug}`, '_blank', 'noopener,noreferrer');
+    console.log(`Opening hotel with slug in new tab: ${slug}`);
   };
+
 
 
 
@@ -266,9 +315,22 @@ const handleHotelClick = (slug: string) => {
       <Navbar />
       <div className="w-full max-w-[1920px] mx-auto px-4">
 
+        {/* Pass live search handler */}
+        <SearchBar onSearch={handleSearch} />
+
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="text-lg text-gray-600">Loading hotels...</div>
+          </div>
+        ) : Object.keys(propertiesByCity).length === 0 ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-lg text-gray-600 font-urbanist">
+              {searchParams.hotelName && !searchParams.destination
+                ? "No hotels found matching your search."
+                : searchParams.destination && !searchParams.hotelName
+                ? "No destination found matching your search."
+                : "No hotels or destinations found matching your search."}
+            </div>
           </div>
         ) : (
           Object.entries(propertiesByCity).map(([city, properties]) => (
@@ -277,7 +339,7 @@ const handleHotelClick = (slug: string) => {
               title={city}
               destination={city}
               properties={properties}
-              onHotelClick={handleHotelClick}
+              onHotelClick={(slug) => window.open(`/hotels/${slug}`, '_blank')}
             />
           ))
         )}
