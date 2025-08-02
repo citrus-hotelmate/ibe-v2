@@ -92,8 +92,8 @@ const HotelDetails = ({
           {renderStars()}
         </div>
         <div className="text-right font-urbanist">
-          <span className="relative inline-block text-3xl md:text-4xl lg:text-5xl font-semibold">
-            <span className="absolute -left-5 -top-1 text-lg md:text-3xl font-semibold">
+          <span className="relative inline-block text-3xl md:text-4xl lg:text-4xl font-semibold">
+            <span className="absolute -left-5 -top-1 text-lg md:text-2xl font-semibold">
               $
             </span>
             <span>{price}</span>

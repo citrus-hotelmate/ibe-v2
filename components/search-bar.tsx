@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Building2, X, Users } from 'lucide-react';
-import { getAllHotels } from '@/controllers/adminController';
+import { getAllHotels } from '@/controllers/ibeController';
 import { HotelResponse } from '@/types/admin';
 
 interface Hotel {
@@ -71,22 +71,25 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(1);
 
-  // Extract unique destinations from hotels data
-  const getUniqueDestinations = (): string[] => {
-    const destinations = new Set<string>();
-    
+  // Extract unique destinations as objects with city and country
+  const getUniqueDestinations = (): { city: string; country: string }[] => {
+    const destinations: { city: string; country: string }[] = [];
+
     hotels.forEach(hotel => {
-      // Add city if available
       if (hotel.city && hotel.city.trim()) {
-        destinations.add(hotel.city.trim());
-      }
-      // Add country if available and different from city
-      if (hotel.country && hotel.country.trim() && hotel.country !== hotel.city) {
-        destinations.add(hotel.country.trim());
+        destinations.push({
+          city: hotel.city.trim(),
+          country: hotel.country?.trim() || '',
+        });
       }
     });
-    
-    return Array.from(destinations).sort();
+
+    // Remove duplicates by city+country
+    const unique = Array.from(
+      new Map(destinations.map(d => [`${d.city}-${d.country}`, d])).values()
+    );
+
+    return unique.sort((a, b) => a.city.localeCompare(b.city));
   };
 
   // Fetch hotels for suggestions
@@ -126,15 +129,16 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     // Get all unique destinations from API data
     const uniqueDestinations = getUniqueDestinations();
 
-    // Filter destinations that start with the input
+    // Filter destinations that start with the input (city or country)
     const matchingDestinations = uniqueDestinations
       .filter(destination =>
-        destination.toLowerCase().startsWith(input)  // Start with input
+        destination.city.toLowerCase().startsWith(input) ||
+        destination.country.toLowerCase().startsWith(input)
       )
       .slice(0, 8) // Limit to 8 suggestions
       .map(destination => ({
-        id: `destination-${destination}`,
-        text: destination,
+        id: `destination-${destination.city}`,
+        text: `${destination.city}${destination.country ? ', ' + destination.country : ''}`,
         type: 'destination' as const,
         icon: <MapPin className="w-4 h-4 text-gray-500" />
       }));
@@ -367,7 +371,12 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 }}
               >
                 {suggestion.icon}
-                <span>{suggestion.text}</span>
+                <div className="flex justify-between w-full">
+                  <span className="font-medium text-gray-500 font-urbanist">{suggestion.text.split(',')[0]}</span>
+                  {suggestion.text.includes(',') && (
+                    <span className="text-gray-500 text-sm font-urbanist">{suggestion.text.split(',')[1].trim()}</span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
