@@ -54,14 +54,14 @@ const FeaturedAccommodationDetails = ({
     room: FeaturedRoom;
 }) => (
     <div
-        className=" sm:p-5 md:p-5 font-urbanist"
+        className="p-5 font-urbanist"
         style={{
             background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
         }}
     >
-        <h3 className="font-semibold text-lg mb-2">{room.name}</h3>
+        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{room.name}</h3>
         <div className="flex items-center text-sm mb-2">
-            <Users className="h-4 w-4 mr-1 text-primary" />
+            <Users className="h-4 w-4 mr-1 text-primary flex-shrink-0" />
             <span className="notranslate text-[#8f8f73]">{room.adultCapacity}</span>
             <span className="text-[#8f8f73]">&nbsp;Adults</span>
             {room.childCapacity > 0 && (
@@ -84,10 +84,10 @@ const FeaturedAccommodationDetails = ({
                 {room.features.length > 3 && "..."}
             </div>
         )}
-        <div className="mt-auto flex items-center justify-end text-3xl md:text-4xl lg:text-5xl relative">
+        <div className="mt-auto flex items-center justify-end text-4xl relative">
             {/* Price on the right */}
             <div className="relative inline-block font-urbanist">
-                <span className="absolute -left-5 -top-1 text-lg md:text-3xl font-semibold">$</span>
+                <span className="absolute -left-5 -top-1 text-2xl font-semibold">$</span>
                 <span className="notranslate font-medium">{room.price}</span>
             </div>
         </div>
@@ -97,7 +97,7 @@ const FeaturedAccommodationDetails = ({
 
 const FeaturedAccommodationCard = ({ room }: Props) => {
     return (
-        <div className="rounded-[3rem] bg-card text-card-foreground shadow-md overflow-hidden w-full max-w-xs mb-4 md:mb-0 lg:mb-0 2xl:mb-0 flex flex-col">
+        <div className="rounded-[3rem] bg-card text-card-foreground shadow-md overflow-hidden w-[252px] h-auto flex flex-col">
             <FeaturedAccommodationImage image={room.image} name={room.name} />
             <FeaturedAccommodationDetails room={room} />
         </div>

@@ -32,9 +32,8 @@ const HotelImage = ({
         e.stopPropagation(); // Prevent triggering card click
         onWishlistClick();
       }}
-      className={`absolute top-5 right-5 w-6 h-6 transition ${
-        isWishlisted ? "text-red-500" : "text-gray-600 opacity-90 "
-      }`}
+      className={`absolute top-3 sm:top-5 right-3 sm:right-5 w-5 h-5 sm:w-6 sm:h-6 transition ${isWishlisted ? "text-red-500" : "text-gray-600 opacity-90 "
+        }`}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -63,37 +62,36 @@ const HotelDetails = ({
     return Array.from({ length: 5 }, (_, index) => (
       <Star
         key={index}
-        className={`w-5 h-5 ${
-          index < rating
+        className={`w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ${index < rating
             ? "fill-[#ff9100] text-[#ff9100]"
             : "fill-none text-muted-foreground"
-        }`}
+          }`}
       />
     ));
   };
 
   return (
     <div
-      className="p-4 sm:p-5 md:p-6 h-full"
+      className="p-3 sm:p-4 md:p-5 lg:p-6 h-full"
       style={{
         background:
           "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
       }}
     >
-      <h3 className="text-base md:text-lg font-semibold mb-1 font-urbanist notranslate">
+      <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 font-urbanist notranslate line-clamp-2">
         {title}
       </h3>
       <div className="flex items-center gap-1 mb-0">
-        <MapPin className="w-7 h-5 text-[#ff9100]" />
-        <span className="text-sm text-[#8f8f73] notranslate">{location}</span>
+        <MapPin className="w-4 sm:w-5 md:w-7 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+        <span className="text-xs sm:text-sm text-[#8f8f73] notranslate truncate">{location}</span>
       </div>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-[2px] sm:gap-1">
+        <div className="flex items-center gap-[1px] sm:gap-[2px] md:gap-1">
           {renderStars()}
         </div>
         <div className="text-right font-urbanist">
-          <span className="relative inline-block text-3xl md:text-4xl lg:text-4xl font-semibold">
-            <span className="absolute -left-5 -top-1 text-lg md:text-2xl font-semibold">
+          <span className="relative inline-block text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold">
+            <span className="absolute -left-3 sm:-left-4 md:-left-5 -top-1 text-sm sm:text-base md:text-lg lg:text-2xl font-semibold">
               $
             </span>
             <span>{price}</span>
@@ -135,7 +133,7 @@ const hotelCard = ({
   return (
     <div
       onClick={onClick}
-      className="rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full max-w-xs mb-4 lg:mb-0"
+      className="rounded-2xl sm:rounded-3xl lg:rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full max-w-xs mx-auto mb-4 lg:mb-0 cursor-pointer"
     >
       <HotelImage
         image={image}
