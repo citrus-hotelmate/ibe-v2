@@ -1,11 +1,9 @@
-
 "use client"
 
 import type React from "react"
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface DialOption {
   code: string
@@ -31,37 +29,31 @@ export function PhoneInput({
   error,
   countryCode,
 }: PhoneInputProps) {
-  const [dialCode, setDialCode] = useState(() => {
-    try {
-      const stored = localStorage.getItem("selectedCountry")
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        return parsed?.IDDCode?.trim() || "+1"
-      }
-    } catch {
-      return "+1"
-    }
-    return "+1"
-  })
+  const [dialCode, setDialCode] = useState("+1")
   const [dialOptions, setDialOptions] = useState<DialOption[]>([])
 
   useEffect(() => {
     const fetchDialOptions = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/API_IBE/getcountry.aspx`)
-        const raw = await res.text()
-        const fixed = `[${raw.replace(/}\s*{/g, "},{")}]`
-        const data = JSON.parse(fixed)
+        const res = await fetch("https://restcountries.com/v3.1/all")
+        const data = await res.json()
+        interface Country {
+          idd?: {
+            root?: string
+            suffixes?: string[]
+          }
+          name: {
+            common: string
+          }
+        }
 
-        const seen = new Set()
-        const options: DialOption[] = data
-          .filter((c: any) => c.IDDCode && !seen.has(c.IDDCode) && (seen.add(c.IDDCode) || true))
-          .map((c: any) => ({
-            code: c.IDDCode.trim(),
-            name: c.CountryName.trim()
+        const options: DialOption[] = (data as Country[])
+          .filter((c) => c.idd?.root && c.idd?.suffixes?.[0])
+          .map((c) => ({
+            code: `${c.idd!.root!}${c.idd!.suffixes![0]}`,
+            name: c.name.common,
           }))
-          .sort((a, b) => parseInt(a.code.replace(/\D/g, "")) - parseInt(b.code.replace(/\D/g, "")))
-
+          .sort((a, b) => parseInt(a.code.replace("+", "")) - parseInt(b.code.replace("+", "")))
         setDialOptions(options)
       } catch (err) {
         console.error("Failed to fetch country codes", err)
@@ -69,29 +61,6 @@ export function PhoneInput({
     }
 
     fetchDialOptions()
-  }, [])
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      try {
-        const stored = localStorage.getItem("selectedCountry")
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          if (parsed?.IDDCode?.trim()) {
-            setDialCode(parsed.IDDCode.trim())
-          }
-        }
-      } catch {
-        // ignore errors
-      }
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-    handleStorageChange()
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange)
-    }
   }, [])
 
   const phoneOnly = value.replace(/^\+\d+\s*/, "")
@@ -112,12 +81,10 @@ export function PhoneInput({
           }}
           className="w-full bg-transparent focus:outline-none"
         >
-          <option value={dialCode}>
-            {dialCode}
-          </option>
+          <option value="+1">+1</option>
           {dialOptions.map((option) => (
             <option key={option.code} value={option.code}>
-              {option.name} ({option.code})
+              {option.code}
             </option>
           ))}
         </select>

@@ -1,4 +1,4 @@
-// pages/API_IBE/post-booking.ts
+// pages/api/post-booking.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/API_IBE/PostBooking.aspx`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/API/PostBooking.aspx`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

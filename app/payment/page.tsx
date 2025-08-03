@@ -7,19 +7,13 @@ import { useRouter } from "next/navigation";
 import { CreditCard, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { format } from "date-fns";
@@ -28,65 +22,25 @@ import { generateBookingId } from "@/lib/utils";
 import Header from "@/components/header";
 import { useCurrency } from "@/components/currency-context";
 import { CurrencySelector } from "@/components/currency-selector";
-import PaqymentMethodImage from "../../assets/image/cards.png";
-import Image from "next/image";
-import HotelNetworkScript from "@/components/hotelNetworkScript";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function PaymentPage() {
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const lang = localStorage.getItem("selectedLanguage") || "en";
-      const expectedHash = `#googtrans(en|${lang})`;
-      if (!window.location.hash.includes("googtrans")) {
-        window.location.hash = expectedHash;
-      }
-    }
-  }, []);
   const router = useRouter();
   const { bookingDetails, updateBookingDetails } = useBooking();
   const { convertPrice, formatPrice } = useCurrency();
   const [isProcessing, setIsProcessing] = useState(false);
-
-  console.log("Booking Details:✅✅✅", bookingDetails);
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const [allowPayAtProperty, setAllowPayAtProperty] = useState(false);
   const [isIPGActive, setIsIPGActive] = useState(false);
 
-  // Voucher state
-  const [voucherCode, setVoucherCode] = useState("");
-  const [voucherAmount, setVoucherAmount] = useState(0);
-  const [voucherError, setVoucherError] = useState("");
-
-  const [hotelData, setHotelData] = useState<any>({ images: [] });
-
-  useEffect(() => {
-    const fetchHotelDetails = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/API_IBE/GetHotelDetail.aspx`);
-        const data = await res.json();
-        setHotelData(data);
-      } catch (error) {
-        console.error("Failed to fetch hotel details", error);
-      }
-    };
-
-    fetchHotelDetails();
-  }, []);
-
   // isMounted state for client-only rendering
   const [isMounted, setIsMounted] = useState(false);
 
-  // Modal confirmation state
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-
   useEffect(() => {
     setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("payment_collect", "hotelcollect");
   }, []);
 
   useEffect(() => {
@@ -95,8 +49,6 @@ export default function PaymentPage() {
       const parsed = JSON.parse(saved);
       if (parsed.checkIn) parsed.checkIn = new Date(parsed.checkIn);
       if (parsed.checkOut) parsed.checkOut = new Date(parsed.checkOut);
-      // Clear payment method so nothing is selected by default
-      delete parsed.paymentMethod;
       updateBookingDetails(parsed);
       // Restore and apply stored promotion
       const storedPromoDetails = localStorage.getItem("parsedPromoDetails");
@@ -110,17 +62,15 @@ export default function PaymentPage() {
           console.error("Failed to parse stored promo details", e);
         }
       }
-      // Restore voucherAmount if present
-      if (parsed.voucherAmount) {
-        updateBookingDetails({ voucherAmount: parsed.voucherAmount });
-      }
     }
   }, []);
 
   useEffect(() => {
     const fetchPaymentOptions = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/API_IBE/GetHotelDetail.aspx`);
+        const res = await fetch(
+          "https://ipg.citrusibe.com/API/GetHotelDetail.aspx"
+        );
         const data = await res.json();
         setAllowPayAtProperty(data?.IBE_AllowPayAtProperty === true);
         setIsIPGActive(data?.IBE_isIPGActive === true);
@@ -151,8 +101,6 @@ export default function PaymentPage() {
     paymentMethod?: string;
     bookingId?: string;
     currency: "USD" | "LKR";
-    selectedPackages?: any[]; // selectedPackages property added to fix the error
-    voucherAmount?: number;
   }
 
   interface MealPlan {
@@ -163,92 +111,32 @@ export default function PaymentPage() {
   }
 
   // Calculate total price
-  const roomsTotal = bookingDetails.selectedRooms.reduce(
-    (total: number, room: RoomBooking) => {
-      return total + room.price * room.quantity;
-    },
-    0
-  );
+  const roomsTotal = bookingDetails.selectedRooms.reduce((total, room) => {
+    return total + room.price * room.quantity * bookingDetails.nights;
+  }, 0);
   const baseTotal = roomsTotal;
 
   // Packages, promo, and final total calculations (from booking step)
   const packagesTotal =
-    bookingDetails.selectedPackages?.reduce((total: number, pkg: any) => {
+    bookingDetails.selectedPackages?.reduce((total, pkg) => {
       return total + pkg.Price;
     }, 0) || 0;
 
-  const promoDiscount = (() => {
-    const promo = bookingDetails.promoDetails;
-    if (!promo) return 0;
-
-    if (promo.PromoType === "PERCENTAGE") {
-      return (promo.Value / 100) * roomsTotal;
-    }
-
-    if (
-      promo.PromoType === "FREE NIGHTS" &&
-      promo.Value &&
-      promo.FreeNights &&
-      bookingDetails.nights >= promo.Value &&
-      bookingDetails.nights > 0
-    ) {
-      const perNightPrice = roomsTotal / bookingDetails.nights;
-      return perNightPrice * promo.FreeNights;
-    }
-
-    return 0;
-  })();
-  const finalTotal = roomsTotal + packagesTotal - promoDiscount - voucherAmount;
-  // Voucher validation effect
-  useEffect(() => {
-    const validateVoucher = async () => {
-      if (!voucherCode) {
-        setVoucherAmount(0);
-        setVoucherError("");
-        return;
-      }
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/API_IBE/ValidateVoucherCode.aspx?vcode=${voucherCode}`
-        );
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0 && !data[0].isUsed) {
-          setVoucherAmount(data[0].Amount || 0);
-          setVoucherError("");
-        } else {
-          setVoucherAmount(0);
-          setVoucherError("Invalid or already used voucher.");
-        }
-      } catch (error) {
-        console.error("Voucher validation error:", error);
-        setVoucherError("Failed to validate voucher.");
-        setVoucherAmount(0);
-      }
-    };
-
-    validateVoucher();
-  }, [voucherCode]);
+  const promoDiscount = bookingDetails.promoCode ? 0.15 * roomsTotal : 0;
+  const finalTotal = roomsTotal + packagesTotal - promoDiscount;
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    const finalBookingId = bookingDetails.bookingId || generateBookingId();
-    console.log("Final Booking ID:", finalBookingId);
 
-    updateBookingDetails({ bookingId: finalBookingId });
-    // Save reservationSummary with voucherAmount to localStorage
-    localStorage.setItem(
-      "reservationSummary",
-      JSON.stringify({
-        ...bookingDetails,
-        voucherAmount,
-      })
-    );
+    const bookingId = generateBookingId();
+    updateBookingDetails({ bookingId });
 
     if (bookingDetails.paymentMethod === "arrival") {
       try {
         // Build payload dynamically from bookingDetails
         const {
+          bookingId,
           checkIn,
           checkOut,
           selectedRooms,
@@ -265,17 +153,17 @@ export default function PaymentPage() {
           totalPrice,
           currency,
           children,
-          adults,
+          adults
         } = bookingDetails;
 
         const payload = {
           data: [
             {
-              id: finalBookingId,
+              id: bookingId,
               attributes: {
-                id: finalBookingId,
+                id: bookingId,
                 meta: {
-                  ruid: finalBookingId,
+                  ruid: bookingId,
                 },
                 status: "new",
                 services: [],
@@ -286,17 +174,13 @@ export default function PaymentPage() {
                 ota_name: "CitrusIBE",
                 property_id: "",
                 channel_id: "",
-                unique_id: finalBookingId,
+                unique_id: parseInt(bookingId.replace(/\D/g, "").slice(0, 10)) || Date.now(),
                 system_id: "",
-                booking_id: finalBookingId,
+                booking_id: bookingId,
                 notes: specialRequests || "No remarks",
-                arrival_date: checkIn
-                  ? format(new Date(checkIn), "MM/dd/yyyy")
-                  : "",
+                arrival_date: checkIn ? format(new Date(checkIn), "MM/dd/yyyy") : "",
                 arrival_hour: "12.00AM",
-                departure_date: checkOut
-                  ? format(new Date(checkOut), "MM/dd/yyyy")
-                  : "",
+                departure_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
                 promotion: {
                   code: promoCode || null,
                   discount_amount: promoDetails?.Value || null,
@@ -314,57 +198,44 @@ export default function PaymentPage() {
                   mail: email,
                   phone,
                 },
-                payment_collect: "hotelcollect",
+                payment_collect: "paid",
                 deposits: null,
                 guarantee: null,
-                // Add packages block after guarantee
-                packages:
-                  bookingDetails.selectedPackages?.map((pkg: any) => ({
-                    package_code: pkg.PackageCode ?? "UNKNOWN",
-                    package_name: pkg.PackageName ?? "",
-                    amount: (pkg.Price ?? 0).toFixed(2),
-                  })) ?? [],
-                // Add voucher code
-                vouchercode_used: voucherCode || null,
-                rooms: selectedRooms.map((room: RoomBooking, idx: number) => ({
+                rooms: selectedRooms.map((room, idx) => ({
                   meta: {
                     mapping_id: `mapping-id-${idx}`,
                     parent_rate_plan_id: `rate-plan-${idx}`,
-                    rate_plan_code: "",
+                    rate_plan_code: 9536508,
                     room_type_code: room.roomId,
                     days_breakdown: [
                       {
-                        date: checkIn
-                          ? format(new Date(checkIn), "yyyy-MM-dd")
-                          : "",
+                        date: checkIn ? format(new Date(checkIn), "yyyy-MM-dd") : "",
                         amount: (room.price * room.quantity).toFixed(2),
                         promotion: {
                           code: promoCode || null,
                           discount_amount: promoDetails?.Value || null,
                         },
-                        rate_code: "",
+                        rate_code: 9536508,
                         rate_plan: `rate-plan-${idx}`,
-                      },
+                      }
                     ],
                     cancel_penalties: [
                       {
                         amount: "0.00",
                         currency: currency || "USD",
-                        from: new Date().toISOString(),
-                      },
+                        from: new Date().toISOString()
+                      }
                     ],
                     meal_plan: room.mealPlanId || "BB",
                     policies: null,
                     room_remarks: [],
-                    smoking_preferences: null,
+                    smoking_preferences: null
                   },
                   taxes: [],
                   amount: (room.price * room.quantity).toFixed(2),
                   services: [],
                   days: {
-                    [checkIn ? format(new Date(checkIn), "yyyy-MM-dd") : ""]: (
-                      room.price * room.quantity
-                    ).toFixed(2),
+                    [checkIn ? format(new Date(checkIn), "yyyy-MM-dd") : ""]: (room.price * room.quantity).toFixed(2)
                   },
                   booking_room_id: `room-booking-${idx}`,
                   rate_plan_id: `rate-plan-${idx}`,
@@ -373,75 +244,67 @@ export default function PaymentPage() {
                     {
                       name,
                       surname: "",
-                    },
+                    }
                   ],
                   occupancy: {
                     children: room.children || 0,
                     adults: room.adults || 2,
-                    infants: 0,
+                    infants: 0
                   },
                   ota_commission: "00.00",
-                  checkin_date: checkIn
-                    ? format(new Date(checkIn), "MM/dd/yyyy")
-                    : "",
-                  checkout_date: checkOut
-                    ? format(new Date(checkOut), "MM/dd/yyyy")
-                    : "",
+                  checkin_date: checkIn ? format(new Date(checkIn), "MM/dd/yyyy") : "",
+                  checkout_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
                   is_cancelled: false,
-                  ota_unique_id: null,
+                  ota_unique_id: null
                 })),
                 secondary_ota: null,
                 occupancy: {
                   children,
                   adults,
-                  infants: 0,
+                  infants: 0
                 },
                 acknowledge_status: "pending",
                 ota_commission: "00.00",
-                ota_reservation_code: finalBookingId,
-                raw_message: "{}",
+                ota_reservation_code: bookingId,
+                raw_message: "{}"
               },
               relationships: {
                 data: {
                   property: {
                     id: "",
-                    type: "property",
+                    type: "property"
                   },
                   booking: {
                     id: "",
-                    type: "booking",
-                  },
-                },
-              },
-            },
+                    type: "booking"
+                  }
+                }
+              }
+            }
           ],
           meta: {
             total: 1,
             limit: 10,
             order_by: "inserted_at",
             page: 1,
-            order_direction: "asc",
-          },
-        };
-        const response = await fetch(
-          `${API_BASE_URL}/API_IBE/PostBooking.aspx`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+            order_direction: "asc"
           }
-        );
+        };
+        const response = await fetch("/api/post-booking", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
 
         const result = await response.json();
-        if (result?.status === "success") {
-          localStorage.clear();
-          router.push(`/tentative/${finalBookingId}`);
+
+        if (result.status === "success") {
+          router.push("/confirmed");
           return;
         } else {
           console.error("Booking failed:", result);
-          router.push(`/bookingfailed`);
           setIsProcessing(false);
           return;
         }
@@ -452,253 +315,41 @@ export default function PaymentPage() {
       }
     } else if (bookingDetails.paymentMethod === "stripe") {
       try {
-        // Build and post booking payload (same as "arrival" block, but with total from finalTotal)
-        const {
-          checkIn,
-          checkOut,
-          selectedRooms,
-          name,
-          email,
-          phone,
-          nationality,
-          promoCode,
-          promoDetails,
-          specialRequests,
-          nights,
-          selectedPackages,
-          currency,
-          children,
-          adults,
-        } = bookingDetails;
-
-        const payload = {
-          data: [
-            {
-              id: finalBookingId,
-              attributes: {
-                id: finalBookingId,
-                meta: {
-                  ruid: finalBookingId,
-                },
-                status: "new",
-                services: [],
-                currency: currency || "USD",
-                amount: finalTotal.toFixed(2),
-                agent: null,
-                inserted_at: new Date().toISOString(),
-                ota_name: "CitrusIBE",
-                property_id: "",
-                channel_id: "",
-                unique_id: finalBookingId,
-                system_id: "",
-                booking_id: finalBookingId,
-                notes: specialRequests || "No remarks",
-                arrival_date: checkIn
-                  ? format(new Date(checkIn), "MM/dd/yyyy")
-                  : "",
-                arrival_hour: "12.00AM",
-                departure_date: checkOut
-                  ? format(new Date(checkOut), "MM/dd/yyyy")
-                  : "",
-                promotion: {
-                  code: promoCode || null,
-                  discount_amount: promoDetails?.Value || null,
-                },
-                customer: {
-                  meta: {
-                    is_genius: false,
-                  },
-                  name,
-                  surname: "",
-                  address: "",
-                  country: nationality,
-                  city: "",
-                  zip: null,
-                  mail: email,
-                  phone,
-                },
-                payment_collect: "unpaid",
-                deposits: null,
-                guarantee: null,
-                // Add packages block after guarantee
-                packages:
-                  bookingDetails.selectedPackages?.map((pkg: any) => ({
-                    package_code: pkg.PackageCode ?? "UNKNOWN",
-                    package_name: pkg.PackageName ?? "",
-                    amount: (pkg.Price ?? 0).toFixed(2),
-                  })) ?? [],
-                // Add voucher code
-                vouchercode_used: voucherCode || null,
-                rooms: selectedRooms.map((room: RoomBooking, idx: number) => ({
-                  meta: {
-                    mapping_id: `mapping-id-${idx}`,
-                    parent_rate_plan_id: `rate-plan-${idx}`,
-                    rate_plan_code: "",
-                    room_type_code: room.roomId,
-                    days_breakdown: [
-                      {
-                        date: checkIn
-                          ? format(new Date(checkIn), "yyyy-MM-dd")
-                          : "",
-                        amount: (room.price * room.quantity).toFixed(2),
-                        promotion: {
-                          code: promoCode || null,
-                          discount_amount: promoDetails?.Value || null,
-                        },
-                        rate_code: "",
-                        rate_plan: `rate-plan-${idx}`,
-                      },
-                    ],
-                    cancel_penalties: [
-                      {
-                        amount: "0.00",
-                        currency: currency || "USD",
-                        from: new Date().toISOString(),
-                      },
-                    ],
-                    meal_plan: room.mealPlanId || "BB",
-                    policies: null,
-                    room_remarks: [],
-                    smoking_preferences: null,
-                  },
-                  taxes: [],
-                  amount: (room.price * room.quantity).toFixed(2),
-                  services: [],
-                  days: {
-                    [checkIn ? format(new Date(checkIn), "yyyy-MM-dd") : ""]: (
-                      room.price * room.quantity
-                    ).toFixed(2),
-                  },
-                  booking_room_id: `room-booking-${idx}`,
-                  rate_plan_id: `rate-plan-${idx}`,
-                  room_type_id: room.roomId,
-                  guests: [
-                    {
-                      name,
-                      surname: "",
-                    },
-                  ],
-                  occupancy: {
-                    children: room.children || 0,
-                    adults: room.adults || 2,
-                    infants: 0,
-                  },
-                  ota_commission: "00.00",
-                  checkin_date: checkIn
-                    ? format(new Date(checkIn), "MM/dd/yyyy")
-                    : "",
-                  checkout_date: checkOut
-                    ? format(new Date(checkOut), "MM/dd/yyyy")
-                    : "",
-                  is_cancelled: false,
-                  ota_unique_id: null,
-                })),
-                secondary_ota: null,
-                occupancy: {
-                  children,
-                  adults,
-                  infants: 0,
-                },
-                acknowledge_status: "pending",
-                ota_commission: "00.00",
-                ota_reservation_code: finalBookingId,
-                raw_message: "{}",
-              },
-              relationships: {
-                data: {
-                  property: {
-                    id: "",
-                    type: "property",
-                  },
-                  booking: {
-                    id: "",
-                    type: "booking",
-                  },
-                },
-              },
-            },
-          ],
-          meta: {
-            total: 1,
-            limit: 10,
-            order_by: "inserted_at",
-            page: 1,
-            order_direction: "asc",
-          },
-        };
-
-        await fetch(`${API_BASE_URL}/API_IBE/PostBooking.aspx`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        // Fetch credentials from the IPG credentials API
-        const credsRes = await fetch(
-          `${API_BASE_URL}/API_IBE/GetIPGCredentials.aspx`
-        );
-        const credsData = await credsRes.json();
-        const firstCred = credsData?.[0] || {};
-        const accessKey = firstCred.AccessKey_USD;
-        const profileId = firstCred.ProfileID_USD;
-
-        // Prepare fields for signature request
-        const fields: Record<string, string> = {
-          access_key: accessKey,
-          profile_id: profileId,
-          transaction_uuid: finalBookingId,
-          signed_field_names:
-            "access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_address1,bill_city,bill_country",
-          unsigned_field_names: "",
-          signed_date_time: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
-          locale: "en",
-          transaction_type: "sale",
-          reference_number: finalBookingId,
-          amount: finalTotal.toFixed(2),
-          currency:
-            localStorage.getItem("preferredCurrency") ||
-            bookingDetails.currency ||
-            "USD",
-          bill_address1: bookingDetails.address || "",
-          bill_city: bookingDetails.city || "",
-          bill_country: bookingDetails.nationality || "",
-        };
-
-        const response = await fetch("/api/generate-cybersource-signature", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(fields),
-        });
-
-        const { signature } = await response.json();
-
         const form = document.createElement("form");
         form.method = "POST";
-        form.action = firstCred.EndPoint;
+        form.action = "https://testsecureacceptance.cybersource.com/pay";
         form.name = "myform";
 
-        Object.entries(fields).forEach(([key, value]) => {
+        const addHiddenField = (name: string, value: string) => {
           const input = document.createElement("input");
           input.type = "hidden";
-          input.name = key;
+          input.name = name;
           input.value = value;
           form.appendChild(input);
-        });
+        };
 
-        const sigInput = document.createElement("input");
-        sigInput.type = "hidden";
-        sigInput.name = "signature";
-        sigInput.value = signature;
-        form.appendChild(sigInput);
+        // Static fields
+        addHiddenField("access_key", "9511dcceccde31438d7e46bab222241c");
+        addHiddenField("profile_id", "F87AFFC2-E55B-403D-93F5-BE17FC99A2BA");
+        addHiddenField("transaction_uuid", bookingDetails.bookingId || generateBookingId());
+        addHiddenField("signed_field_names", "access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_address1,bill_city,bill_country");
+        addHiddenField("unsigned_field_names", "");
+        addHiddenField("signed_date_time", new Date().toISOString());
+        addHiddenField("locale", "en");
 
-        // Debug logs before submitting form
-        console.log("Cybersource Form Payload:", fields);
-        console.log("Signature:", signature);
-        console.log("Signed Field Names:", fields.signed_field_names);
+        // Payment details
+        addHiddenField("transaction_type", "sale");
+        addHiddenField("reference_number", bookingDetails.bookingId || "");
+        addHiddenField("amount", finalTotal.toFixed(2));
+        addHiddenField("currency", bookingDetails.currency || "USD");
+
+        // Billing info
+        addHiddenField("bill_address1", "215SS");
+        addHiddenField("bill_city", "HORANA");
+        addHiddenField("bill_country", "US");
 
         document.body.appendChild(form);
         form.submit();
-        localStorage.clear();
         return;
       } catch (error) {
         console.error("Payment redirection error:", error);
@@ -709,9 +360,7 @@ export default function PaymentPage() {
 
     setTimeout(() => {
       setIsProcessing(false);
-      router.push(
-        `${API_BASE_URL}/ibe/ConfirmedVoucher.aspx?req_reference_number=${finalBookingId}`
-      );
+      router.push("/confirmed");
     }, 2000);
   };
 
@@ -746,29 +395,21 @@ export default function PaymentPage() {
     <>
       <Header />
       <div className="container max-w-7xl mx-auto px-4 py-4">
-        <HotelNetworkScript
-          propertyId={hotelData?.HotelNetworkID || "1039100"}
-        />
         <div className="flex justify-between items-center mb-4 mt-2">
           <h2 className="text-3xl font-bold">Payment</h2>
-          <CurrencySelector />
+          <CurrencySelector allowedCurrencies={["USD", "LKR"]} defaultCurrency="USD" />
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setShowConfirmModal(true);
-              }}
-            >
+            <form onSubmit={handlePaymentSubmit}>
               <Card>
                 <CardHeader>
                   <CardTitle>Payment Method</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <RadioGroup
-                    value={bookingDetails.paymentMethod ?? ""}
+                    value={bookingDetails.paymentMethod}
                     onValueChange={(value) => {
                       updateBookingDetails({ paymentMethod: value });
                       if (value === "arrival") {
@@ -788,13 +429,6 @@ export default function PaymentPage() {
                         >
                           <CreditCard className="w-5 h-5" />
                           Card Payment
-                          <Image
-                            src={PaqymentMethodImage}
-                            alt="payment"
-                            width={100}
-                            height={100}
-                            className="pl-4 "
-                          />
                         </Label>
                       </div>
                     )}
@@ -806,71 +440,11 @@ export default function PaymentPage() {
                           className="flex items-center gap-2 cursor-pointer"
                         >
                           <Wallet className="w-5 h-5" />
-                          Pay Later
+                          Pay on Arrival
                         </Label>
                       </div>
                     )}
                   </RadioGroup>
-
-                  {/* Voucher input */}
-                  <div className="mt-6 bg-green-50 border border-green-200 rounded-md p-4">
-                    <Label
-                      htmlFor="voucher"
-                      className="text-sm font-medium text-green-700"
-                    >
-                      Voucher Code
-                    </Label>
-                    <div className="mt-2 flex items-center space-x-2 bg-white border border-green-300 rounded-md p-3">
-                      <Wallet className="w-5 h-5 text-green-600" />
-                      <input
-                        id="voucher"
-                        type="text"
-                        className="w-full px-2 py-1 text-sm text-green-700 placeholder-green-500 focus:outline-none"
-                        placeholder="Enter voucher code"
-                        value={voucherCode}
-                        onChange={(e) => setVoucherCode(e.target.value)}
-                      />
-                    </div>
-                    {voucherAmount > 0 && (
-                      <div className="mt-3 flex items-center space-x-2 bg-green-50 border border-green-300 text-green-700 px-3 py-2 rounded-md text-sm">
-                        <svg
-                          className="h-4 w-4 text-green-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        <span>
-                          Voucher applied:{" "}
-                          {formatPrice(convertPrice(voucherAmount))}
-                        </span>
-                      </div>
-                    )}
-                    {voucherError && (
-                      <div className="mt-3 flex items-center space-x-2 bg-red-50 border border-red-300 text-red-700 px-3 py-2 rounded-md text-sm">
-                        <svg
-                          className="h-4 w-4 text-red-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                        <span>{voucherError}</span>
-                      </div>
-                    )}
-                  </div>
 
                   {bookingDetails.paymentMethod === "stripe" && null}
 
@@ -889,20 +463,18 @@ export default function PaymentPage() {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full btn-dynamic"
-                      disabled={isProcessing || !bookingDetails.paymentMethod}
+                      className="w-full"
+                      disabled={isProcessing}
                     >
                       {isProcessing
                         ? "Processing..."
                         : bookingDetails.paymentMethod === "arrival"
                         ? "Get Booking Confirmation"
-                        : isMounted
-                        ? `Pay ${
+                        : `Pay ${
                             bookingDetails.currency === "LKR"
                               ? formatPrice(finalTotal)
                               : formatPrice(convertPrice(finalTotal))
-                          }`
-                        : `Pay $${finalTotal.toFixed(2)}`}
+                          }`}
                     </Button>
                   </div>
                 </CardFooter>
@@ -916,42 +488,34 @@ export default function PaymentPage() {
                 <CardTitle>Booking Summary</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                {bookingDetails.selectedRooms.map(
-                  (roomBooking: RoomBooking) => (
-                    <div
-                      key={roomBooking.roomId}
-                      className="mb-4 p-3 bg-muted rounded-md"
-                    >
-                      <div className="flex justify-between flex-row items-center font-bold">
-                        <h3 className="font-medium">{roomBooking.roomName}</h3>
-                        <div className="text-sm mt-1 text-muted-foreground">
-                          {formatPrice(convertPrice(roomBooking.price))} per
-                          period
+                {bookingDetails.selectedRooms.map((roomBooking) => (
+                  <div
+                    key={roomBooking.roomId}
+                    className="mb-4 p-3 bg-muted rounded-md"
+                  >
+                    <h3 className="font-medium">{roomBooking.roomName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {roomBooking.quantity}{" "}
+                      {roomBooking.quantity === 1 ? "room" : "rooms"} •{" "}
+                      {bookingDetails.nights}{" "}
+                      {bookingDetails.nights === 1 ? "night" : "nights"} •
+                      {roomBooking.adults}{" "}
+                      {roomBooking.adults === 1 ? "adult" : "adults"}
+                      {roomBooking.children > 0 &&
+                        `, ${roomBooking.children} ${
+                          roomBooking.children === 1 ? "child" : "children"
+                        }`}
+                    </p>
+                    <div className="text-sm mt-1 text-muted-foreground">
+                      {formatPrice(convertPrice(roomBooking.price))} per night
+                      {roomBooking.mealPlanId && (
+                        <div className="text-xs mt-1">
+                          Meal Plan: {roomBooking.mealPlanId}
                         </div>
-                      </div>
-
-                      <p className="text-sm text-muted-foreground">
-                        {roomBooking.quantity}{" "}
-                        {roomBooking.quantity === 1 ? "room" : "rooms"} •{" "}
-                        {bookingDetails.nights}{" "}
-                        {bookingDetails.nights === 1 ? "night" : "nights"} •
-                        {roomBooking.adults}{" "}
-                        {roomBooking.adults === 1 ? "adult" : "adults"}
-                        {roomBooking.children > 0 &&
-                          `, ${roomBooking.children} ${
-                            roomBooking.children === 1 ? "child" : "children"
-                          }`}
-                      </p>
-                      <div className="text-sm mt-1 text-muted-foreground">
-                        {roomBooking.mealPlanId && (
-                          <div className="text-xs mt-1">
-                            Meal Plan: {roomBooking.mealPlanId}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  )
-                )}
+                  </div>
+                ))}
 
                 <div className="space-y-4">
                   {/* Check-in Date */}
@@ -999,27 +563,20 @@ export default function PaymentPage() {
                           Packages
                         </div>
                         <ul className="text-sm text-muted-foreground space-y-1 mb-1">
-                          {bookingDetails.selectedPackages.map(
-                            (pkg: any, idx: number) => (
-                              <li
-                                key={idx}
-                                className="flex justify-between items-center"
-                              >
-                                <span className="flex flex-col">
-                                  <span>{pkg.PackageName}</span>
-                                </span>
-                                <span className="text-sm font-medium text-foreground">
-                                  {formatPrice(convertPrice(pkg.Price))}
-                                </span>
-                              </li>
-                            )
-                          )}
+                          {bookingDetails.selectedPackages.map((pkg, idx) => (
+                            <li key={idx} className="flex justify-between">
+                              <span>{pkg.Description}</span>
+                              <span className="text-sm font-medium text-foreground">
+                                {formatPrice(convertPrice(pkg.Price))}
+                              </span>
+                            </li>
+                          ))}
                         </ul>
-                        <div className="flex justify-between mt-2 pt-2 border-t">
-                          <span className="text-sm font-semibold text-foreground">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">
                             Total Package Cost
                           </span>
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="text-sm font-medium text-foreground">
                             {formatPrice(convertPrice(packagesTotal))}
                           </span>
                         </div>
@@ -1040,22 +597,6 @@ export default function PaymentPage() {
                           -{formatPrice(convertPrice(promoDiscount))}
                         </span>
                       </div>
-                    )}
-                    {/* Voucher Discount */}
-                    {voucherAmount > 0 && (
-                      <>
-                        <div className="text-sm font-semibold text-foreground mt-4 mb-2">
-                          Voucher
-                        </div>
-                        <div className="flex justify-between mb-2 text-green-700">
-                          <span className="text-sm font-medium">
-                            Voucher Claim
-                          </span>
-                          <span className="text-sm font-medium">
-                            -{formatPrice(convertPrice(voucherAmount))}
-                          </span>
-                        </div>
-                      </>
                     )}
                   </div>
 
@@ -1078,43 +619,7 @@ export default function PaymentPage() {
           </div>
         </div>
       </div>
-      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Your Booking</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {bookingDetails.paymentMethod === "arrival"
-              ? "You have selected to pay at the hotel. Are you sure you want to confirm your booking?"
-              : "You have selected to pay now. Are you sure you want to confirm and proceed with payment?"}
-          </p>
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setShowConfirmModal(false)}
-            >
-              Cancel
-            </Button>
-            {bookingDetails.paymentMethod === "arrival" ? (
-              <Button
-                className="btn-dynamic"
-                onClick={handlePaymentSubmit}
-                disabled={isProcessing}
-              >
-                {isProcessing ? "Processing..." : "Confirm & Pay at Hotel"}
-              </Button>
-            ) : (
-              <Button
-                className="btn-dynamic"
-                onClick={handlePaymentSubmit}
-                disabled={isProcessing}
-              >
-                {isProcessing ? "Processing..." : "Confirm & Pay Now"}
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
+

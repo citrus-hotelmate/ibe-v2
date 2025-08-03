@@ -1,4 +1,4 @@
-// pages/API_IBE/sign-cybersource.ts
+// pages/api/sign-cybersource.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import crypto from 'crypto';
 

@@ -1,46 +1,47 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent } from "@/components/ui/card"
-import { useBooking } from "@/components/booking-context"
-import { getUnavailableDates } from "@/lib/utils"
-import { useMobile } from "@/hooks/use-mobile"
+import { useState, useEffect } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
+import { useBooking } from "@/components/booking-context";
+import { getUnavailableDates } from "@/lib/utils";
+import { useMobile } from "@/hooks/use-mobile";
 
 export function AvailabilityCalendar() {
-  const { updateBookingDetails } = useBooking()
-  const [date, setDate] = useState<Date | undefined>(new Date())
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date())
-  const [nextMonth, setNextMonth] = useState<Date>(new Date(new Date().setMonth(new Date().getMonth() + 1)))
-  const isMobile = useMobile()
+  const { updateBookingDetails } = useBooking();
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [nextMonth, setNextMonth] = useState<Date>(
+    new Date(new Date().setMonth(new Date().getMonth() + 1))
+  );
+  const isMobile = useMobile();
 
-  // Update next month when selected month changes
   useEffect(() => {
-    const nextMonthDate = new Date(selectedMonth)
-    nextMonthDate.setMonth(selectedMonth.getMonth() + 1)
-    setNextMonth(nextMonthDate)
-  }, [selectedMonth])
+    const nextMonthDate = new Date(selectedMonth);
+    nextMonthDate.setMonth(selectedMonth.getMonth() + 1);
+    setNextMonth(nextMonthDate);
+  }, [selectedMonth]);
 
   // Get unavailable dates for the current view
-  const unavailableDates = getUnavailableDates(selectedMonth)
-  const nextMonthUnavailableDates = getUnavailableDates(nextMonth)
+  const unavailableDates = getUnavailableDates(selectedMonth);
+  const nextMonthUnavailableDates = getUnavailableDates(nextMonth);
 
   const handleSelect = (date: Date | undefined) => {
-    setDate(date)
+    setDate(date);
     if (date) {
-      updateBookingDetails({ checkIn: date })
+      updateBookingDetails({ checkIn: date });
 
       // Set checkout to the day after checkin by default
-      const checkOut = new Date(date)
-      checkOut.setDate(checkOut.getDate() + 1)
-      updateBookingDetails({ checkOut })
+      const checkOut = new Date(date);
+      checkOut.setDate(checkOut.getDate() + 1);
+      updateBookingDetails({ checkOut });
     }
-  }
+  };
 
   const isDateUnavailable = (date: Date) => {
     // Disable dates in the past
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     // Check if date is in unavailable dates
     return (
@@ -49,16 +50,16 @@ export function AvailabilityCalendar() {
         (unavailableDate) =>
           unavailableDate.getDate() === date.getDate() &&
           unavailableDate.getMonth() === date.getMonth() &&
-          unavailableDate.getFullYear() === date.getFullYear(),
+          unavailableDate.getFullYear() === date.getFullYear()
       ) ||
       nextMonthUnavailableDates.some(
         (unavailableDate) =>
           unavailableDate.getDate() === date.getDate() &&
           unavailableDate.getMonth() === date.getMonth() &&
-          unavailableDate.getFullYear() === date.getFullYear(),
+          unavailableDate.getFullYear() === date.getFullYear()
       )
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -87,10 +88,10 @@ export function AvailabilityCalendar() {
                 disabled={isDateUnavailable}
                 onMonthChange={(month) => {
                   // If user navigates the second calendar, update both calendars
-                  const prevMonth = new Date(month)
-                  prevMonth.setMonth(month.getMonth() - 1)
-                  setSelectedMonth(prevMonth)
-                  setNextMonth(month)
+                  const prevMonth = new Date(month);
+                  prevMonth.setMonth(month.getMonth() - 1);
+                  setSelectedMonth(prevMonth);
+                  setNextMonth(month);
                 }}
                 className="rounded-md border"
               />
@@ -118,5 +119,5 @@ export function AvailabilityCalendar() {
         <p>Select a date to check availability and start your booking</p>
       </div>
     </div>
-  )
+  );
 }
