@@ -63,12 +63,11 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                 {/* Check In Calendar Popup */}
                 {showCheckInCalendar && (
                     <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl z-50 overflow-hidden">
-                        <div className="w-[300px] overflow-hidden">
+                        <div className="sm:w-[330px]  overflow-visible">
                             <DatePicker
                                 date={checkInDate}
                                 onChange={handleCheckInDateChange}
                                 minDate={new Date()}
-                                maxDate={checkOutDate ? new Date(checkOutDate.getTime() - 24 * 60 * 60 * 1000) : undefined}
                             />
                         </div>
                     </div>
@@ -97,7 +96,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                 {/* Check Out Calendar Popup */}
                 {showCheckOutCalendar && (
                     <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl z-50 overflow-hidden">
-                        <div className="w-[300px] overflow-hidden">
+                        <div className=" sm:w-[330px] overflow-visible">
                             <DatePicker
                                 date={checkOutDate}
                                 onChange={handleCheckOutDateChange}
@@ -124,9 +123,11 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                         <div className="text-gray-400 font-medium font-urbanist notranslate text-xs sm:text-base truncate">{adults} Adults, {rooms} Room{rooms > 1 ? 's' : ''}</div>
                     </div>
                 </div>
+            </div>
 
-                {showGuestDropdown && (
-                    <div className="absolute right-0 z-50 mt-2 bg-white border border-gray-300 rounded-xl shadow-lg p-4 w-56 sm:w-64 guest-dropdown font-urbanist notranslate">
+            {showGuestDropdown && (
+                <div className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl p-6 w-80 sm:w-100 guest-dropdown font-urbanist notranslate">
+                    <div className="max-w-4xl mx-auto">
                         {[
                             { label: 'Adults', desc: 'Ages 13 or above', value: adults, setter: setAdults },
                             { label: 'Children', desc: 'Ages 2–12', value: children, setter: setChildren },
@@ -151,8 +152,8 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                             </div>
                         ))}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Search Button */}
             <button
