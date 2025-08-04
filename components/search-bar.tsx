@@ -403,19 +403,19 @@ export function SearchBar({ onSearch }: SearchBarProps) {
             {/* Recent Searches */}
             {recentSearches.length > 0 && !destinationInput.trim() && (
               <div>
-                <div className="text-xs font-semibold text-gray-400 mb-2">Recent searches</div>
+                <div className="text-xs font-semibold text-gray-500 mb-2">Recent searches</div>
                 <ul className="space-y-1">
                   {recentSearches.map((item, index) => (
                     <li
                       key={`recent-${index}`}
-                      className="cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#ff9100]/10 rounded-md"
+                      className="cursor-pointer flex items-center gap-2 px-2 py-2  rounded-md"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setDestinationInput(item);
                       }}
                     >
                       <MapPin className="w-4 h-4 text-[#ff9100]" />
-                      <span className="text-gray-700 font-medium">{item}</span>
+                      <span className="text-gray-400 font-urbanist">{item}</span>
                     </li>
                   ))}
                 </ul>

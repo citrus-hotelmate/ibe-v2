@@ -1,5 +1,5 @@
 import { MapPin, Star } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface hotelCardProps {
   title: string;
@@ -9,6 +9,33 @@ interface hotelCardProps {
   price: number;
   onClick?: () => void;
 }
+
+const useWishlist = (title: string, hotel: any) => {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  useEffect(() => {
+    const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    setIsWishlisted(wishlist.some((h: any) => h.title === title));
+  }, [title]);
+
+  const toggleWishlist = () => {
+    const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+
+    if (!isWishlisted) {
+      if (!wishlist.some((h: any) => h.title === title)) {
+        wishlist.push(hotel);
+        localStorage.setItem("wishlist", JSON.stringify(wishlist));
+      }
+      setIsWishlisted(true);
+    } else {
+      const updatedWishlist = wishlist.filter((h: any) => h.title !== title);
+      localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+      setIsWishlisted(false);
+    }
+  };
+
+  return { isWishlisted, toggleWishlist };
+};
 
 const HotelImage = ({
   image,
@@ -110,25 +137,8 @@ const hotelCard = ({
   price,
   onClick,
 }: hotelCardProps) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
-
-  // Function to handle adding to wishlist
-  const handleAddToWishlist = () => {
-    const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
-
-    if (!isWishlisted) {
-      const hotel = { title, location, image, rating, price };
-      if (!wishlist.some((h: any) => h.title === title)) {
-        wishlist.push(hotel);
-        localStorage.setItem("wishlist", JSON.stringify(wishlist));
-      }
-      setIsWishlisted(true);
-    } else {
-      const updatedWishlist = wishlist.filter((h: any) => h.title !== title);
-      localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
-      setIsWishlisted(false);
-    }
-  };
+  const hotel = { title, location, image, rating, price };
+  const { isWishlisted, toggleWishlist } = useWishlist(title, hotel);
 
   return (
     <div
@@ -138,7 +148,7 @@ const hotelCard = ({
       <HotelImage
         image={image}
         title={title}
-        onWishlistClick={handleAddToWishlist}
+        onWishlistClick={toggleWishlist}
         isWishlisted={isWishlisted}
       />
       <HotelDetails
