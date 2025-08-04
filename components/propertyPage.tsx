@@ -556,37 +556,9 @@ export default function PropertyPage() {
       <Suspense fallback={null}>
         <SearchParamsWrapper onTabChange={setSelectedTab} />
       </Suspense>
-      <Header />
+      {/* <Header /> */}
       {/* Property Title, Rating, Location, Description */}
-      <div className="container max-w-7xl mx-auto px-4 pt-4">
-        {/* Hotel name, score, star category, and Currency Selector */}
-        <div className="flex flex-col gap-1 sm:gap-2">
-          <h1 className="text-3xl font-bold">{hotelData?.HotelName || "Property Name"}</h1>
-          {hotelData?.Address && (
-            <div className="flex items-center text-sm text-muted-foreground mt-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13 21.314l-4.657-4.657A8 8 0 1117.657 16.657z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>{hotelData.Address}</span>
-            </div>
-          )}
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center text-m text-muted-foreground">
-              <div className="flex items-center">
-                <Star className="h-2 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                <span>{hotelData?.HotelScore || "-"}</span>&nbsp;&nbsp;
-              </div>
-              <span>•</span>&nbsp;
-              <span>{hotelData?.StarCat ? `${hotelData.StarCat}-Star Property` : "Location Unavailable"}</span>
-            </div>
-            <CurrencySelector />
-          </div>
-        </div>
-      </div>
-      <div className="container max-w-12xl mx-auto px-4 py-2">
-
-
+      <div className="container max-w-10xl mx-auto">
         {/* Date and Guest Selection Bar */}
         <Card className="mb-4">
           <CardContent className="p-4">
@@ -1244,27 +1216,6 @@ export default function PropertyPage() {
         </div>
       </div>
     {/* WhatsApp Floating Chat Button */}
-    <div
-      className="fixed bottom-6 right-6 z-50"
-      style={{ zIndex: 9999 }}
-    >
-      <a
-        href={whatsappNumber ? `https://wa.me/${whatsappNumber}` : "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg flex items-center justify-center"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path d="M20.52 3.48A11.87 11.87 0 0012 0C5.37 0 0 5.37 0 12a11.94 11.94 0 001.67 6.13L0 24l5.87-1.54A11.94 11.94 0 0012 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.48-8.52zM12 22a9.94 9.94 0 01-5.09-1.39l-.36-.21-3.49.92.93-3.4-.23-.36A9.94 9.94 0 012 12c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10zm5.25-7.85c-.29-.15-1.7-.84-1.97-.93-.26-.1-.45-.15-.64.15-.18.29-.74.93-.91 1.12-.17.18-.34.2-.63.07-.29-.14-1.23-.45-2.34-1.43-.86-.76-1.44-1.7-1.61-1.98-.17-.29-.02-.45.13-.6.14-.14.29-.34.44-.5.15-.17.2-.29.3-.48.1-.2.05-.36-.03-.51-.07-.14-.64-1.55-.88-2.13-.23-.56-.47-.49-.64-.5l-.54-.01c-.18 0-.47.07-.71.34-.24.27-.94.91-.94 2.21s.97 2.56 1.1 2.74c.13.18 1.91 2.91 4.63 4.08.65.28 1.15.44 1.54.57.65.21 1.24.18 1.7.11.52-.08 1.7-.69 1.94-1.36.24-.66.24-1.22.17-1.34-.07-.12-.26-.18-.54-.32z" />
-        </svg>
-      </a>
-    </div>
     </>
   )
 }

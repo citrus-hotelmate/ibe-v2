@@ -16,6 +16,7 @@ import { getAllHotels } from "@/controllers/ibeController";
 import { ArrowRight, ArrowUpRight, Star, StarHalf } from "lucide-react";
 import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
+import PropertyPage from "@/components/propertyPage";
 
 
 const slugify = (name: string) =>
@@ -282,27 +283,6 @@ export default function LandingPage() {
 
       </div>
 
-      {/* Travel & Experiences Tabs */}
-      {/* <div className="mx-auto max-w-5xl w-full mt-16 text-center">
-                <h2 className="font-urbanist text-lg md:text-xl  mb-4">
-                    Seamless travel & experiences
-                </h2>
-                <div className="flex justify-center space-x-2 bg-neutral-100 rounded-full p-1 max-w-md mx-auto">
-                    {["Flights", "Trains", "Bus & Travel", "Activity"].map((tab, index) => (
-                        <button
-                            key={index}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                                tab === "Activity"
-                                    ? "bg-white text-black shadow"
-                                    : "text-neutral-500 hover:text-black"
-                            }`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
-                </div>
-            </div> */}
-
       {/* Featured Accommodations */}
       <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
         <div className="w-full max-w-[98rem]">
@@ -336,6 +316,10 @@ export default function LandingPage() {
             </div>
           )}
         </div>
+      </div>
+      {/* Property Page Integration */}
+      <div className="mt-1 w-full mx-auto  sm:px-4">
+        <PropertyPage />
       </div>
     </div>
   );
