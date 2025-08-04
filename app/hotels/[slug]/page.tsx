@@ -318,7 +318,7 @@ export default function LandingPage() {
         </div>
       </div>
       {/* Property Page Integration */}
-      <div className="mt-1 w-full mx-auto  sm:px-4">
+      <div className="mt-1 w-full mx-auto sm:px-4">
         <PropertyPage />
       </div>
     </div>
