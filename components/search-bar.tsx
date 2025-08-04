@@ -449,7 +449,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       </div>
 
       {/* Guest & Rooms */}
-      <div className="flex-1 px-2 sm:px-4 py-2 relative">
+      {/* <div className="flex-1 px-2 sm:px-4 py-2 relative">
         <div
           className="flex items-center gap-1 sm:gap-3 cursor-pointer guest-dropdown-toggle"
           onClick={() => setShowGuestDropdown(prev => !prev)}
@@ -488,7 +488,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
             ))}
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Search Button */}
       <button

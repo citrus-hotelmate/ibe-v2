@@ -110,10 +110,22 @@ function PropertyListings({
         </div>
       </div>
 
-      <div className="w-full max-w-[1920px] mx-auto overflow-x-auto sm:overflow-hidden scroll-smooth scrollbar-hide" id={`scroll-${title}`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
+      <div
+        className="w-full max-w-[1920px] mx-auto overflow-x-auto scroll-smooth scrollbar-hide"
+        id={`scroll-${title}`}
+      >
+        <div
+          className="
+      flex sm:grid 
+      sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6
+      gap-3 sm:gap-4
+    "
+        >
           {properties.map((property) => (
-            <div key={property.id} className="flex justify-center">
+            <div
+              key={property.id}
+              className="flex-shrink-0 w-72  flex justify-center"
+            >
               <HotelCard
                 title={property.type}
                 location={property.location}
