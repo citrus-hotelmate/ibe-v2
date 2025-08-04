@@ -317,6 +317,8 @@ export default function PropertyPage() {
           );
           const data: RoomRateApiResponse[] = await res.json();
 
+         
+
           // Sort data array by seq before mapping
           interface RoomRateApiResponse {
             seq?: number;
@@ -352,6 +354,8 @@ export default function PropertyPage() {
           }
 
           data.sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
+
+          console.log("Fetched room rates:", data);
 
           const totalGuests = (bookingDetailsWithRooms.adults || 0) + (bookingDetailsWithRooms.children || 0);
           const requiredRooms = bookingDetailsWithRooms.rooms || 1;
@@ -550,6 +554,8 @@ export default function PropertyPage() {
     }, 0);
     return () => clearTimeout(timeout);
   }, []);
+
+  console.log("Available Rooms:", availableRooms);
 
   return (
     <>

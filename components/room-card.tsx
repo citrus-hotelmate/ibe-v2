@@ -82,7 +82,7 @@ export function RoomCard({
   const [selectedMealPlan, setSelectedMealPlan] = useState(room.defaultMealPlan)
 
   const [features, setFeatures] = useState<string[]>([])
-  console.log("Room", room)
+  console.log("Room wwwwwww", room)
   const [localPrice, setLocalPrice] = useState(room.price);
 
   console.log("features", features)
@@ -92,7 +92,7 @@ export function RoomCard({
 
   const fetchFeatures = useCallback(async () => {
     try {
-      const response = await fetch(`https://ipg.citrusibe.com/API/GetRoomFeatures.aspx?roomtypeid=${room.id}`)
+      const response = await fetch(`https://ipg.citrusibe.com/API/GetRoomFeatures.aspx?roomtypeid=${room.roomID}`)
       const data = await response.json()
       setTest(data)
       const featureList = data.map((item: any) => item.Feature)
@@ -100,7 +100,7 @@ export function RoomCard({
     } catch (error) {
       console.error("Failed to fetch room features", error)
     }
-  }, [room.id])
+  }, [room.roomID])
 
   useEffect(() => {
     fetchFeatures()
