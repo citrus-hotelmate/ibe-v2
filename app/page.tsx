@@ -83,7 +83,7 @@ function PropertyListings({
   onHotelClick: (slug: string) => void;
 }) {
   return (
-    <div className="px-2 sm:px-4 md:px-6 py-4">
+    <div className="px-2 sm:px-4 md:px-6 p-2">
       <div className="border-t border-gray-300 mb-4 sm:mb-6"></div>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h2 className="text-base sm:text-lg md:text-xl font-semibold font-urbanist notranslate">{title}</h2>
@@ -111,20 +111,23 @@ function PropertyListings({
       </div>
 
       <div
-        className="w-full max-w-[1920px] mx-auto overflow-x-auto scroll-smooth scrollbar-hide"
+        className="w-full max-w-[1920px] mx-auto overflow-x-auto sm:overflow-x-visible scroll-smooth scrollbar-hide"
         id={`scroll-${title}`}
       >
         <div
           className="
-      flex sm:grid 
-      sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6
-      gap-3 sm:gap-4
-    "
+    flex overflow-x-auto scroll-smooth scrollbar-hide
+    sm:grid sm:overflow-x-visible
+    sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6
+    gap-3 sm:gap-4
+  "
         >
           {properties.map((property) => (
             <div
               key={property.id}
-              className="flex-shrink-0 w-72  flex justify-center"
+              className="
+        flex-shrink-0 w-[42%] xs:w-[50%] sm:w-auto flex justify-center
+      "
             >
               <HotelCard
                 title={property.type}
@@ -327,7 +330,7 @@ export default function Home() {
       <Navbar />
       <div className="w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
 
-      
+
         <SearchBar onSearch={handleSearch} />
 
         {loading ? (

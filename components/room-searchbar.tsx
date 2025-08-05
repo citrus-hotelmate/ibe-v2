@@ -40,9 +40,9 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto bg-white/70 rounded-3xl shadow-xl flex items-center border border-white/30 overflow-visible relative z-10">
+        <div className="w-full max-w-4xl mx-auto bg-white/70 rounded-3xl shadow-xl flex flex-col sm:flex-row gap-2 sm:gap-0 items-stretch sm:items-center border border-white/30 overflow-visible relative z-10">
             {/* Check In */}
-            <div className="flex-1 px-2 sm:px-4 py-2 relative">
+            <div className="flex-1 px-2 sm:px-4 py-2 relative w-full sm:w-auto">
                 <div
                     className="flex items-center gap-1 sm:gap-2 cursor-pointer"
                     onClick={() => {
@@ -75,7 +75,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
             </div>
 
             {/* Check Out */}
-            <div className="flex-1 px-2 sm:px-4 py-2 relative">
+            <div className="flex-1 px-2 sm:px-4 py-2 relative w-full sm:w-auto">
                 <div
                     className="flex items-center gap-1 sm:gap-3 cursor-pointer"
                     onClick={() => {
@@ -108,7 +108,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
             </div>
 
             {/* Guest & Rooms */}
-            <div className="flex-1 px-2 sm:px-4 py-2 relative">
+            <div className="flex-1 px-2 sm:px-4 py-2 relative w-full sm:w-auto">
                 <div
                     className="flex items-center gap-1 sm:gap-3 cursor-pointer guest-dropdown-toggle"
                     onClick={() => {
@@ -158,9 +158,9 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
             {/* Search Button */}
             <button
                 onClick={handleSearch}
-                className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-3 sm:p-4 rounded-2xl ml-2 sm:ml-4 mr-1"
+                className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-3 sm:p-4 rounded-2xl mt-2 sm:mt-0 sm:ml-2 mr-0 w-full sm:w-auto mr-[5px]"
             >
-                <Search className="w-4 sm:w-5 h-4 sm:h-5" />
+                <Search className="w-4 sm:w-5 h-4 sm:h-5 mx-auto" />
             </button>
         </div>
     );

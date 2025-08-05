@@ -28,21 +28,16 @@ export default function RootLayout({
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        if (typeof window === "undefined") return;
         setIsMounted(true);
 
-        // Dynamically create the hidden Google Translate container
         const div = document.createElement('div');
         div.id = 'google_translate_element';
-        div.style.position = 'fixed';
-        div.style.top = '-1000px';
-        div.style.left = '-1000px';
-        div.style.visibility = 'hidden';
-        div.style.zIndex = '-1';
+        div.style.cssText = "position:fixed; top:-1000px; left:-1000px; visibility:hidden; z-index:-1;";
         document.body.appendChild(div);
 
-        // Define the callback for Google Translate
         window.googleTranslateElementInit = () => {
-            if (window.google && window.google.translate) {
+            if (window.google?.translate) {
                 new window.google.translate.TranslateElement(
                     {
                         pageLanguage: 'en',
@@ -56,16 +51,8 @@ export default function RootLayout({
             }
         };
 
-        // Cleanup to avoid memory leaks
         return () => {
-            try {
-                const element = document.getElementById('google_translate_element');
-                if (element && element.parentNode && element.parentNode.contains(element)) {
-                    element.parentNode.removeChild(element);
-                }
-            } catch (error) {
-                console.log('Cleanup error handled:', error);
-            }
+            div.remove();
         };
     }, []);
 
@@ -102,7 +89,7 @@ export default function RootLayout({
                         <BookingProvider>
                             <div className="flex flex-col min-h-screen" suppressHydrationWarning>
                                 <main className="flex-1">{children}</main>
-                                <Footer hotelName={hotelName || undefined} />
+                                {isMounted && <Footer hotelName={hotelName || undefined} />}
                             </div>
                             
                             {/* Client-only floating buttons */}
@@ -110,14 +97,15 @@ export default function RootLayout({
                     </CurrencyProvider>
                 </ThemeProvider>
 
-                {/* Google Translate Script */}
-                <Script
-                    src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-                    strategy="afterInteractive"
-                    onError={() => {
-                        console.log("Google Translate script failed to load");
-                    }}
-                />
+                {isMounted && (
+                    <Script
+                        src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+                        strategy="afterInteractive"
+                        onError={() => {
+                            console.log("Google Translate script failed to load");
+                        }}
+                    />
+                )}
             </body>
         </html>
     );

@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Users, Minus, Plus } from "lucide-react"
 import { useBooking } from "@/components/booking-context"
 
-export function GuestSelector() {
+export function GuestSelector({ onChange }: { onChange?: (guests: { adults: number; children: number; rooms: number }) => void }) {
   const { bookingDetails, updateBookingDetails } = useBooking()
   const [open, setOpen] = useState(false)
 
@@ -26,11 +26,13 @@ const rooms = bookingDetails.rooms != null ? bookingDetails.rooms : 1;
   const handleAdultChange = (change: number) => {
     const newValue = Math.max(1, Math.min(10, adults + change))
     updateBookingDetails({ adults: newValue })
+    onChange?.({ adults: newValue, children, rooms })
   }
 
   const handleChildrenChange = (change: number) => {
     const newValue = Math.max(0, Math.min(6, children + change))
     updateBookingDetails({ children: newValue })
+    onChange?.({ adults, children: newValue, rooms })
   }
 
   const totalGuests = adults + children
@@ -124,9 +126,11 @@ const rooms = bookingDetails.rooms != null ? bookingDetails.rooms : 1;
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() =>
-                  updateBookingDetails({ rooms: Math.max(1, rooms - 1) })
-                }
+                onClick={() => {
+                  const newRooms = Math.max(1, rooms - 1);
+                  updateBookingDetails({ rooms: newRooms });
+                  onChange?.({ adults, children, rooms: newRooms });
+                }}
                 disabled={rooms <= 1}
               >
                 <Minus className="h-4 w-4" />
@@ -137,9 +141,11 @@ const rooms = bookingDetails.rooms != null ? bookingDetails.rooms : 1;
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() =>
-                  updateBookingDetails({ rooms: Math.min(10, rooms + 1) })
-                }
+                onClick={() => {
+                  const newRooms = Math.min(10, rooms + 1);
+                  updateBookingDetails({ rooms: newRooms });
+                  onChange?.({ adults, children, rooms: newRooms });
+                }}
               >
                 <Plus className="h-4 w-4" />
               </Button>
