@@ -12,30 +12,35 @@ interface RoomCardProps {
   roomsLeft: number;
   mealPlanId: number;
   onAddToBooking: (room: any) => void;
+  onUpdateRoomQuantity?: (roomTypeID: number, delta: number) => void;
+  roomTypeID?: number;
+  isSelected?: boolean;
+  onRemoveFromBooking?: (roomTypeID: number) => void;
 }
 
-export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooking }: RoomCardProps) {
+export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooking, onUpdateRoomQuantity, roomTypeID, isSelected, onRemoveFromBooking }: RoomCardProps) {
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [guests, setGuests] = useState({ adults: 2, children: 0, rooms: 1 });
+  const [roomCount, setRoomCount] = useState(1);
 
-  useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-    if (!token) return;
+  // useEffect(() => {
+  //   const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+  //   if (!token) return;
 
-    const fetchMealPlans = async () => {
-      try {
-        const plan = await getMealPlanById(token, mealPlanId);
-        setMealPlans([plan]);
-      } catch (err) {
-        console.error("Failed to fetch meal plans:", err);
-      }
-    };
+  //   const fetchMealPlans = async () => {
+  //     try {
+  //       const plan = await getMealPlanById(token, mealPlanId);
+  //       setMealPlans([plan]);
+  //     } catch (err) {
+  //       console.error("Failed to fetch meal plans:", err);
+  //     }
+  //   };
 
-    fetchMealPlans();
-  }, [mealPlanId]);
+  //   fetchMealPlans();
+  // }, [mealPlanId]);
 
-  console.log("meal plan id",mealPlanId);
-    console.log("room left",roomsLeft);
+  // console.log("meal plan id",mealPlanId);
+  //   console.log("room left",roomsLeft);
 
   return (
     <div className="overflow-hidden rounded-md border">
@@ -126,19 +131,57 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
                     onChange={(newGuests) => setGuests(newGuests)}
                   />
                 </div>
-                <div className="flex justify-end sm:justify-start">
-                  <Button
-                    onClick={() =>
-                      onAddToBooking({
-                        roomName,
-                        mealPlan: mealPlans[0]?.mealPlan || "Room Only",
-                        price: mealPlans[0]?.defaultRate || 0,
-                        guests,
-                      })
-                    }
-                  >
-                    Add to Booking
-                  </Button>
+                <div className="flex justify-end sm:justify-start gap-2">
+                  {isSelected ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          if (roomCount > 1) {
+                            setRoomCount(roomCount - 1);
+                            if (onUpdateRoomQuantity && roomTypeID !== undefined) {
+                              onUpdateRoomQuantity(roomTypeID, -1);
+                            }
+                          } else {
+                            if (onRemoveFromBooking && roomTypeID !== undefined) {
+                              onRemoveFromBooking(roomTypeID);
+                            }
+                          }
+                        }}
+                      >
+                        -
+                      </Button>
+                      <div className="px-4 py-2 border rounded-md">{roomCount}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setRoomCount(roomCount + 1);
+                          if (onUpdateRoomQuantity && roomTypeID !== undefined) {
+                            onUpdateRoomQuantity(roomTypeID, 1);
+                          }
+                        }}
+                      >
+                        +
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        onAddToBooking({
+                          roomName,
+                          mealPlan: mealPlans[0]?.mealPlan || "Room Only",
+                          price: mealPlans[0]?.defaultRate || 0,
+                          guests,
+                          count: roomCount,
+                          roomTypeID,
+                        });
+                      }}
+                    >
+                      Add to Booking
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

@@ -32,6 +32,7 @@ export default function PropertyPage() {
   const [ratePlans, setRatePlans] = useState<HotelRatePlan[] | null>(null);
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[] | null>(null);
   const [selectedRooms, setSelectedRooms] = useState<any[]>([]);
+  const [selectedRoomIDs, setSelectedRoomIDs] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchRatePlans = async () => {
@@ -140,8 +141,15 @@ export default function PropertyPage() {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <DateRangePicker
-                    onChange={(item) => setDateRange({ from: item.selection.startDate, to: item.selection.endDate })}
-                    showSelectionPreview={true}
+                    onChange={(item) => {
+                      if (item.selection.startDate && item.selection.endDate) {
+                        console.log("Date range changed:", item.selection);
+                        setDateRange({
+                          from: item.selection.startDate,
+                          to: item.selection.endDate
+                        });
+                      }
+                    }}
                     moveRangeOnFirstSelection={false}
                     ranges={[
                       {
@@ -195,7 +203,25 @@ export default function PropertyPage() {
                     roomName={roomGroup.roomType}
                     roomsLeft={roomGroup.rooms.length}
                     mealPlanId={mealPlanMap[roomGroup.roomTypeID] || 0}
-                    onAddToBooking={(room) => setSelectedRooms((prev) => [...prev, room])}
+                    roomTypeID={roomGroup.roomTypeID}
+                    onAddToBooking={(room) => {
+                      setSelectedRooms((prev) => [...prev, {...room, roomCount: 1}]);
+                      if (room.roomTypeID !== undefined) {
+                        setSelectedRoomIDs((prev) => [...prev, room.roomTypeID]);
+                      }
+                    }}
+                    onRemoveFromBooking={(roomTypeID) => {
+                      setSelectedRooms((prev) => prev.filter((r) => r.roomTypeID !== roomTypeID));
+                      setSelectedRoomIDs((prev) => prev.filter((id) => id !== roomTypeID));
+                    }}
+                    onUpdateRoomQuantity={(roomTypeID, delta) => {
+                      setSelectedRooms((prev) => prev.map(room => 
+                        room.roomTypeID === roomTypeID 
+                          ? { ...room, roomCount: (room.roomCount || 1) + delta }
+                          : room
+                      ));
+                    }}
+                    isSelected={selectedRoomIDs.includes(roomGroup.roomTypeID)}
                   />
                 ))
               ) : (
@@ -232,8 +258,8 @@ export default function PropertyPage() {
                     <span>Dates</span>
                     {dateRange.from && dateRange.to ? (
                       <span>
-                        {dateRange.from.toLocaleDateString(undefined, { month: "short", day: "numeric" })} -{" "}
-                        {dateRange.to.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                        {dateRange.from.toLocaleDateString('en-US', { month: "short", day: "numeric" })} -{" "}
+                        {dateRange.to.toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric" })}
                       </span>
                     ) : (
                       <span>Select dates</span>
@@ -267,16 +293,19 @@ export default function PropertyPage() {
                               <span>${room.price.toFixed(2)}/period</span>
                             </div>
                             <div className="flex justify-between mb-1">
-                              <span>1 room • {room.guests?.adults || 0} adult{room.guests?.adults > 1 ? "s" : ""}</span>
-                              <span>Total: ${room.price.toFixed(2)}</span>
+                              <span>{room.roomCount || 1} room{(room.roomCount || 1) > 1 ? 's' : ''} • {room.guests?.adults || 0} adult{room.guests?.adults > 1 ? "s" : ""}</span>
+                              <span>Total: ${((room.price || 0) * (room.roomCount || 1)).toFixed(2)}</span>
                             </div>
                             <div className="text-muted-foreground">Meal Plan: {room.mealPlan}</div>
                             <button
                               className="absolute bottom-2 right-2 text-red-500 hover:text-red-700"
                               onClick={() => {
                                 const updated = [...selectedRooms];
-                                updated.splice(idx, 1);
+                                const removed = updated.splice(idx, 1)[0];
                                 setSelectedRooms(updated);
+                                if (removed.roomTypeID !== undefined) {
+                                  setSelectedRoomIDs((prev) => prev.filter((id) => id !== removed.roomTypeID));
+                                }
                               }}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -291,7 +320,7 @@ export default function PropertyPage() {
                 <div className="pt-4 mt-4 border-t">
                   <div className="flex justify-between font-medium text-sm">
                     <span>Total</span>
-                    <span>${selectedRooms.reduce((sum, r) => sum + (r.price || 0), 0)}</span>
+                    <span>${selectedRooms.reduce((sum, r) => sum + ((r.price || 0) * (r.roomCount || 1)), 0).toFixed(2)}</span>
                   </div>
                 </div>
                 <br />
