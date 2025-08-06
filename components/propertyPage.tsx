@@ -19,10 +19,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Trash2 } from "lucide-react";
 import { GuestSelector } from "@/components/guest-selector";
 import { DateRangePicker } from "react-date-range";
-import { getHotelRatePlans } from "@/controllers/hotelRatePlansController";
+import { getHotelRatePlans, getHotelRatePlansAvailability } from "@/controllers/hotelRatePlansController";
 import { getAvailableRooms } from "@/controllers/roomTypeController";
 import { AvailableRoom } from "@/types/roomType";
 import RoomCard from "@/components/room-card";
@@ -82,32 +82,28 @@ export default function PropertyPage() {
         return;
       }
 
-      const roomTypeIds = ratePlans.map(plan => plan.hotelRoomType.hotelRoomTypeID);
+      const ratePlansAvailability = await getHotelRatePlansAvailability({
+        token,
+        hotelId,
+        startDate: checkInDate,
+        endDate: checkOutDate,
+      });
+      console.log("Hotel Rate Plans Availability:", ratePlansAvailability);
 
-      let allRooms: any[] = [];
-      for (const roomTypeId of roomTypeIds) {
-        const rooms = await getAvailableRooms(hotelId, roomTypeId, checkInDate, checkOutDate, token);
-        allRooms = allRooms.concat(rooms);
-      }
-
-      const groupedRooms = Object.values(
-        allRooms.reduce((acc: any, room: any) => {
-          if (!acc[room.roomTypeID]) {
-            acc[room.roomTypeID] = {
-              roomTypeID: room.roomTypeID,
-              roomType: room.roomType,
-              rooms: [],
-            };
-          }
-          acc[room.roomTypeID].rooms.push(room);
-          return acc;
-        }, {})
-      );
+      // Transform ratePlansAvailability into grouped room data for RoomCard
+      const groupedRooms = ratePlansAvailability.map((room: any) => {
+        const minAvailableCount = Math.min(...room.availability.map((a: any) => a.count));
+        return {
+          roomTypeID: room.roomTypeId,
+          roomType: room.roomType,
+          rooms: Array(minAvailableCount).fill({})  // mock room entries based on min availability
+        };
+      });
 
       setAvailableRooms(groupedRooms);
-      console.log("Grouped Available Rooms:", groupedRooms);
+
     } catch (error) {
-      console.error("Failed to fetch available rooms:", error);
+      console.error("Failed to fetch hotel rate plans availability:", error);
     }
   };
 
@@ -137,7 +133,7 @@ export default function PropertyPage() {
                     <CalendarIcon className="h-4 w-4" />
                     <span>
                       {dateRange.from && dateRange.to
-                        ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`
+                        ? `${dateRange.from.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} - ${dateRange.to.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} (${Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))} ${Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) === 1 ? "night" : "nights"})`
                         : "Select dates"}
                     </span>
                   </button>
@@ -234,7 +230,14 @@ export default function PropertyPage() {
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-sm">
                     <span>Dates</span>
-                    <span>Select dates</span>
+                    {dateRange.from && dateRange.to ? (
+                      <span>
+                        {dateRange.from.toLocaleDateString(undefined, { month: "short", day: "numeric" })} -{" "}
+                        {dateRange.to.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                      </span>
+                    ) : (
+                      <span>Select dates</span>
+                    )}
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Guests</span>
@@ -254,18 +257,36 @@ export default function PropertyPage() {
                       <span>0 adults</span>
                     )}
                   </div>
-                  <div className="pt-2 mt-2 border-t">
-                    <div className="font-medium mb-2">Selected Rooms:</div>
-                    {selectedRooms.length > 0 ? (
-                      selectedRooms.map((room, idx) => (
-                        <div key={idx} className="text-sm text-muted-foreground">
-                          {room.roomName} - {room.mealPlan} (${room.price})
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-sm text-muted-foreground">No rooms selected.</div>
-                    )}
-                  </div>
+                    <div className="pt-2 mt-2 border-t">
+                      <div className="font-medium mb-2">Selected Rooms:</div>
+                      {selectedRooms.length > 0 ? (
+                        selectedRooms.map((room, idx) => (
+                          <div key={idx} className="border p-3 mb-2 rounded-md text-sm relative">
+                            <div className="flex justify-between font-semibold mb-1">
+                              <span>{room.roomName.toUpperCase()}</span>
+                              <span>${room.price.toFixed(2)}/period</span>
+                            </div>
+                            <div className="flex justify-between mb-1">
+                              <span>1 room • {room.guests?.adults || 0} adult{room.guests?.adults > 1 ? "s" : ""}</span>
+                              <span>Total: ${room.price.toFixed(2)}</span>
+                            </div>
+                            <div className="text-muted-foreground">Meal Plan: {room.mealPlan}</div>
+                            <button
+                              className="absolute bottom-2 right-2 text-red-500 hover:text-red-700"
+                              onClick={() => {
+                                const updated = [...selectedRooms];
+                                updated.splice(idx, 1);
+                                setSelectedRooms(updated);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground">No rooms selected.</div>
+                      )}
+                    </div>
                 </div>
                 <div className="pt-4 mt-4 border-t">
                   <div className="flex justify-between font-medium text-sm">
