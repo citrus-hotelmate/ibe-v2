@@ -247,7 +247,7 @@ export default function LandingPage() {
                       alt={`Hotel Image ${index + 1}`}
                       width={1600}
                       height={700}
-                      className="object-cover w-full h-full"
+                      className="object-cover w-full h-full"  
                       priority={index === 0}
                     />
                   </div>

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { getMealPlanById } from "@/controllers/mealPlanController";
 import { MealPlan } from "@/types/mealPlan";
 import { GuestSelector } from "@/components/guest-selector";
+import { getHotelRoomTypeById } from "@/controllers/hotelRoomTypeController";
+import { HotelRoomType } from "@/types/hotelRoomType";
 
 interface RoomCardProps {
   roomName: string;
@@ -22,22 +24,27 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [guests, setGuests] = useState({ adults: 2, children: 0, rooms: 1 });
   const [roomCount, setRoomCount] = useState(1);
+  const [roomDetails, setRoomDetails] = useState<HotelRoomType | null>(null);
 
-  // useEffect(() => {
-  //   const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-  //   if (!token) return;
+  useEffect(() => {
+    const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+    if (!token || !mealPlanId || !roomTypeID) return;
 
-  //   const fetchMealPlans = async () => {
-  //     try {
-  //       const plan = await getMealPlanById(token, mealPlanId);
-  //       setMealPlans([plan]);
-  //     } catch (err) {
-  //       console.error("Failed to fetch meal plans:", err);
-  //     }
-  //   };
+    const fetchData = async () => {
+      try {
+        const [plan, room] = await Promise.all([
+          getMealPlanById(token, mealPlanId),
+          getHotelRoomTypeById({ token, id: roomTypeID })
+        ]);
+        setMealPlans([plan]);
+        setRoomDetails(room);
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+      }
+    };
 
-  //   fetchMealPlans();
-  // }, [mealPlanId]);
+    fetchData();
+  }, [mealPlanId, roomTypeID]);
 
   // console.log("meal plan id",mealPlanId);
   //   console.log("room left",roomsLeft);
@@ -76,7 +83,7 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold">
-                    $0
+                    ${mealPlans[0]?.defaultRate ?? 0}
                     <span className="text-sm font-normal text-muted-foreground">/period</span>
                   </div>
                   <div className="text-xs text-green-600 font-medium">
@@ -89,22 +96,22 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
                 <div className="flex items-center gap-1 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    2 adults and 1 child
+                    {roomDetails?.adultSpace ?? 2} adults and {roomDetails?.childSpace ?? 1} child
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <Bed className="h-4 w-4 text-muted-foreground" />
-                  <span>King Bed</span>
+                  <span>{roomDetails?.bedType || "King Bed"}</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <Maximize className="h-4 w-4 text-muted-foreground" />
-                  <span>300 sqft</span>
+                  <span>{roomDetails?.roomSize ?? "300 sqft"}</span>
                 </div>
               </div>
 
               <div className="mb-4 flex items-start gap-2 text-sm bg-blue-50 p-2 rounded">
                 <Baby className="h-4 w-4 text-blue-500 mt-0.5" />
-                <span>Child policy details go here.</span>
+                <span>{roomDetails?.roomDescription || "Child policy details go here."}</span>
               </div>
 
               <>
