@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 // TypeScript interfaces for hotel room types and rate plans
 interface HotelRoomType {
   hotelRoomTypeID: number;
@@ -26,38 +27,144 @@ import { getHotelRatePlans, getHotelRatePlansAvailability } from "@/controllers/
 import { getAvailableRooms } from "@/controllers/roomTypeController";
 import { AvailableRoom } from "@/types/roomType";
 import RoomCard from "@/components/room-card";
+import { useBooking } from "@/components/booking-context";
 
 export default function PropertyPage() {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({ from: undefined, to: undefined });
   const [ratePlans, setRatePlans] = useState<HotelRatePlan[] | null>(null);
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[] | null>(null);
-  const [selectedRooms, setSelectedRooms] = useState<any[]>([]);
-  const [selectedRoomIDs, setSelectedRoomIDs] = useState<number[]>([]);
+  const { selectedRooms, removeRoom } = useBooking();
+  const selectedRoomIDs = selectedRooms.map((r) => r.roomTypeID);
+const [guests, setGuests] = useState<{ adults: number; children: number }>({
+  adults: 2,
+  children: 0,
+});
 
-  useEffect(() => {
-    const fetchRatePlans = async () => {
-      try {
-        const hotelDataString = localStorage.getItem("hotelData");
-        if (!hotelDataString) return;
-        const hotelData = JSON.parse(hotelDataString);
-        const hotelId = hotelData.hotelID;
+  const fetchRoomRatesFromNewAPI = async ({
+    token,
+    hotelId,
+    checkIn,
+    checkOut,
+    adults,
+    children,
+    setAvailableRooms,
+  }: {
+    token: string;
+    hotelId: number;
+    checkIn: Date;
+    checkOut: Date;
+    adults: number;
+    children: number;
+    setAvailableRooms: (rooms: Room[]) => void;
+  }) => {
+    try {
+      const ratePlanData = await getHotelRatePlans({ token, hotelId });
+      console.log("Rate plan roomTypeIDs:", ratePlanData.map(p => p.hotelRoomType.hotelRoomTypeID));
+      console.log("rate plan", ratePlanData)
 
-        console.log("Fetching rate plans for hotel ID:", hotelId);
+      // --- BEGIN PATCHED BLOCK ---
+      const paxKey = `pax${adults}`;
+      const dateFrom = format(checkIn, "yyyy-MM-dd");
+      const dateTo = format(checkOut, "yyyy-MM-dd");
 
-        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-        if (!token || !hotelId) return;
+      // Fetch availability data and build map
+      const availabilityData = await getHotelRatePlansAvailability({
+        token,
+        hotelId,
+        startDate: dateFrom,
+        endDate: dateTo,
+      });
+      console.log("Availability roomTypeIDs:", availabilityData.map(a => a.roomTypeId));
+      console.log("availabilityData", availabilityData);
 
-        const data = await getHotelRatePlans({ token, hotelId });
-        setRatePlans(data);
-        console.log("Hotel Rate Plans length:", data.length);
-        console.log("Hotel Rate Plans", data)
-      } catch (error) {
-        console.error("Failed to fetch hotel rate plans:", error);
-      }
-    };
+      const availabilityMap: Record<number, number> = {};
+      availabilityData.forEach((item: any) => {
+        const minCount = Math.min(...item.availability.map((a: any) => a.count));
+        availabilityMap[item.roomTypeId] = minCount;
+      });
 
-    fetchRatePlans();
-  }, []);
+      // Patch: show all rooms from availability, even if no rate plan
+      const ratePlanMap: Record<number, any[]> = {};
+      ratePlanData.forEach((item) => {
+        const roomTypeId = item.hotelRoomType.hotelRoomTypeID;
+        if (!ratePlanMap[roomTypeId]) ratePlanMap[roomTypeId] = [];
+        ratePlanMap[roomTypeId].push(item);
+      });
+
+      const filteredRooms: Room[] = availabilityData.map((item: any) => {
+        const roomTypeId = item.roomTypeId;
+        const availabilityCount = availabilityMap[roomTypeId];
+        if (availabilityCount === undefined || availabilityCount === 0) return null;
+
+        const ratePlans = ratePlanMap[roomTypeId] || [];
+        const first = ratePlans[0];
+
+        const roomType = first?.hotelRoomType || {
+          hotelRoomTypeID: roomTypeId,
+          roomType: item.roomType,
+          roomDescription: "",
+          noOfRooms: item.roomCount,
+          adultSpace: 2,
+          childSpace: 0,
+        };
+
+        const mealPlan = first?.mealPlanMaster;
+        const hotel = first?.hotelMaster;
+
+        const totalRate = ratePlans.length > 0
+          ? ratePlans.reduce((sum, entry) => {
+            const rateObj = entry.hotelRates.find((rate: any) => {
+              const date = new Date(rate.rateDate).toISOString().split("T")[0];
+              return date >= dateFrom && date <= dateTo;
+            });
+            const baseRate = Number(rateObj?.[paxKey] ?? rateObj?.defaultRate ?? 0);
+            const childRate = Number(rateObj?.child ?? 0);
+            return sum + baseRate + children * childRate;
+          }, 0)
+          : 0;
+
+        return {
+          id: roomType.hotelRoomTypeID,
+          name: roomType.roomType,
+          description: roomType.roomDescription || "",
+          mainimageurl: hotel?.hotelImage || "",
+          price: totalRate,
+          capacity: roomType.adultSpace + roomType.childSpace,
+          maxAdult: roomType.adultSpace,
+          maxChild: roomType.childSpace,
+          available: availabilityMap[roomType.hotelRoomTypeID] ?? roomType.noOfRooms,
+          mealPlan: mealPlan?.mealPlan || "",
+          mealplandesc: mealPlan?.mealPlan || "",
+          triplerate: first?.hotelRates?.[0]?.pax3 ?? 0,
+          doublerate: first?.hotelRates?.[0]?.pax2 ?? 0,
+          sglrate: first?.hotelRates?.[0]?.pax1 ?? 0,
+          qdplrate: first?.hotelRates?.[0]?.pax4 ?? 0,
+          familyerate: first?.hotelRates?.[0]?.pax5 ?? 0,
+          exadultrate: first?.hotelRates?.[0]?.pax6 ?? 0,
+          childrate: first?.hotelRates?.[0]?.child ?? 0,
+          childagelower: 0,
+          childagehigher: 17,
+          features: [],
+          amenities: [],
+          policies: [],
+          photos: [],
+          availability: roomType.noOfRooms,
+          popular: false,
+          defaultMealPlan: mealPlan?.mealPlan ?? "",
+          availableMealPlans: [mealPlan?.mealPlan ?? ""],
+          bedType: "Standard",
+          roomsize: "",
+          seq: 0,
+        };
+      }).filter(Boolean);
+
+      filteredRooms.sort((a, b) => (a?.price ?? 0) - (b?.price ?? 0));
+      setAvailableRooms(filteredRooms);
+      // --- END PATCHED BLOCK ---
+    } catch (error) {
+      console.error("Error fetching room rates:", error);
+    }
+  };
 
 
   // Fetch available rooms only on button click, not automatically.
@@ -65,8 +172,6 @@ export default function PropertyPage() {
 
   // Handler to fetch available rooms on button click
   const handleViewAvailableRooms = async () => {
-    if (!ratePlans || ratePlans.length === 0) return;
-
     try {
       const hotelDataString = localStorage.getItem("hotelData");
       if (!hotelDataString) return;
@@ -74,37 +179,22 @@ export default function PropertyPage() {
       const hotelData = JSON.parse(hotelDataString);
       const hotelId = hotelData.hotelID;
       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-      if (!token || !hotelId) return;
-
-      const checkInDate = dateRange.from ? dateRange.from.toISOString().split("T")[0] : "";
-      const checkOutDate = dateRange.to ? dateRange.to.toISOString().split("T")[0] : "";
-      if (!checkInDate || !checkOutDate) {
-        alert("Please select check-in and check-out dates.");
+      if (!token || !hotelId || !dateRange.from || !dateRange.to) {
+        alert("Missing token, hotel ID, or date range.");
         return;
       }
 
-      const ratePlansAvailability = await getHotelRatePlansAvailability({
+      await fetchRoomRatesFromNewAPI({
         token,
         hotelId,
-        startDate: checkInDate,
-        endDate: checkOutDate,
+        checkIn: dateRange.from,
+        checkOut: dateRange.to,
+        adults: guests.adults, // pull from guest selector
+        children: guests.children,
+        setAvailableRooms,
       });
-      console.log("Hotel Rate Plans Availability:", ratePlansAvailability);
-
-      // Transform ratePlansAvailability into grouped room data for RoomCard
-      const groupedRooms = ratePlansAvailability.map((room: any) => {
-        const minAvailableCount = Math.min(...room.availability.map((a: any) => a.count));
-        return {
-          roomTypeID: room.roomTypeId,
-          roomType: room.roomType,
-          rooms: Array(minAvailableCount).fill({})  // mock room entries based on min availability
-        };
-      });
-
-      setAvailableRooms(groupedRooms);
-
     } catch (error) {
-      console.error("Failed to fetch hotel rate plans availability:", error);
+      console.error("Error loading room data:", error);
     }
   };
 
@@ -164,7 +254,11 @@ export default function PropertyPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Guests</label>
-              <GuestSelector />
+              <GuestSelector
+                adults={guests.adults}
+                children={guests.children}
+                onChange={(adults, children) => setGuests({ adults, children })}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Promo Code</label>
@@ -199,29 +293,22 @@ export default function PropertyPage() {
               {availableRooms && availableRooms.length > 0 ? (
                 availableRooms.map((roomGroup: any) => (
                   <RoomCard
-                    key={roomGroup.roomTypeID}
-                    roomName={roomGroup.roomType}
-                    roomsLeft={roomGroup.rooms.length}
-                    mealPlanId={mealPlanMap[roomGroup.roomTypeID] || 0}
-                    roomTypeID={roomGroup.roomTypeID}
+                    key={roomGroup.id}
+                    roomName={roomGroup.name}
+                    roomsLeft={roomGroup.available}
+                    mealPlanId={mealPlanMap[roomGroup.id] || 0}
+                    roomTypeID={roomGroup.id}
+                    price={roomGroup.price}
                     onAddToBooking={(room) => {
-                      setSelectedRooms((prev) => [...prev, {...room, roomCount: 1}]);
-                      if (room.roomTypeID !== undefined) {
-                        setSelectedRoomIDs((prev) => [...prev, room.roomTypeID]);
-                      }
+                      // no-op here; handled in context
                     }}
                     onRemoveFromBooking={(roomTypeID) => {
-                      setSelectedRooms((prev) => prev.filter((r) => r.roomTypeID !== roomTypeID));
-                      setSelectedRoomIDs((prev) => prev.filter((id) => id !== roomTypeID));
+                      removeRoom(roomTypeID);
                     }}
                     onUpdateRoomQuantity={(roomTypeID, delta) => {
-                      setSelectedRooms((prev) => prev.map(room => 
-                        room.roomTypeID === roomTypeID 
-                          ? { ...room, roomCount: (room.roomCount || 1) + delta }
-                          : room
-                      ));
+                      // optional logic if needed later
                     }}
-                    isSelected={selectedRoomIDs.includes(roomGroup.roomTypeID)}
+                    isSelected={selectedRoomIDs.includes(roomGroup.id)}
                   />
                 ))
               ) : (
@@ -283,39 +370,34 @@ export default function PropertyPage() {
                       <span>0 adults</span>
                     )}
                   </div>
-                    <div className="pt-2 mt-2 border-t">
-                      <div className="font-medium mb-2">Selected Rooms:</div>
-                      {selectedRooms.length > 0 ? (
-                        selectedRooms.map((room, idx) => (
-                          <div key={idx} className="border p-3 mb-2 rounded-md text-sm relative">
-                            <div className="flex justify-between font-semibold mb-1">
-                              <span>{room.roomName.toUpperCase()}</span>
-                              <span>${room.price.toFixed(2)}/period</span>
-                            </div>
-                            <div className="flex justify-between mb-1">
-                              <span>{room.roomCount || 1} room{(room.roomCount || 1) > 1 ? 's' : ''} • {room.guests?.adults || 0} adult{room.guests?.adults > 1 ? "s" : ""}</span>
-                              <span>Total: ${((room.price || 0) * (room.roomCount || 1)).toFixed(2)}</span>
-                            </div>
-                            <div className="text-muted-foreground">Meal Plan: {room.mealPlan}</div>
-                            <button
-                              className="absolute bottom-2 right-2 text-red-500 hover:text-red-700"
-                              onClick={() => {
-                                const updated = [...selectedRooms];
-                                const removed = updated.splice(idx, 1)[0];
-                                setSelectedRooms(updated);
-                                if (removed.roomTypeID !== undefined) {
-                                  setSelectedRoomIDs((prev) => prev.filter((id) => id !== removed.roomTypeID));
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                  <div className="pt-2 mt-2 border-t">
+                    <div className="font-medium mb-2">Selected Rooms:</div>
+                    {selectedRooms.length > 0 ? (
+                      selectedRooms.map((room, idx) => (
+                        <div key={idx} className="border p-3 mb-2 rounded-md text-sm relative">
+                          <div className="flex justify-between font-semibold mb-1">
+                            <span>{(availableRooms?.find(r => r.id === room.roomTypeID)?.name.toUpperCase()) || "Unnamed Room"}</span>
+                            <span>${room.price.toFixed(2)}/period</span>
                           </div>
-                        ))
-                      ) : (
-                        <div className="text-sm text-muted-foreground">No rooms selected.</div>
-                      )}
-                    </div>
+                          <div className="flex justify-between mb-1">
+                            <span>{room.roomCount || 1} room{(room.roomCount || 1) > 1 ? 's' : ''} • {room.guests?.adults || 0} adult{room.guests?.adults > 1 ? "s" : ""}</span>
+                            <span>Total: ${((room.price || 0) * (room.roomCount || 1)).toFixed(2)}</span>
+                          </div>
+                          <div className="text-muted-foreground">Meal Plan: {room.mealPlan}</div>
+                          <button
+                            className="absolute bottom-2 right-2 text-red-500 hover:text-red-700"
+                            onClick={() => {
+                              removeRoom(room.roomTypeID);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">No rooms selected.</div>
+                    )}
+                  </div>
                 </div>
                 <div className="pt-4 mt-4 border-t">
                   <div className="flex justify-between font-medium text-sm">

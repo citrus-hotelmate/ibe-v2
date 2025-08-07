@@ -7,6 +7,7 @@ import { useBooking } from "@/components/booking-context"
 
 export function GuestSelector({ onChange }: { onChange?: (guests: { adults: number; children: number; rooms: number }) => void }) {
   const { bookingDetails, updateBookingDetails } = useBooking()
+  if (!bookingDetails) return null;
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -19,9 +20,7 @@ export function GuestSelector({ onChange }: { onChange?: (guests: { adults: numb
     }
   }, []);
 
-  const adults = bookingDetails.adults != null ? bookingDetails.adults : 2;
-const children = bookingDetails.children != null ? bookingDetails.children : 0;
-const rooms = bookingDetails.rooms != null ? bookingDetails.rooms : 1;
+  const { adults = 2, children = 0, rooms = 1 } = bookingDetails;
 
   const handleAdultChange = (change: number) => {
     const newValue = Math.max(1, Math.min(10, adults + change))

@@ -5,9 +5,11 @@ import { Bed, Users, Maximize, Baby } from "lucide-react"
 import { useEffect, useState } from "react";
 import { getMealPlanById } from "@/controllers/mealPlanController";
 import { MealPlan } from "@/types/mealPlan";
-import { GuestSelector } from "@/components/guest-selector";
+import { RoomGuestSelector } from "@/components/room-guest-selector";
 import { getHotelRoomTypeById } from "@/controllers/hotelRoomTypeController";
 import { HotelRoomType } from "@/types/hotelRoomType";
+import { HotelRatePlan } from "@/types/hotelRatePlans";
+import { useBooking } from "@/components/booking-context";
 
 interface RoomCardProps {
   roomName: string;
@@ -18,13 +20,17 @@ interface RoomCardProps {
   roomTypeID?: number;
   isSelected?: boolean;
   onRemoveFromBooking?: (roomTypeID: number) => void;
+  price?: number;
+  ratePlansMap?: Record<number, HotelRatePlan[]>;
 }
 
-export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooking, onUpdateRoomQuantity, roomTypeID, isSelected, onRemoveFromBooking }: RoomCardProps) {
+export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooking, onUpdateRoomQuantity, roomTypeID, isSelected, onRemoveFromBooking, price, ratePlansMap }: RoomCardProps) {
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [guests, setGuests] = useState({ adults: 2, children: 0, rooms: 1 });
   const [roomCount, setRoomCount] = useState(1);
   const [roomDetails, setRoomDetails] = useState<HotelRoomType | null>(null);
+  const [localPrice, setLocalPrice] = useState<number>(price ?? 0);
+  const { updateRoomGuests, getRoomGuests } = useBooking();
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
@@ -38,6 +44,14 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
         ]);
         setMealPlans([plan]);
         setRoomDetails(room);
+        const existingGuests = getRoomGuests(roomTypeID ?? -1);
+        if (existingGuests) {
+          setGuests((prev) => ({
+            ...prev,
+            adults: existingGuests.adults,
+            children: existingGuests.children,
+          }));
+        }
       } catch (err) {
         console.error("Failed to fetch data:", err);
       }
@@ -83,7 +97,7 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold">
-                    ${mealPlans[0]?.defaultRate ?? 0}
+                    {price && price > 0 ? `$${price.toFixed(2)}` : "Price on request"}
                     <span className="text-sm font-normal text-muted-foreground">/period</span>
                   </div>
                   <div className="text-xs text-green-600 font-medium">
@@ -134,8 +148,31 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
               <div className="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div className="flex-1">
                   <div className="text-sm font-medium mb-2">Guests for this room:</div>
-                  <GuestSelector
-                    onChange={(newGuests) => setGuests(newGuests)}
+                  <RoomGuestSelector
+                    adults={guests.adults}
+                    children={guests.children}
+                    childAges={[]}
+                    onChange={(adults, children, childAges) => {
+                      setGuests({ adults, children, rooms: roomCount });
+
+                      const paxKey = `pax${adults}`;
+                      const ratePlans = ratePlansMap?.[roomTypeID ?? -1] ?? [];
+
+                      const updatedPrice = ratePlans.reduce((total, plan) => {
+                        const rate = plan.hotelRates?.[0]; // Use first rate for now
+                        const baseRate = Number(rate?.[paxKey] ?? rate?.defaultRate ?? 0);
+                        const childRate = Number(rate?.child ?? 0);
+                        return total + baseRate + children * childRate;
+                      }, 0);
+
+                      setLocalPrice(updatedPrice);
+                      updateRoomGuests(roomTypeID ?? -1, { adults, children, childAges }, updatedPrice);
+                    }}
+                    maxGuests={(roomDetails?.adultSpace ?? 2) + (roomDetails?.childSpace ?? 1)}
+                    maxAdult={roomDetails?.adultSpace ?? 2}
+                    maxChild={roomDetails?.childSpace ?? 1}
+                    childAgeLower={roomDetails?.childAgeLower ?? 6}
+                    childAgeUpper={roomDetails?.childAgeHigher ?? 12}
                   />
                 </div>
                 <div className="flex justify-end sm:justify-start gap-2">
@@ -179,7 +216,7 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
                         onAddToBooking({
                           roomName,
                           mealPlan: mealPlans[0]?.mealPlan || "Room Only",
-                          price: mealPlans[0]?.defaultRate || 0,
+                          price: price ?? mealPlans[0]?.defaultRate || 0,
                           guests,
                           count: roomCount,
                           roomTypeID,
