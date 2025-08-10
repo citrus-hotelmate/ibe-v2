@@ -6,6 +6,8 @@ interface GetHotelRatePlansParams {
   token: string;
   hotelId: number;
   isCmActive?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const getHotelRatePlans = async ({
@@ -33,27 +35,17 @@ export const getHotelRatePlans = async ({
   }
 };
 
-interface GetAvailabilityParams {
-  token: string;
-  hotelId: number;
-  startDate?: string;
-  endDate?: string;
-}
-
-export const getHotelRatePlansAvailability = async ({
+export const getHotelRatePlanAvailability = async ({
   token,
   hotelId,
   startDate,
   endDate,
-}: GetAvailabilityParams) => {
+}: GetHotelRatePlansParams) => {
   try {
     const response = await axiosInstance.get<HotelRatePlansResponse>(
-      `/HotelRatePlans/availability/${hotelId}`,
+      `${HotelRatePlans}/availability/${hotelId}`,
       {
-        params: {
-          ...(startDate && { startDate }),
-          ...(endDate && { endDate }),
-        },
+        params: { startDate, endDate },
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -304,7 +304,7 @@ export default function PaymentPage() {
           router.push("/confirmed");
           return;
         } else {
-          console.error("Booking failed:", result);
+       
           setIsProcessing(false);
           return;
         }

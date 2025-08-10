@@ -1,5 +1,19 @@
 
-
+export interface hotelRoomType {
+hotelRoomTypeID: number;
+hotelID: number;
+roomType: string;
+adultSpace: number;
+childSpace: number;
+noOfRooms: number;
+cmid: string;
+createdTimeStamp: string;
+createdBy: string;
+updatedBy: string | null;
+finAct: boolean;
+updatedTimeStamp: string | null;
+roomDescription: string | null;
+}
 export interface HotelRatePlan {
   recordID: number;
   hotelRatePlanID: number;
@@ -32,6 +46,7 @@ export interface HotelRatePlan {
   primaryOccupancy: number;
   increaseBy: number;
   decreaseBy: number;
+  hotelRoomType: hotelRoomType[]
 }
 
 export type HotelRatePlansResponse = HotelRatePlan[];

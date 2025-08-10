@@ -1,79 +1,185 @@
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Bed, Users, Maximize, Baby } from "lucide-react"
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Bed, Users, Maximize, Baby, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getMealPlanById } from "@/controllers/mealPlanController";
 import { MealPlan } from "@/types/mealPlan";
-import { RoomGuestSelector } from "@/components/room-guest-selector";
-import { getHotelRoomTypeById } from "@/controllers/hotelRoomTypeController";
-import { HotelRoomType } from "@/types/hotelRoomType";
-import { HotelRatePlan } from "@/types/hotelRatePlans";
-import { useBooking } from "@/components/booking-context";
+import { GuestSelector } from "@/components/guest-selector";
+import { RoomGuestSelector } from "./room-guest-selector";
+import { useBooking, RoomBooking } from "./booking-context";
+import { set } from "date-fns";
+import { is } from "date-fns/locale";
 
 interface RoomCardProps {
   roomName: string;
   roomsLeft: number;
   mealPlanId: number;
-  onAddToBooking: (room: any) => void;
-  onUpdateRoomQuantity?: (roomTypeID: number, delta: number) => void;
-  roomTypeID?: number;
-  isSelected?: boolean;
-  onRemoveFromBooking?: (roomTypeID: number) => void;
-  price?: number;
-  ratePlansMap?: Record<number, HotelRatePlan[]>;
+  defaultRate?: number;
+  onAddToBooking: (room: RoomBooking) => void;
+  adultCount?: number;
+  childCount?: number;
+  roomTypeId?: number;
+  showQuantitySelector?: boolean;
 }
 
-export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooking, onUpdateRoomQuantity, roomTypeID, isSelected, onRemoveFromBooking, price, ratePlansMap }: RoomCardProps) {
+export default function RoomCard({
+  roomName,
+  roomsLeft,
+  mealPlanId,
+  defaultRate,
+  onAddToBooking,
+  adultCount,
+  childCount,
+  roomTypeId,
+  showQuantitySelector,
+}: RoomCardProps) {
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
-  const [guests, setGuests] = useState({ adults: 2, children: 0, rooms: 1 });
-  const [roomCount, setRoomCount] = useState(1);
-  const [roomDetails, setRoomDetails] = useState<HotelRoomType | null>(null);
-  const [localPrice, setLocalPrice] = useState<number>(price ?? 0);
-  const { updateRoomGuests, getRoomGuests } = useBooking();
+  const [childAges, setChildAges] = useState<number[]>([]);
+  const [price, setPrice] = useState<number>(100); // Default room price
 
+  const {
+    bookingDetails,
+    updateBookingDetails,
+    addRoom,
+    incrementRoomQuantity,
+    decrementRoomQuantity,
+    removeRoom,
+  } = useBooking();
+
+  const selectedRoom = bookingDetails.selectedRooms.find(
+    (room) => room.roomId === roomTypeId?.toString()
+  );
+  const quantity = selectedRoom?.quantity || 0;
+
+  // Uncomment this to fetch meal plans
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-    if (!token || !mealPlanId || !roomTypeID) return;
-
-    const fetchData = async () => {
-      try {
-        const [plan, room] = await Promise.all([
-          getMealPlanById(token, mealPlanId),
-          getHotelRoomTypeById({ token, id: roomTypeID })
-        ]);
-        setMealPlans([plan]);
-        setRoomDetails(room);
-        const existingGuests = getRoomGuests(roomTypeID ?? -1);
-        if (existingGuests) {
-          setGuests((prev) => ({
-            ...prev,
-            adults: existingGuests.adults,
-            children: existingGuests.children,
-          }));
+    if (!token) return;
+    if (mealPlanId) {
+      const fetchMealPlans = async () => {
+        try {
+          const plan = await getMealPlanById(token, mealPlanId);
+          setMealPlans([plan]);
+        } catch (err) {
+          console.error("Failed to fetch meal plans:", err);
         }
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
-      }
-    };
+      };
+      fetchMealPlans();
+    }
+  }, [mealPlanId]);
 
-    fetchData();
-  }, [mealPlanId, roomTypeID]);
+  // Handle guest changes and calculate room price based on complex rules
+  const handleGuestChange = (
+    adults: number,
+    children: number,
+    ages?: number[]
+  ) => {
+    // Enforce maximum limits for adults and children
+    const maxAdult = 3;
+    const maxChild = 2;
 
-  // console.log("meal plan id",mealPlanId);
-  //   console.log("room left",roomsLeft);
+    if (adults > maxAdult) adults = maxAdult;
+    if (children > maxChild) children = maxChild;
 
+    // Store child ages if provided
+    if (ages) setChildAges(ages);
+
+    // Base price calculation with dynamic pricing model
+    const basePrice = 100; // Base price for the room
+    let calculatedPrice = basePrice;
+
+    // Dynamic pricing based on adult occupancy
+    switch (adults) {
+      case 1:
+        calculatedPrice = basePrice * 0.85; // 15% discount for single occupancy
+        break;
+      case 2:
+        calculatedPrice = basePrice; // Standard rate for double occupancy
+        break;
+      case 3:
+        calculatedPrice = basePrice * 1.3; // 30% premium for triple occupancy
+        break;
+      default:
+        calculatedPrice = basePrice;
+    }
+
+    // Advanced child pricing logic based on age groups
+    if (children > 0 && Array.isArray(ages) && ages.length > 0) {
+      ages.forEach((age) => {
+        if (age < 2) {
+          // Infants stay free
+          // No additional charge
+        } else if (age >= 2 && age <= 5) {
+          // Toddlers (2-5)
+          calculatedPrice += basePrice * 0.25; // 25% of base price
+        } else if (age > 5 && age <= 12) {
+          // Children (6-12)
+          calculatedPrice += basePrice * 0.5; // 50% of base price
+        } else {
+          // Teenagers (13+)
+          calculatedPrice += basePrice * 0.7; // 70% of base price
+        }
+      });
+    } else if (children > 0) {
+      // If child ages not provided, use average child rate (50%)
+      calculatedPrice += children * (basePrice * 0.5);
+    }
+
+    // Apply dynamic discount for longer stays (simulated from booking context)
+    const nights = bookingDetails.nights || 1;
+    let stayDiscount = 0;
+
+    if (nights >= 7) {
+      stayDiscount = 0.15; // 15% off for 7+ nights
+    } else if (nights >= 4) {
+      stayDiscount = 0.1; // 10% off for 4-6 nights
+    } else if (nights >= 2) {
+      stayDiscount = 0.05; // 5% off for 2-3 nights
+    }
+
+    // Apply potential seasonal or promotional adjustments
+    const isHighSeason = false; // This would come from an API or context
+    const hasPromotion = price > 100; // Check if a promotion is active
+
+    if (isHighSeason) {
+      calculatedPrice *= 1.2; // 20% premium during high season
+    }
+
+    if (hasPromotion) {
+      calculatedPrice *= 0.9; // 10% promotion discount
+    }
+
+    // Apply stay discount
+    calculatedPrice = calculatedPrice * (1 - stayDiscount);
+
+    // Round to whole number for display
+    setPrice(Math.round(calculatedPrice));
+
+    // Optionally sync with booking context if needed
+    // updateBookingDetails({...}); // If you want to update context here
+  };
+
+  // Check if minimum stay requirement is met
+  const minimumStayRequired = 2; // Minimum nights required for this room
+  const minimumStayNotMet = bookingDetails.nights < minimumStayRequired;
+  console.log(defaultRate, "DF");
+  // Room is ready for booking
   return (
-    <div className="overflow-hidden rounded-md border">
+    <div className="overflow-hidden rounded-md m-3 md:mx-16">
       <Card className="rounded-b-none border-none">
         <div className="grid md:grid-cols-5 gap-4">
           <div className="md:col-span-2 relative h-48 md:h-full">
             <div className="cursor-pointer">
               <img
-                src="/placeholder.svg?height=300&width=500"
+                src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500&q=80?height=300&width=500"
                 alt={roomName}
                 className="object-cover w-full h-full"
                 style={{ objectFit: "cover" }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/placeholder.svg?height=300&width=500";
+                }}
               />
             </div>
             <Badge className="absolute top-2 left-2" variant="secondary">
@@ -89,20 +195,33 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
                 <div>
                   <h3 className="text-lg font-semibold">{roomName}</h3>
                   <p className="text-sm text-green-600">
-                    {roomsLeft} rooms left
+                    {Math.max(0, roomsLeft - quantity)} rooms left
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Minimum stay: 2 nights
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold">
-                    {price && price > 0 ? `$${price.toFixed(2)}` : "Price on request"}
-                    <span className="text-sm font-normal text-muted-foreground">/period</span>
+                  <div className="text-md font-bold">
+                    {defaultRate && bookingDetails.nights
+                      ? `$${(defaultRate * bookingDetails.nights).toFixed(2)}`
+                      : `$${defaultRate?.toFixed(2)}`}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      /period
+                    </span>
                   </div>
-                  <div className="text-xs text-green-600 font-medium">
-                    10% off
-                  </div>
+                  {bookingDetails.nights > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      {`($${defaultRate?.toFixed(2)} = per night × ${
+                        bookingDetails.nights
+                      })`}
+                    </div>
+                  )}
+                  {defaultRate && defaultRate > 100 && (
+                    <div className="text-sm text-green-600 font-medium">
+                      20% off
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -110,36 +229,46 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
                 <div className="flex items-center gap-1 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {roomDetails?.adultSpace ?? 2} adults and {roomDetails?.childSpace ?? 1} child
+                    {`${adultCount} adults and ${childCount} children`}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <Bed className="h-4 w-4 text-muted-foreground" />
-                  <span>{roomDetails?.bedType || "King Bed"}</span>
+                  <span>King Bed</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <Maximize className="h-4 w-4 text-muted-foreground" />
-                  <span>{roomDetails?.roomSize ?? "300 sqft"}</span>
+                  <span>300 sqft</span>
                 </div>
               </div>
 
               <div className="mb-4 flex items-start gap-2 text-sm bg-blue-50 p-2 rounded">
                 <Baby className="h-4 w-4 text-blue-500 mt-0.5" />
-                <span>{roomDetails?.roomDescription || "Child policy details go here."}</span>
+                <span>Child policy details go here.</span>
               </div>
 
               <>
                 <div className="mb-2">
-                  <div className="text-sm font-medium mb-1">Select Meal Plan:</div>
-                  <select className="w-full sm:w-60 border rounded p-2">
+                  <div className="text-sm font-medium mb-1">
+                    Select Meal Plan:
+                  </div>
+                  <select className="w-full sm:w-60 border rounded p-2 cursor-pointer text-sm">
                     {mealPlans.length > 0 ? (
                       mealPlans.map((plan) => (
                         <option key={plan.mealPlanID}>
-                          {plan.mealPlan} - ${plan.defaultRate ?? 0}/period
+                          {plan.mealPlan} -{" "}
+                          {defaultRate && bookingDetails.nights
+                            ? `$${(defaultRate * bookingDetails.nights).toFixed(
+                                2
+                              )}`
+                            : `$${defaultRate?.toFixed(2)}`}
+                          <span className="text-sm font-normal text-muted-foreground">
+                            /period
+                          </span>
                         </option>
                       ))
                     ) : (
-                      <option>Loading meal plans...</option>
+                      <option>N/A</option>
                     )}
                   </select>
                 </div>
@@ -147,81 +276,74 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
 
               <div className="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div className="flex-1">
-                  <div className="text-sm font-medium mb-2">Guests for this room:</div>
+                  <div className="text-sm font-medium mb-2">
+                    Guests for this room:
+                  </div>
                   <RoomGuestSelector
-                    adults={guests.adults}
-                    children={guests.children}
-                    childAges={[]}
-                    onChange={(adults, children, childAges) => {
-                      setGuests({ adults, children, rooms: roomCount });
-
-                      const paxKey = `pax${adults}`;
-                      const ratePlans = ratePlansMap?.[roomTypeID ?? -1] ?? [];
-
-                      const updatedPrice = ratePlans.reduce((total, plan) => {
-                        const rate = plan.hotelRates?.[0]; // Use first rate for now
-                        const baseRate = Number(rate?.[paxKey] ?? rate?.defaultRate ?? 0);
-                        const childRate = Number(rate?.child ?? 0);
-                        return total + baseRate + children * childRate;
-                      }, 0);
-
-                      setLocalPrice(updatedPrice);
-                      updateRoomGuests(roomTypeID ?? -1, { adults, children, childAges }, updatedPrice);
+                    adults={adultCount || 2}
+                    children={childCount || 0}
+                    onChange={(adults, children, ages) => {
+                      // Use our enhanced handleGuestChange function
+                      handleGuestChange(adults, children, ages);
                     }}
-                    maxGuests={(roomDetails?.adultSpace ?? 2) + (roomDetails?.childSpace ?? 1)}
-                    maxAdult={roomDetails?.adultSpace ?? 2}
-                    maxChild={roomDetails?.childSpace ?? 1}
-                    childAgeLower={roomDetails?.childAgeLower ?? 6}
-                    childAgeUpper={roomDetails?.childAgeHigher ?? 12}
+                    maxGuests={(adultCount || 0) + (childCount || 0)}
+                    maxAdult={adultCount || 0}
+                    maxChild={childCount || 0}
+                    childAgeLower={2}
+                    childAgeUpper={12}
+                    childAges={childAges}
+                    onChildAgesChange={setChildAges}
                   />
                 </div>
-                <div className="flex justify-end sm:justify-start gap-2">
-                  {isSelected ? (
-                    <>
+                <div className="flex justify-end sm:justify-start">
+                  {minimumStayNotMet ? (
+                    <div className="text-xs text-red-600 font-medium">
+                      This room requires a minimum stay of {minimumStayRequired}{" "}
+                      night
+                      {minimumStayRequired > 2 ? "s" : ""}.
+                    </div>
+                  ) : showQuantitySelector && quantity > 0 ? (
+                    <div className="flex items-center gap-2">
                       <Button
-                        type="button"
                         variant="outline"
-                        onClick={() => {
-                          if (roomCount > 1) {
-                            setRoomCount(roomCount - 1);
-                            if (onUpdateRoomQuantity && roomTypeID !== undefined) {
-                              onUpdateRoomQuantity(roomTypeID, -1);
-                            }
-                          } else {
-                            if (onRemoveFromBooking && roomTypeID !== undefined) {
-                              onRemoveFromBooking(roomTypeID);
-                            }
-                          }
-                        }}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() =>
+                          decrementRoomQuantity(roomTypeId?.toString() || "")
+                        }
+                        // disabled={quantity <= 1}
                       >
-                        -
+                        <Minus className="h-4 w-4" />
                       </Button>
-                      <div className="px-4 py-2 border rounded-md">{roomCount}</div>
+                      <span className="w-8 text-center">{quantity}</span>
                       <Button
-                        type="button"
                         variant="outline"
-                        onClick={() => {
-                          setRoomCount(roomCount + 1);
-                          if (onUpdateRoomQuantity && roomTypeID !== undefined) {
-                            onUpdateRoomQuantity(roomTypeID, 1);
-                          }
-                        }}
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() =>
+                          incrementRoomQuantity(roomTypeId?.toString() || "")
+                        }
+                        disabled={quantity >= roomsLeft}
                       >
-                        +
+                        <Plus className="h-4 w-4" />
                       </Button>
-                    </>
+                    </div>
                   ) : (
                     <Button
                       onClick={() => {
-                        onAddToBooking({
+                        const roomData: any = {
                           roomName,
-                          mealPlan: mealPlans[0]?.mealPlan || "Room Only",
-                          price: price ?? mealPlans[0]?.defaultRate || 0,
-                          guests,
-                          count: roomCount,
-                          roomTypeID,
-                        });
+                          adultCount,
+                          childCount,
+                          mealPlanId:
+                            mealPlans[0]?.mealPlanID.toString() || "0",
+                          price: price,
+                          quantity: 1,
+                        };
+
+                        onAddToBooking(roomData);
                       }}
+                      disabled={roomsLeft <= 0}
                     >
                       Add to Booking
                     </Button>
@@ -233,5 +355,5 @@ export default function RoomCard({ roomName, roomsLeft, mealPlanId, onAddToBooki
         </div>
       </Card>
     </div>
-  )
+  );
 }

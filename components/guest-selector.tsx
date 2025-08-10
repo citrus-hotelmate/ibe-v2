@@ -5,37 +5,97 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Users, Minus, Plus } from "lucide-react"
 import { useBooking } from "@/components/booking-context"
 
-export function GuestSelector({ onChange }: { onChange?: (guests: { adults: number; children: number; rooms: number }) => void }) {
+export function GuestSelector({ 
+  setGuestCount,
+  onChange,
+  initialAdults,
+  initialChildren,
+  initialRooms,
+  useContextValues = true
+}: { 
+  setGuestCount?: (guests: { adults: number; children: number; rooms: number }) => void;
+  onChange?: (guests: { adults: number; children: number; rooms: number }) => void;
+  initialAdults?: number;
+  initialChildren?: number;
+  initialRooms?: number;
+  useContextValues?: boolean;
+}) {
   const { bookingDetails, updateBookingDetails } = useBooking()
-  if (!bookingDetails) return null;
   const [open, setOpen] = useState(false)
+  
+  // Local state for when not using context values
+  const [localAdults, setLocalAdults] = useState(initialAdults ?? 2)
+  const [localChildren, setLocalChildren] = useState(initialChildren ?? 0)
+  const [localRooms, setLocalRooms] = useState(initialRooms ?? 1)
+
+  useEffect(() => {
+    // Update local state when props change
+    if (initialAdults !== undefined) setLocalAdults(initialAdults)
+    if (initialChildren !== undefined) setLocalChildren(initialChildren)
+    if (initialRooms !== undefined) setLocalRooms(initialRooms)
+  }, [initialAdults, initialChildren, initialRooms])
 
   useEffect(() => {
     if (
+      useContextValues &&
       bookingDetails.adults == null &&
       bookingDetails.children == null &&
       bookingDetails.rooms == null
     ) {
-      updateBookingDetails({ adults: 2, children: 0, rooms: 1 });
+      updateBookingDetails({ adults: initialAdults ?? 2, children: initialChildren ?? 0, rooms: initialRooms ?? 1 });
     }
-  }, []);
+  }, [useContextValues]);
 
-  const { adults = 2, children = 0, rooms = 1 } = bookingDetails;
+  // Use either context values or local state based on useContextValues prop
+  const adults = useContextValues 
+    ? (bookingDetails.adults != null ? bookingDetails.adults : 2)
+    : localAdults;
+  const children = useContextValues 
+    ? (bookingDetails.children != null ? bookingDetails.children : 0)
+    : localChildren;
+  const rooms = useContextValues 
+    ? (bookingDetails.rooms != null ? bookingDetails.rooms : 1)
+    : localRooms;
 
   const handleAdultChange = (change: number) => {
     const newValue = Math.max(1, Math.min(10, adults + change))
-    updateBookingDetails({ adults: newValue })
+    
+    if (useContextValues) {
+      updateBookingDetails({ adults: newValue })
+    } else {
+      setLocalAdults(newValue)
+    }
+    
     onChange?.({ adults: newValue, children, rooms })
   }
 
   const handleChildrenChange = (change: number) => {
     const newValue = Math.max(0, Math.min(6, children + change))
-    updateBookingDetails({ children: newValue })
+    
+    if (useContextValues) {
+      updateBookingDetails({ children: newValue })
+    } else {
+      setLocalChildren(newValue)
+    }
+    
     onChange?.({ adults, children: newValue, rooms })
   }
 
   const totalGuests = adults + children
 
+  // Update the guest count with the latest values whenever they change
+  useEffect(() => {
+    setGuestCount({ adults, children, rooms });
+    
+    // If using context, ensure the context is updated
+    if (useContextValues) {
+      updateBookingDetails({ 
+        adults, 
+        children, 
+        rooms 
+      });
+    }
+  }, [adults, children, rooms, setGuestCount, useContextValues]);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -127,7 +187,11 @@ export function GuestSelector({ onChange }: { onChange?: (guests: { adults: numb
                 className="h-8 w-8"
                 onClick={() => {
                   const newRooms = Math.max(1, rooms - 1);
-                  updateBookingDetails({ rooms: newRooms });
+                  if (useContextValues) {
+                    updateBookingDetails({ rooms: newRooms });
+                  } else {
+                    setLocalRooms(newRooms);
+                  }
                   onChange?.({ adults, children, rooms: newRooms });
                 }}
                 disabled={rooms <= 1}
@@ -142,7 +206,11 @@ export function GuestSelector({ onChange }: { onChange?: (guests: { adults: numb
                 className="h-8 w-8"
                 onClick={() => {
                   const newRooms = Math.min(10, rooms + 1);
-                  updateBookingDetails({ rooms: newRooms });
+                  if (useContextValues) {
+                    updateBookingDetails({ rooms: newRooms });
+                  } else {
+                    setLocalRooms(newRooms);
+                  }
                   onChange?.({ adults, children, rooms: newRooms });
                 }}
               >

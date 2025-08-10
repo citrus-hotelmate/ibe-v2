@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link"
+import Link from "next/link";
 import FeaturedAccommodationCard from "@/components/featuredAccommodationCard";
 import Navbar from "@/components/navbar";
 import { getHotelRoomFeaturesByHotelId } from "@/controllers/hotelRoomFeatureController";
@@ -16,11 +16,13 @@ import { getAllHotels } from "@/controllers/ibeController";
 import { ArrowRight, ArrowUpRight, Star, StarHalf } from "lucide-react";
 import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
-import PropertyPage from "@/components/propertyPage";
-
+import PropertyPage from "@/components/property-component";
 
 const slugify = (name: string) =>
-  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 
 export default function LandingPage() {
   const params = useParams();
@@ -32,7 +34,9 @@ export default function LandingPage() {
   const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
   const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
   // Track window width for responsive grid calculations
-  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== "undefined" ? window.innerWidth : 0);
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== "undefined" ? window.innerWidth : 0
+  );
   // Listen to window resize for grid calculations
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -48,7 +52,7 @@ export default function LandingPage() {
       try {
         setIsLoading(true);
         const allHotels = await getAllHotels({
-          token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || '',
+          token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || "",
         });
 
         const matchedHotel = allHotels.find(
@@ -57,7 +61,7 @@ export default function LandingPage() {
 
         if (matchedHotel) {
           setHotelData([matchedHotel]);
-          localStorage.setItem('hotelData', JSON.stringify(matchedHotel));
+          localStorage.setItem("hotelData", JSON.stringify(matchedHotel));
         }
       } catch (error) {
         console.error("Error fetching hotel by slug:", error);
@@ -71,24 +75,21 @@ export default function LandingPage() {
     }
   }, [slug]);
 
-  console.log('hotel hotelDate', hotelData)
-
   // Fetch room features and images
   useEffect(() => {
     const fetchRoomFeatures = async () => {
       try {
-        const storedHotelData = localStorage.getItem('hotelData');
+        const storedHotelData = localStorage.getItem("hotelData");
         if (!storedHotelData) return;
 
         const parsedHotel = JSON.parse(storedHotelData);
         const hotelId = parsedHotel?.hotelID;
-        console.log("Fetching room features for hotel ID:", hotelId);
 
         if (!hotelId) return;
 
-        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || '';
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
         const data = await getHotelRoomFeaturesByHotelId(hotelId, token);
-        console.log("Fetched room features:", data);
+
         setRoomFeatures(data);
 
         // Process the data to create featured rooms
@@ -98,7 +99,8 @@ export default function LandingPage() {
           const roomTypeId = feature.hotelRoomTypeID;
 
           if (!roomMap.has(roomTypeId)) {
-            const mainImage = feature.hotelRoomTypeImage?.find(img => img.isMain) ||
+            const mainImage =
+              feature.hotelRoomTypeImage?.find((img) => img.isMain) ||
               feature.hotelRoomTypeImage?.[0];
 
             roomMap.set(roomTypeId, {
@@ -109,7 +111,10 @@ export default function LandingPage() {
               totalRooms: feature.hotelRoomType.noOfRooms,
               image: mainImage?.imageURL || mainImage?.base64Image,
               features: [],
-              price: generateMockPrice(feature.hotelRoomType.roomType, feature.hotelRoomType.adultSpace),
+              price: generateMockPrice(
+                feature.hotelRoomType.roomType,
+                feature.hotelRoomType.adultSpace
+              ),
               rating: generateMockRating(),
             });
           }
@@ -118,7 +123,6 @@ export default function LandingPage() {
         // Remove allowedRoomTypeIds filter to display all rooms
         const filteredRooms = Array.from(roomMap.values());
 
-        console.log("Filtered rooms:", filteredRooms);
         setFeaturedRooms(filteredRooms);
       } catch (err) {
         console.error("Error fetching room features:", err);
@@ -128,14 +132,16 @@ export default function LandingPage() {
     fetchRoomFeatures();
   }, []);
 
-  console.log("Featured Rooms:", featuredRooms);
-
   // Helper function to generate mock prices based on room type
   const generateMockPrice = (roomType: string, adultSpace: number): number => {
     const basePrice = 150;
-    const typeMultiplier = roomType.toLowerCase().includes('suite') ? 1.8 :
-      roomType.toLowerCase().includes('deluxe') ? 1.5 :
-        roomType.toLowerCase().includes('premium') ? 1.3 : 1.0;
+    const typeMultiplier = roomType.toLowerCase().includes("suite")
+      ? 1.8
+      : roomType.toLowerCase().includes("deluxe")
+      ? 1.5
+      : roomType.toLowerCase().includes("premium")
+      ? 1.3
+      : 1.0;
     const capacityMultiplier = adultSpace > 2 ? 1.2 : 1.0;
     return Math.round(basePrice * typeMultiplier * capacityMultiplier);
   };
@@ -152,26 +158,32 @@ export default function LandingPage() {
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={i} className="h-4 w-4 fill-current text-primary" />);
+      stars.push(
+        <Star key={i} className="h-4 w-4 fill-current text-primary" />
+      );
     }
 
     if (hasHalfStar) {
-      stars.push(<StarHalf key="half" className="h-4 w-4 fill-current text-primary" />);
+      stars.push(
+        <StarHalf key="half" className="h-4 w-4 fill-current text-primary" />
+      );
     }
 
     const remainingStars = 5 - Math.ceil(rating);
     for (let i = 0; i < remainingStars; i++) {
-      stars.push(<Star key={`empty-${i}`} className="h-4 w-4 text-muted-foreground" />);
+      stars.push(
+        <Star key={`empty-${i}`} className="h-4 w-4 text-muted-foreground" />
+      );
     }
 
     return stars;
   };
 
-
   // Get hotel name with fallback
   const getHotelName = () => {
     if (isLoading) return "Loading...";
-    if (!hotelData || !Array.isArray(hotelData)) return "Hotel Name Unavailable";
+    if (!hotelData || !Array.isArray(hotelData))
+      return "Hotel Name Unavailable";
     return hotelData[0]?.hotelName || "Hotel Name Unavailable";
   };
 
@@ -180,14 +192,17 @@ export default function LandingPage() {
     <h3 className="text-2xl font-bold font-urbanist">{name}</h3>
   );
 
-  const HotelDescriptionDisplay = ({ description }: { description: string }) => (
-    <p className="text-base font-urbanist mt-1">{description}</p>
-  );
-
-  console.log("Hotel Name wwwwwwwwwww:", getHotelName());
+  const HotelDescriptionDisplay = ({
+    description,
+  }: {
+    description: string;
+  }) => <p className="text-base font-urbanist mt-1">{description}</p>;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#e2e0df" }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: "#e2e0df" }}
+    >
       {/* <Navbar /> */}
       {/* Logo - stays at the top-left */}
       <div className="absolute left-4 sm:left-8 lg:left-12 top-4 sm:top-8 lg:top-12 flex items-center z-30">
@@ -205,9 +220,7 @@ export default function LandingPage() {
       <div className="relative z-20 text-center mt-6 sm:mt-8 md:mt-10 px-4">
         <h1 className="font-urbanist text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[80px] 2xl:text-[100px] tracking-tight leading-tight relative inline-block notranslate">
           {/* Unblurred main text */}
-          <span className="relative z-10 block">
-            {getHotelName()}
-          </span>
+          <span className="relative z-10 block">{getHotelName()}</span>
           {/* Blurred overlay showing only bottom 25% */}
           <span className="absolute inset-0 z-20 blur-overlay pointer-events-none">
             {getHotelName()}
@@ -217,7 +230,6 @@ export default function LandingPage() {
 
       {/* Hero + SearchBar Wrapper */}
       <div className="relative w-full flex flex-col items-center">
-
         {/* Hero Section */}
         {(() => {
           // Carousel images
@@ -226,7 +238,7 @@ export default function LandingPage() {
             "/rooms/hotel-room.jpg",
             "/rooms/khanh-do-bvN15iQgqog-unsplash.jpg",
             "/rooms/yosuke-ota-0R1GMsc2E7w-unsplash.jpg",
-            "/rooms/yu-yi-tsai-UX_Pn1L2FkQ-unsplash.jpg"
+            "/rooms/yu-yi-tsai-UX_Pn1L2FkQ-unsplash.jpg",
           ];
           const [currentIndex, setCurrentIndex] = useState(0);
           const scrollRefLocal = useRef<HTMLDivElement>(null);
@@ -234,11 +246,13 @@ export default function LandingPage() {
             setCurrentIndex((prev) => (prev + 1) % images.length);
           };
           return (
-            <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] max-w-[98rem] w-full mx-auto mt-[-20px] sm:mt-[-25px] md:mt-[-22px] mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl md:rounded-[3rem] overflow-hidden z-15 group">
+            <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] max-w-[98rem] w-full mx-auto mt-[-10px] sm:mt-[-25px] md:mt-[-22px] mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl md:rounded-[3rem] overflow-hidden z-15 group">
               <div
                 ref={scrollRefLocal}
                 className="flex h-full w-full transition-transform duration-500"
-                style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                style={{
+                  transform: `translateX(-${currentIndex * 100}%)`,
+                }}
               >
                 {images.map((img, index) => (
                   <div key={index} className="flex-shrink-0 w-full h-full">
@@ -247,7 +261,7 @@ export default function LandingPage() {
                       alt={`Hotel Image ${index + 1}`}
                       width={1600}
                       height={700}
-                      className="object-cover w-full h-full"  
+                      className="object-cover w-full h-full"
                       priority={index === 0}
                     />
                   </div>
@@ -276,11 +290,10 @@ export default function LandingPage() {
         <div className="absolute -bottom-[4px] sm:-bottom-[7px] w-full max-w-5xl px-2 sm:px-4 z-40 drop-shadow-xl">
           <RoomSearchBar
             onSearch={(destination, hotelName) => {
-              console.log('Search triggered with:', destination, hotelName);
+              console.log("Search triggered with:", destination, hotelName);
             }}
           />
         </div>
-
       </div>
 
       {/* Featured Accommodations */}
@@ -292,8 +305,11 @@ export default function LandingPage() {
             </h2>
           </div>
           {featuredRooms.length > 0 && (
-            <div className="w-full overflow-x-auto pb-4 md:overflow-hidden">
-              <div className="flex gap-4 sm:gap-6 w-max md:w-full md:justify-center">
+            <div className="w-full overflow-x-auto md:overflow-visible scrollbar-hide">
+              <div
+                className="flex gap-4 sm:gap-4 overflow-x-auto md:overflow-visible px-4 md:px-6 pb-2 w-full md:grid md:grid-flow-col md:auto-cols-max md:justify-start lg:justify-center scrollbar-hide"
+                style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+              >
                 {featuredRooms.map((room) => (
                   <div key={room.id} className="w-[252px] flex-shrink-0">
                     <FeaturedAccommodationCard room={room} />
@@ -303,8 +319,16 @@ export default function LandingPage() {
                 {/* Orange Card - maintaining same width on all devices */}
                 <div className="w-[252px] md:flex-grow md:min-w-[252px] rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 flex-shrink-0">
                   <div className="self-start">
-                    <h3 className="text-xl lg:text-2xl font-bold font-urbanist">{getHotelName()}</h3>
-                    <div className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-20 lg:max-h-32 pr-1">
+                    <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
+                      {getHotelName()}
+                    </h3>
+                    <div
+                      className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-60 lg:max-h-62 pr-1 scrollbar-hide"
+                      style={{
+                        msOverflowStyle: "none",
+                        scrollbarWidth: "none",
+                      }}
+                    >
                       {hotelData[0]?.hotelDesc || "Your perfect stay awaits"}
                     </div>
                   </div>

@@ -138,7 +138,6 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     fetchHotels();
   }, []);
 
-  console.log('All Hotels:', allHotels); // Debug log
   // Debug log
 
   // Generate destination suggestions
@@ -521,13 +520,14 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         )}
       </div>
       {/* Search Button */}
-     <button
-  onClick={handleSearch}
-  className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white sm:p-4 
-             rounded-2xl w-full sm:w-auto mr-[5px]"
->
-  <Search className="w-4 sm:w-5 h-4 sm:h-5" />
-</button>
+    <button
+      onClick={handleSearch}
+      className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-2 sm:p-4 
+                 rounded-2xl w-full sm:w-auto mr-[5px] flex items-center justify-center gap-2"
+    >
+      <Search className="w-4 sm:w-5 h-4 sm:h-5" />
+      <span className="block sm:hidden">Search</span>
+    </button>
     </div>
   );
 }

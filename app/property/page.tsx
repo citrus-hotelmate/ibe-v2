@@ -179,7 +179,7 @@ export default function PropertyPage() {
         try {
           const res = await fetch(`${API_BASE_URL}/api/GetPromoCodes.aspx`);
           const data = await res.json();
-          console.log("Fetched promo data:", data);
+        
           setAllPromos(data);
 
           // Centralized promotion matching logic via matchPromoCode helper
@@ -398,21 +398,7 @@ export default function PropertyPage() {
 
               const rate = baseRate + (childRate > 0 ? childRate * applicableChildren : 0);
 
-              // Log the parsed rate fields for debugging
-              console.log("Parsed Room Rate:", {
-                id: room.roomtypeid,
-                singlerate: parseRate(room.singlerate),
-                doublerate: parseRate(room.doublerate),
-                triplerate: parseRate(room.triplerate),
-                qdplrate: parseRate(room.qdplrate),
-                familyerate: parseRate(room.familyerate),
-                childrate: parseRate(room.childrate),
-                exadultrate: parseRate(room.exadultrate),
-                discount: parseRate(room.discount),
-                childagelower: parseRate(room.childagelower),
-                childagehigher: parseRate(room.childagehigher),
-                mealplan: room.mealplan,
-              });
+        
 
               return {
                 id: room.roomtypeid,

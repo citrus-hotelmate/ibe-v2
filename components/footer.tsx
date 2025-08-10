@@ -65,7 +65,6 @@ export function Footer({ hotelName }: { hotelName?: string }) {
   }, [hotelCodeFromParams, hotelName, hotelDataVersion]);
 // Debug log
 
-  console.log("Footer contact info:", contact); // Debug log
 
   useEffect(() => {
     const handleStorageChange = () => {
