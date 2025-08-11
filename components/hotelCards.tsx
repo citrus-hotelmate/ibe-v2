@@ -7,6 +7,7 @@ interface hotelCardProps {
   image: string;
   rating: number;
   price: number;
+  hotelType?: string;
   onClick?: () => void;
 }
 
@@ -79,19 +80,21 @@ const HotelDetails = ({
   location,
   rating,
   price,
+  hotelType,
 }: {
   title: string;
   location: string;
   rating: number;
   price: number;
+  hotelType?: string;
 }) => {
   const renderStars = () => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
         key={index}
         className={`w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ${index < rating
-            ? "fill-[#ff9100] text-[#ff9100]"
-            : "fill-none text-muted-foreground"
+          ? "fill-[#ff9100] text-[#ff9100]"
+          : "fill-none text-muted-foreground"
           }`}
       />
     ));
@@ -107,6 +110,11 @@ const HotelDetails = ({
     >
       <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 font-urbanist notranslate line-clamp-2">
         {title}
+        {hotelType && (
+          <span className="font-semibold text-black ml-1">
+            - {hotelType}
+          </span>
+        )}
       </h3>
       <div className="flex items-center gap-1 mb-0">
         <MapPin className="w-4 sm:w-5 md:w-7 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
@@ -135,6 +143,7 @@ const hotelCard = ({
   image,
   rating,
   price,
+  hotelType,
   onClick,
 }: hotelCardProps) => {
   const hotel = { title, location, image, rating, price };
@@ -156,6 +165,7 @@ const hotelCard = ({
         location={location}
         rating={rating}
         price={price}
+        hotelType={hotelType}
       />
     </div>
   );

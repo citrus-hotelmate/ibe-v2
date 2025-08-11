@@ -10,46 +10,9 @@ import { useCurrency } from "@/components/currency-context";
 import { CurrencySelector } from "@/components/currency-selector";
 import { getAllHotels } from "@/controllers/ibeController";
 import HotelCard from "@/components/hotelCards";
-import { Hotel } from "lucide-react";
+import { Hotel as HotelIcon } from "lucide-react";
 import { useRef } from "react";
-
-interface Hotel {
-  hotelID: number;
-  hotelGUID: string;
-  finAct: boolean;
-  hotelName: string;
-  hotelCode: number;
-  userGUID_HotelOwner: string;
-  hotelType: string;
-  hotelAddress: string;
-  city: string;
-  zipCode: string;
-  country: string;
-  hotelPhone: string;
-  hotelEmail: string;
-  hotelWeb: string;
-  noOfRooms: number;
-  latitude: string;
-  longitude: string;
-  currencyCode: string;
-  languageCode: string;
-  createdOn: string;
-  createdTimeStamp: string;
-  lastUpdatedOn: string | null;
-  lastUpdatedTimeStamp: string | null;
-  lastUpdatedBy_UserGUID: string;
-  starCatgeory: number;
-  cM_PropertyID: string;
-  isCMActive: boolean;
-  hotelDate: string;
-  isOnTrial: null;
-  planId: null;
-  lowestRate: number;
-  hotelImage?: {
-    imageFileName?: string;
-    isMain?: boolean;
-  };
-}
+import { Hotel } from "@/types/ibe";
 
 interface PropertyListing {
   id: number;
@@ -69,7 +32,8 @@ interface PropertyListing {
 interface SearchParams {
   destination: string;
   hotelName: string;
-  searchType: "destinations" | "hotel name" | "both" | "none";
+  hotelType: string;
+  searchType: "destinations" | "hotel name" | "both" | "none" | "all" | "destination-type" | "hotel-type" | "hotel type";
 }
 
 const slugify = (name: string) =>
@@ -155,6 +119,7 @@ function PropertyListings({
                 image={property.image}
                 rating={property.rating}
                 price={property.lowestRate}
+                hotelType={property.hotelType}
                 onClick={() => onHotelClick(property.slug)}
               />
             </div>
@@ -178,6 +143,7 @@ export default function Home() {
   const [searchParams, setSearchParams] = useState<SearchParams>({
     destination: "",
     hotelName: "",
+    hotelType: "",
     searchType: "none",
   });
 
@@ -193,7 +159,7 @@ export default function Home() {
         });
         setAllHotels(hotels);
         // initial: no destination => group by city (current behavior)
-        groupAndSet(hotels, "", "");
+        groupAndSet(hotels, "", "", "");
       } catch (error) {
         console.error(error);
       } finally {
@@ -207,28 +173,32 @@ export default function Home() {
   const filterHotels = (hotels: Hotel[], params: SearchParams): Hotel[] => {
     const city = params.destination.toLowerCase().trim();
     const hotelName = params.hotelName.toLowerCase().trim();
+    const hotelType = params.hotelType.toLowerCase().trim();
 
     return hotels.filter((hotel) => {
       const hotelCity = (hotel.city || "").toLowerCase().trim();
       const hotelNameLower = (hotel.hotelName || "").toLowerCase();
+      const hotelTypeLower = (hotel.hotelType || "").toLowerCase();
 
-      // City only → startsWith for friendlier UX
-      if (city && !hotelName) {
-        return hotelCity.startsWith(city);
+      // Apply individual filters
+      let matches = true;
+
+      // City filter
+      if (city) {
+        matches = matches && hotelCity.startsWith(city);
       }
 
-      // Hotel only
-      if (!city && hotelName) {
-        return hotelNameLower.includes(hotelName);
+      // Hotel name filter
+      if (hotelName) {
+        matches = matches && hotelNameLower.includes(hotelName);
       }
 
-      // Both city and hotel
-      if (city && hotelName) {
-        return hotelCity.startsWith(city) && hotelNameLower.includes(hotelName);
+      // Hotel type filter
+      if (hotelType) {
+        matches = matches && hotelTypeLower.includes(hotelType);
       }
 
-      // Nothing entered
-      return true;
+      return matches;
     });
   };
 
@@ -256,10 +226,11 @@ export default function Home() {
    *  - If a destination (city) is provided → group by hotelType with section titles like "Hotels in Colombo"
    *  - Otherwise → group by City (current behavior)
    */
-  const groupAndSet = (hotels: Hotel[], city: string, hotelName: string) => {
+  const groupAndSet = (hotels: Hotel[], city: string, hotelName: string, hotelType: string = '') => {
     const filtered = filterHotels(hotels, {
       destination: city,
       hotelName,
+      hotelType,
       searchType: "none",
     });
 
@@ -267,15 +238,30 @@ export default function Home() {
 
     const grouped: { [sectionTitle: string]: PropertyListing[] } = {};
     const hasCity = !!city.trim();
+    const hasHotelType = !!hotelType.trim();
 
     if (hasCity) {
       const prettyCity = titleCase(city);
+      if (hasHotelType) {
+        // If both city and hotel type are specified, group by hotel type in that city
+        const sectionTitle = `${hotelType}s in ${prettyCity}`;
+        grouped[sectionTitle] = transformed;
+      } else {
+        // Group by different hotel types in the city
+        transformed.forEach((prop) => {
+          const type = prop.hotelType || "Other";
+          const plural =
+            type.toLowerCase().endsWith("s") ? type : `${type}s`; // e.g., Villa -> Villas
+          const sectionTitle = `${plural} in ${prettyCity}`;
+          if (!grouped[sectionTitle]) grouped[sectionTitle] = [];
+          grouped[sectionTitle].push(prop);
+        });
+      }
+    } else if (hasHotelType) {
+      // If only hotel type is specified, group by cities with that hotel type
       transformed.forEach((prop) => {
-        // Normalize type to pluralized section labels
-        const type = prop.hotelType || "Other";
-        const plural =
-          type.toLowerCase().endsWith("s") ? type : `${type}s`; // e.g., Villa -> Villas
-        const sectionTitle = `${plural} in ${prettyCity}`;
+        const cityKey = prop.location || "Unknown";
+        const sectionTitle = `${hotelType}s in ${cityKey}`;
         if (!grouped[sectionTitle]) grouped[sectionTitle] = [];
         grouped[sectionTitle].push(prop);
       });
@@ -292,19 +278,28 @@ export default function Home() {
   };
 
   /** Called by SearchBar */
-  const handleSearch = (city: string, hotel: string) => {
-    groupAndSet(allHotels, city, hotel);
+  const handleSearch = (city: string, hotel: string, hotelType: string = '') => {
+    groupAndSet(allHotels, city, hotel, hotelType);
     setSearchParams({
       destination: city,
       hotelName: hotel,
+      hotelType,
       searchType:
-        city && hotel
-          ? "both"
-          : city
-          ? "destinations"
-          : hotel
-          ? "hotel name"
-          : "none",
+        city && hotel && hotelType
+          ? "all"
+          : city && hotel
+            ? "both"
+            : city && hotelType
+              ? "destination-type"
+              : hotel && hotelType
+                ? "hotel-type"
+                : city
+                  ? "destinations"
+                  : hotel
+                    ? "hotel name"
+                    : hotelType
+                      ? "hotel type"
+                      : "none",
     });
   };
 
@@ -333,8 +328,8 @@ export default function Home() {
               {searchParams.hotelName && !searchParams.destination
                 ? "No hotels found matching your search."
                 : searchParams.destination && !searchParams.hotelName
-                ? "No destination found matching your search."
-                : "No hotels or destinations found matching your search."}
+                  ? "No destination found matching your search."
+                  : "No hotels or destinations found matching your search."}
             </div>
           </div>
         ) : (

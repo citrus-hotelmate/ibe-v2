@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, Building2, X, Users } from 'lucide-react';
+import { Search, MapPin, Building2, X, Users, Hotel as HotelIcon } from 'lucide-react';
 import { getAllHotels } from '@/controllers/ibeController';
 import { HotelResponse } from '@/types/admin';
 
@@ -42,12 +42,15 @@ interface Hotel {
 interface Suggestion {
   id: string;
   text: string;
-  type: 'hotel' | 'destination';
+  type: 'hotel' | 'destination' | 'hotelType'; // ⬅️ add 'hotelType'
   icon: React.ReactNode;
 }
-
 interface SearchBarProps {
-  onSearch?: (destinationInput: string, hotelNameInput: string) => void;
+  onSearch?: (
+    destinationInput: string,
+    hotelNameInput: string,
+    hotelTypeInput: string
+  ) => void;
 }
 
 
@@ -83,28 +86,54 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   const destinationInputRef = useRef<HTMLInputElement>(null);
   const hotelInputRef = useRef<HTMLInputElement>(null);
 
+  const [hotelTypeInput, setHotelTypeInput] = useState('');
+  const [hotelTypeSuggestions, setHotelTypeSuggestions] = useState<Suggestion[]>([]);
+  const [showHotelTypeSuggestions, setShowHotelTypeSuggestions] = useState(false);
+  const [selectedHotelTypeIndex, setSelectedHotelTypeIndex] = useState(-1);
+  const hotelTypeRef = useRef<HTMLDivElement>(null);
+  const hotelTypeInputRef = useRef<HTMLInputElement>(null);
+
+
   const [showGuestDropdown, setShowGuestDropdown] = useState(false);
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(1);
 
 
+  const getUniqueHotelTypes = (): string[] => {
+    const types = allHotels
+      .map(hotel => hotel.hotelType?.trim())
+      .filter((type): type is string => !!type);
+    return Array.from(new Set(types)).sort((a, b) => a.localeCompare(b));
+  };
 
+  const uniqueHotelTypes = getUniqueHotelTypes();
 
-  // Debounced values to prevent too many calls
   const debouncedCity = useDebounce(destinationInput, 300);
   const debouncedHotel = useDebounce(hotelNameInput, 300);
+  const debouncedType = useDebounce(hotelTypeInput, 300);
 
-  // Call onSearch whenever inputs change
   useEffect(() => {
-    onSearch?.(debouncedCity.trim(), debouncedHotel.trim());
-  }, [debouncedCity, debouncedHotel]);
+    onSearch?.(
+      debouncedCity.trim(),
+      debouncedHotel.trim(),
+      debouncedType.trim()
+    );
+  }, [debouncedCity, debouncedHotel, debouncedType]);
 
   // Extract unique destinations as objects with city and country
   const getUniqueDestinations = (): { city: string; country: string }[] => {
     const destinations: { city: string; country: string }[] = [];
 
-    hotels.forEach(hotel => {
+    // Filter hotels by hotel type if specified
+    let filteredHotels = allHotels;
+    if (hotelTypeInput.trim()) {
+      filteredHotels = allHotels.filter(
+        h => h.hotelType?.toLowerCase() === hotelTypeInput.toLowerCase()
+      );
+    }
+
+    filteredHotels.forEach(hotel => {
       if (hotel.city && hotel.city.trim()) {
         destinations.push({
           city: hotel.city.trim(),
@@ -176,40 +205,45 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     setDestinationSuggestions(matchingDestinations);
     setShowDestinationSuggestions(matchingDestinations.length > 0);
     setSelectedDestinationIndex(-1);
-  }, [destinationInput, hotels]);
+  }, [destinationInput, allHotels, hotelTypeInput]);
 
   // Generate hotel suggestions
   useEffect(() => {
+    // Start with all hotels and apply filters
+    let pool = allHotels;
+
+    // filter by city (if any)
+    if (destinationInput.trim()) {
+      pool = pool.filter(h => h.city?.toLowerCase() === destinationInput.toLowerCase());
+    }
+
+    // filter by hotel type (if any)
+    if (hotelTypeInput.trim()) {
+      pool = pool.filter(
+        h => h.hotelType?.toLowerCase() === hotelTypeInput.toLowerCase()
+      );
+    }
+
     if (!hotelNameInput.trim()) {
-      const defaultHotelSuggestions = allHotels
-        .slice(0, 5)
-        .map(hotel => ({
-          id: `default-hotel-${hotel.hotelID}`,
-          text: hotel.hotelName,
-          type: 'hotel' as const,
-          icon: <Building2 className="w-4 h-4 text-gray-500" />
-        }));
+      const defaultHotelSuggestions = pool.slice(0, 5).map(hotel => ({
+        id: `default-hotel-${hotel.hotelID}`,
+        text: hotel.hotelName,
+        type: 'hotel' as const,
+        icon: <Building2 className="w-4 h-4 text-gray-500" />
+      }));
       setHotelSuggestions(defaultHotelSuggestions);
       setSelectedHotelIndex(-1);
-      // Do not auto-open dropdown
       return;
     }
 
     const input = hotelNameInput.toLowerCase().trim();
-    const cityFilteredHotels = destinationInput
-      ? allHotels.filter(hotel =>
-          hotel.city?.toLowerCase() === destinationInput.toLowerCase()
-        )
-      : allHotels;
 
-    const filteredSuggestions = cityFilteredHotels
-      .filter(hotel =>
-        hotel.hotelName.toLowerCase().startsWith(input)
-      )
+    const filteredSuggestions = pool
+      .filter(h => h.hotelName.toLowerCase().startsWith(input))
       .slice(0, 8)
-      .map(hotel => ({
-        id: `hotel-${hotel.hotelID}`,
-        text: hotel.hotelName,
+      .map(h => ({
+        id: `hotel-${h.hotelID}`,
+        text: h.hotelName,
         type: 'hotel' as const,
         icon: <Building2 className="w-4 h-4 text-gray-500" />
       }));
@@ -217,7 +251,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     setHotelSuggestions(filteredSuggestions);
     setShowHotelSuggestions(filteredSuggestions.length > 0);
     setSelectedHotelIndex(-1);
-  }, [hotelNameInput, allHotels, destinationInput]);
+  }, [hotelNameInput, allHotels, destinationInput, hotelTypeInput]);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -228,9 +262,12 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       if (hotelRef.current && !hotelRef.current.contains(event.target as Node)) {
         setShowHotelSuggestions(false);
       }
+      if (hotelTypeRef.current && !hotelTypeRef.current.contains(event.target as Node)) {
+        setShowHotelTypeSuggestions(false);  // ⬅️ add this
+      }
       if (
         !event.target ||
-        !(event.target instanceof Node) ||
+        !(event.target instanceof Element) ||
         (event.target && !event.target.closest('.guest-dropdown') && !event.target.closest('.guest-dropdown-toggle'))
       ) {
         setShowGuestDropdown(false);
@@ -240,6 +277,48 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    // Filter hotels by destination if specified
+    let filteredHotels = allHotels;
+    if (destinationInput.trim()) {
+      filteredHotels = allHotels.filter(h => h.city?.toLowerCase() === destinationInput.toLowerCase());
+    }
+
+    const types = Array.from(
+      new Set(filteredHotels.map(h => h.hotelType?.trim()).filter(Boolean))
+    ).sort();
+
+    if (!hotelTypeInput.trim()) {
+      setHotelTypeSuggestions(
+        types.slice(0, 5).map((type, idx) => ({
+          id: `default-type-${idx}`,
+          text: type,
+          type: 'hotelType' as const,
+          icon: <HotelIcon className="w-4 h-4 text-gray-500" />
+        }))
+      );
+      setSelectedHotelTypeIndex(-1);
+      return;
+    }
+
+    const input = hotelTypeInput.toLowerCase().trim();
+    const filtered = types
+      .filter(t => t.toLowerCase().startsWith(input))
+      .slice(0, 8)
+      .map((t, idx) => ({
+        id: `type-${idx}`,
+        text: t,
+        type: 'hotelType' as const,
+        icon: <HotelIcon className="w-4 h-4 text-gray-500" />
+      }));
+
+    setHotelTypeSuggestions(filtered);
+    setShowHotelTypeSuggestions(filtered.length > 0);
+    setSelectedHotelTypeIndex(-1);
+  }, [allHotels, hotelTypeInput, destinationInput]);
+
+
 
   // Handle keyboard navigation for destination input
   const handleDestinationKeyDown = (e: React.KeyboardEvent) => {
@@ -301,6 +380,35 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     }
   };
 
+  const handleHotelTypeKeyDown = (e: React.KeyboardEvent) => {
+    if (!showHotelTypeSuggestions) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedHotelTypeIndex(prev =>
+          prev < hotelTypeSuggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedHotelTypeIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedHotelTypeIndex >= 0) {
+          handleHotelTypeSuggestionSelect(hotelTypeSuggestions[selectedHotelTypeIndex]);
+        } else {
+          handleSearch();
+        }
+        break;
+      case 'Escape':
+        setShowHotelTypeSuggestions(false);
+        setSelectedHotelTypeIndex(-1);
+        break;
+    }
+  };
+
   const handleDestinationSuggestionSelect = (suggestion: Suggestion) => {
     // Extract city (text before the comma)
     const cityOnly = suggestion.text.split(',')[0].trim();
@@ -338,21 +446,21 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     }, 50);
 
     // Trigger search with combined input
-    onSearch?.(destinationInput, suggestion.text);
+    onSearch?.(destinationInput, suggestion.text, hotelTypeInput);
   };
 
   const handleSearch = () => {
     const city = destinationInput.trim();
     const hotel = hotelNameInput.trim();
+    const type = hotelTypeInput.trim();
 
-    // Only trigger search if at least one field is filled
-    if (city || hotel) {
-      onSearch?.(city, hotel);
+    if (city || hotel || type) {
+      onSearch?.(city, hotel, type);
     }
 
-    // Hide suggestions
     setShowDestinationSuggestions(false);
     setShowHotelSuggestions(false);
+    setShowHotelTypeSuggestions(false);
   };
 
   const clearDestination = () => {
@@ -377,8 +485,20 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     setHotels(allHotels);
   };
 
+  const handleHotelTypeSuggestionSelect = (suggestion: Suggestion) => {
+    setHotelTypeInput(suggestion.text);
+
+    setTimeout(() => {
+      setHotelTypeSuggestions([]);
+      setShowHotelTypeSuggestions(false);
+      setSelectedHotelTypeIndex(-1);
+    }, 50);
+
+    onSearch?.(destinationInput, hotelNameInput, suggestion.text);
+  };
+
   return (
-    <div className="max-w-xl mx-auto bg-white/70 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center border border-white/30 overflow-visible relative z-10 gap-2 sm:gap-0 p-2 sm:p-0">
+    <div className="max-w-2xl mx-auto bg-white/70 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center border border-white/30 overflow-visible relative z-10 gap-2 sm:gap-0 p-2 sm:p-0">
       {/* City or Destination */}
       <div className="w-full sm:flex-1 px-2 sm:px-3 py-2 relative" ref={destinationRef}>
         <div className="flex items-center gap-1 sm:gap-2">
@@ -427,9 +547,8 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 {destinationSuggestions.map((suggestion, index) => (
                   <li
                     key={suggestion.id}
-                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${
-                      index === selectedDestinationIndex ? 'bg-[#ff9100]/20' : ''
-                    }`}
+                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${index === selectedDestinationIndex ? 'bg-[#ff9100]/20' : ''
+                      }`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       handleDestinationSuggestionSelect(suggestion);
@@ -446,6 +565,50 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                         </span>
                       )}
                     </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Hotel Type Search */}
+      <div className="w-full sm:flex-1 px-2 sm:px-3 py-2 sm:ml-2 relative" ref={hotelTypeRef}>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <HotelIcon className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist">Hotel Type</div>
+            <input
+              ref={hotelTypeInputRef}
+              type="text"
+              placeholder="Search hotel type"
+              value={hotelTypeInput}
+              onChange={(e) => setHotelTypeInput(e.target.value)}
+              onKeyDown={handleHotelTypeKeyDown}
+              onFocus={() => setShowHotelTypeSuggestions(hotelTypeSuggestions.length > 0)}
+              className="text-gray-900 font-semibold bg-transparent focus:outline-none font-urbanist notranslate w-full text-sm sm:text-base"
+            />
+          </div>
+        </div>
+        {showHotelTypeSuggestions && (
+          <div className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
+            <div>
+              <div className="text-xs font-semibold text-gray-500 mb-2">Suggested types</div>
+              <ul className="space-y-1">
+                {hotelTypeSuggestions.map((suggestion, index) => (
+                  <li
+                    key={suggestion.id}
+                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${index === selectedHotelTypeIndex ? 'bg-[#ff9100]/20' : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleHotelTypeSuggestionSelect(suggestion);
+                    }}
+                  >
+                    {suggestion.icon}
+                    <span className="font-medium text-gray-500 font-urbanist text-sm">
+                      {suggestion.text}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -502,9 +665,8 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 {hotelSuggestions.map((suggestion, index) => (
                   <li
                     key={suggestion.id}
-                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${
-                      index === selectedHotelIndex ? 'bg-[#ff9100]/20' : ''
-                    }`}
+                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${index === selectedHotelIndex ? 'bg-[#ff9100]/20' : ''
+                      }`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       handleHotelSuggestionSelect(suggestion);
@@ -520,14 +682,14 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         )}
       </div>
       {/* Search Button */}
-    <button
-      onClick={handleSearch}
-      className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-2 sm:p-4 
+      <button
+        onClick={handleSearch}
+        className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-2 sm:p-4 
                  rounded-2xl w-full sm:w-auto mr-[5px] flex items-center justify-center gap-2"
-    >
-      <Search className="w-4 sm:w-5 h-4 sm:h-5" />
-      <span className="block sm:hidden">Search</span>
-    </button>
+      >
+        <Search className="w-4 sm:w-5 h-4 sm:h-5" />
+        <span className="block sm:hidden">Search</span>
+      </button>
     </div>
   );
 }
