@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
 import { Hotel } from "@/types/ibe";
 import { getAllHotels } from "@/controllers/ibeController";
-import { ArrowRight, ArrowUpRight, Star, StarHalf } from "lucide-react";
+import { ArrowRight, ArrowUpRight, MapPin, Star, StarHalf } from "lucide-react";
+import HotelMap from "@/components/hotel-map";
 import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
 import PropertyPage from "@/components/property-component";
@@ -90,7 +91,7 @@ export default function LandingPage() {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
         const data = await getHotelRoomFeaturesByHotelId(hotelId, token);
 
-        console.log("hotel room features",data)
+        console.log("hotel room features", data)
 
         setRoomFeatures(data);
 
@@ -140,10 +141,10 @@ export default function LandingPage() {
     const typeMultiplier = roomType.toLowerCase().includes("suite")
       ? 1.8
       : roomType.toLowerCase().includes("deluxe")
-      ? 1.5
-      : roomType.toLowerCase().includes("premium")
-      ? 1.3
-      : 1.0;
+        ? 1.5
+        : roomType.toLowerCase().includes("premium")
+          ? 1.3
+          : 1.0;
     const capacityMultiplier = adultSpace > 2 ? 1.2 : 1.0;
     return Math.round(basePrice * typeMultiplier * capacityMultiplier);
   };
@@ -181,12 +182,24 @@ export default function LandingPage() {
     return stars;
   };
 
+  // Get hotel data from localStorage or fallback to state
+  const getHotelData = () => {
+    try {
+      const storedData = localStorage.getItem("hotelData");
+      if (storedData) {
+        return JSON.parse(storedData);
+      }
+    } catch (error) {
+      console.error("Error reading hotel data from localStorage:", error);
+    }
+    return hotelData[0] || null;
+  };
+
   // Get hotel name with fallback
   const getHotelName = () => {
     if (isLoading) return "Loading...";
-    if (!hotelData || !Array.isArray(hotelData))
-      return "Hotel Name Unavailable";
-    return hotelData[0]?.hotelName || "Hotel Name Unavailable";
+    const hotel = getHotelData();
+    return hotel?.hotelName || "Hotel Name Unavailable";
   };
 
   // Components for orange card
@@ -331,11 +344,32 @@ export default function LandingPage() {
                         scrollbarWidth: "none",
                       }}
                     >
-                      {hotelData[0]?.hotelDesc || "Your perfect stay awaits"}
+                      {getHotelData()?.hotelDesc || "Your perfect stay awaits"}
                     </div>
                   </div>
                   <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
                     <ArrowUpRight className="text-[#ff9100] w-6 h-6 lg:w-7 lg:h-7" />
+                  </div>
+                </div>
+
+                {/* Map Card */}
+                <div className="w-[252px] md:flex-grow md:min-w-[252px] rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 flex-shrink-0">
+                  <div className="h-full relative">
+                    <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-[#4285F4]/90 to-transparent">
+                      <div className="flex items-center mb-1">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        <h3 className="text-lg font-bold font-urbanist">
+                          {getHotelData()?.city || "Location"}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="w-full h-full min-h-[220px]">
+                      <HotelMap
+                        latitude={getHotelData()?.latitude || ""}
+                        longitude={getHotelData()?.longitude || ""}
+                        hotelName={getHotelData()?.hotelName || ""}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

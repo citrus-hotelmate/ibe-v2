@@ -518,7 +518,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
           </div>
         </div>
         {showDestinationSuggestions && (
-          <div className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
+          <div className="absolute z-[110] mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
             {/* Recent Searches */}
             {recentSearches.length > 0 && !destinationInput.trim() && (
               <div>
@@ -592,7 +592,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
           </div>
         </div>
         {showHotelTypeSuggestions && (
-          <div className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
+          <div className="absolute z-[110] mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
             <div>
               <div className="text-xs font-semibold text-gray-500 mb-2">Suggested types</div>
               <ul className="space-y-1">
@@ -636,7 +636,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
           </div>
         </div>
         {showHotelSuggestions && (
-          <div className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
+          <div className="absolute z-[110] mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
             {/* Recent Hotel Searches */}
             {recentHotelSearches.length > 0 && !hotelNameInput.trim() && (
               <div>

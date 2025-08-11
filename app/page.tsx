@@ -148,6 +148,8 @@ export default function Home() {
   });
 
   const [allHotels, setAllHotels] = useState<Hotel[]>([]);
+  const [showStickySearch, setShowStickySearch] = useState(false);
+  const searchBarRef = useRef<HTMLDivElement>(null);
 
   // Fetch all hotels once
   useEffect(() => {
@@ -167,6 +169,28 @@ export default function Home() {
       }
     };
     fetchInitialHotels();
+  }, []);
+
+  // Handle scroll to show/hide sticky search bar
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (searchBarRef.current) {
+            const searchBarBottom = searchBarRef.current.getBoundingClientRect().bottom;
+            setShowStickySearch(searchBarBottom < -20); // Add slight offset for better UX
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   /** Core filter */
@@ -313,8 +337,29 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#e2e0df]">
       <Navbar />
-      <div className="w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
-        <SearchBar onSearch={handleSearch} />
+
+      {/* Sticky Search Bar */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-[100] bg-[#e2e0df]/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-500 ease-out transform ${showStickySearch
+            ? 'translate-y-0 opacity-100 scale-100'
+            : '-translate-y-full opacity-0 scale-95 pointer-events-none'
+          }`}
+        style={{
+          transitionTimingFunction: showStickySearch
+            ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            : 'cubic-bezier(0.55, 0.06, 0.68, 0.19)'
+        }}
+      >
+        <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 transition-all duration-300 ease-out ${showStickySearch ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          }`}>
+          <SearchBar onSearch={handleSearch} />
+        </div>
+      </div>
+
+      <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${showStickySearch ? 'pt-20 sm:pt-24' : ''}`}>
+        <div ref={searchBarRef} className="py-6">
+          <SearchBar onSearch={handleSearch} />
+        </div>
 
         {loading ? (
           <div className="flex justify-center items-center py-10 sm:py-20">

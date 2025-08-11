@@ -111,7 +111,7 @@ const HotelDetails = ({
       <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 font-urbanist notranslate line-clamp-2">
         {title}
         {hotelType && (
-          <span className="font-semibold text-black ml-1">
+          <span className="font-semibold text-[#8f8f73] ml-1 text-xs sm:text-sm md:text-base">
             - {hotelType}
           </span>
         )}
