@@ -53,13 +53,17 @@ interface Hotel {
 
 interface PropertyListing {
   id: number;
+  /** Hotel name */
   type: string;
+  /** City or address (displayed under card) */
   location: string;
   rating: number;
   image: string;
   hotelCode: number;
   lowestRate: number;
   slug: string;
+  /** NEW: used for grouping when destination is searched */
+  hotelType: string;
 }
 
 interface SearchParams {
@@ -69,15 +73,14 @@ interface SearchParams {
 }
 
 const slugify = (name: string) =>
-  name
+  name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const titleCase = (s: string) =>
+  (s || "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .replace(/\b[a-z]/g, (m) => m.toUpperCase());
 
-// Your exact UI PropertyListings component with click functionality
-
-
-// Your exact UI PropertyListings component with click functionality
+/** The horizontally scrollable row with buttons (unchanged) */
 function PropertyListings({
   title,
   destination,
@@ -89,7 +92,6 @@ function PropertyListings({
   properties: PropertyListing[];
   onHotelClick: (slug: string) => void;
 }) {
-  // use a safe id (no spaces) and always scroll the INNER row
   const rowId = `scroll-${slugify(title)}`;
 
   const scrollByCards = (dir: "left" | "right") => {
@@ -127,9 +129,7 @@ function PropertyListings({
         </div>
       </div>
 
-      {/* OUTER wrapper: no horizontal scroll here */}
       <div className="w-full max-w-[1920px] mx-auto">
-        {/* INNER row: the ONLY horizontally scrollable element */}
         <div
           id={rowId}
           className="
@@ -168,9 +168,12 @@ function PropertyListings({
 export default function Home() {
   const router = useRouter();
   const { convertPrice, formatPrice, currency } = useCurrency();
-  const [propertiesByCity, setPropertiesByCity] = useState<{
-    [key: string]: PropertyListing[];
+
+  // Grouped sections. Key is a readable title ("Hotels in Colombo" OR "Colombo")
+  const [groupedSections, setGroupedSections] = useState<{
+    [sectionTitle: string]: PropertyListing[];
   }>({});
+
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useState<SearchParams>({
     destination: "",
@@ -189,7 +192,8 @@ export default function Home() {
           token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || "",
         });
         setAllHotels(hotels);
-        filterAndSetHotels(hotels, "", "");
+        // initial: no destination => group by city (current behavior)
+        groupAndSet(hotels, "", "");
       } catch (error) {
         console.error(error);
       } finally {
@@ -199,48 +203,97 @@ export default function Home() {
     fetchInitialHotels();
   }, []);
 
-  // Filter hotels whenever user types
-  const filterAndSetHotels = (
-    hotels: Hotel[],
-    city: string,
-    hotelName: string
-  ) => {
-    const filtered = hotels.filter((hotel) => {
-      const hotelCity = (hotel.city || "").toLowerCase();
-      const hotelNameLower = hotel.hotelName.toLowerCase();
+  /** Core filter */
+  const filterHotels = (hotels: Hotel[], params: SearchParams): Hotel[] => {
+    const city = params.destination.toLowerCase().trim();
+    const hotelName = params.hotelName.toLowerCase().trim();
 
-      const cityMatch = city ? hotelCity.startsWith(city.toLowerCase()) : true;
-      const hotelMatch = hotelName
-        ? hotelNameLower.includes(hotelName.toLowerCase())
-        : true;
+    return hotels.filter((hotel) => {
+      const hotelCity = (hotel.city || "").toLowerCase().trim();
+      const hotelNameLower = (hotel.hotelName || "").toLowerCase();
 
-      return cityMatch && hotelMatch;
+      // City only → startsWith for friendlier UX
+      if (city && !hotelName) {
+        return hotelCity.startsWith(city);
+      }
+
+      // Hotel only
+      if (!city && hotelName) {
+        return hotelNameLower.includes(hotelName);
+      }
+
+      // Both city and hotel
+      if (city && hotelName) {
+        return hotelCity.startsWith(city) && hotelNameLower.includes(hotelName);
+      }
+
+      // Nothing entered
+      return true;
     });
+  };
 
-    const transformed = filtered.map((hotel) => ({
+  /** Transform to your PropertyListing */
+  const transform = (hotel: Hotel): PropertyListing => {
+    const rawImage = hotel.hotelImage?.imageFileName;
+    const decodedImage =
+      rawImage && hotel.hotelImage?.isMain ? decodeURIComponent(rawImage) : null;
+    const imageUrl = decodedImage ? decodedImage.split("?")[0] : "";
+
+    return {
       id: hotel.hotelID,
-      type: hotel.hotelName,
-      location: hotel.city || hotel.hotelAddress || "Unknown",
+      type: hotel.hotelName, // card title (unchanged)
+      location: (hotel.city || hotel.hotelAddress || "Unknown").trim(),
       rating: hotel.starCatgeory,
-      image: hotel.hotelImage?.imageFileName || "",
+      image: imageUrl,
       hotelCode: hotel.hotelCode,
       lowestRate: hotel.lowestRate || 0,
       slug: slugify(hotel.hotelName),
-    }));
-
-    // Group by city
-    const grouped: { [key: string]: PropertyListing[] } = {};
-    transformed.forEach((prop) => {
-      const cityKey = prop.location || "Unknown";
-      if (!grouped[cityKey]) grouped[cityKey] = [];
-      grouped[cityKey].push(prop);
-    });
-
-    setPropertiesByCity(grouped);
+      hotelType: titleCase(hotel.hotelType || "Other"),
+    };
   };
 
+  /** Grouping logic:
+   *  - If a destination (city) is provided → group by hotelType with section titles like "Hotels in Colombo"
+   *  - Otherwise → group by City (current behavior)
+   */
+  const groupAndSet = (hotels: Hotel[], city: string, hotelName: string) => {
+    const filtered = filterHotels(hotels, {
+      destination: city,
+      hotelName,
+      searchType: "none",
+    });
+
+    const transformed = filtered.map(transform);
+
+    const grouped: { [sectionTitle: string]: PropertyListing[] } = {};
+    const hasCity = !!city.trim();
+
+    if (hasCity) {
+      const prettyCity = titleCase(city);
+      transformed.forEach((prop) => {
+        // Normalize type to pluralized section labels
+        const type = prop.hotelType || "Other";
+        const plural =
+          type.toLowerCase().endsWith("s") ? type : `${type}s`; // e.g., Villa -> Villas
+        const sectionTitle = `${plural} in ${prettyCity}`;
+        if (!grouped[sectionTitle]) grouped[sectionTitle] = [];
+        grouped[sectionTitle].push(prop);
+      });
+    } else {
+      // Fallback: group by city (as before)
+      transformed.forEach((prop) => {
+        const cityKey = prop.location || "Unknown";
+        if (!grouped[cityKey]) grouped[cityKey] = [];
+        grouped[cityKey].push(prop);
+      });
+    }
+
+    setGroupedSections(grouped);
+  };
+
+  /** Called by SearchBar */
   const handleSearch = (city: string, hotel: string) => {
-    filterAndSetHotels(allHotels, city, hotel);
+    groupAndSet(allHotels, city, hotel);
     setSearchParams({
       destination: city,
       hotelName: hotel,
@@ -255,95 +308,7 @@ export default function Home() {
     });
   };
 
-  useEffect(() => {
-    fetchHotels();
-  }, []);
-
-  const filterHotels = (hotels: Hotel[], params: SearchParams): Hotel[] => {
-    const city = params.destination.toLowerCase().trim();
-    const hotelName = params.hotelName.toLowerCase().trim();
-
-    return hotels.filter((hotel) => {
-      const hotelCity = (hotel.city || "").toLowerCase();
-      const hotelCountry = (hotel.country || "").toLowerCase();
-      const hotelFullLocation = `${hotelCity} ${hotelCountry}`.trim();
-      const hotelNameLower = hotel.hotelName.toLowerCase();
-
-      // Case 1: City only
-      if (city && !hotelName) {
-        return hotelCity === city; // exact city match
-      }
-
-      // Case 2: Hotel name only
-      if (!city && hotelName) {
-        return hotelNameLower.includes(hotelName);
-      }
-
-      // Case 3: Both city and hotel name
-      if (city && hotelName) {
-        return hotelCity === city && hotelNameLower.includes(hotelName);
-      }
-
-      // Case 4: Nothing entered
-      return true;
-    });
-  };
-
-  const fetchHotels = async (
-    params: SearchParams = {
-      destination: "",
-      hotelName: "",
-      searchType: "none",
-    }
-  ) => {
-    try {
-      setLoading(true);
-      const allHotels = await getAllHotels({
-        token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || "",
-      });
-
-      const filteredHotels = filterHotels(allHotels, params);
-
-      const transformedProperties: PropertyListing[] = filteredHotels.map(
-        (hotel) => {
-          const rawImage = hotel.hotelImage?.imageFileName;
-          const decodedImage =
-            rawImage && hotel.hotelImage?.isMain
-              ? decodeURIComponent(rawImage)
-              : null;
-          const imageUrl = decodedImage ? decodedImage.split("?")[0] : "";
-
-          return {
-            id: hotel.hotelID,
-            type: hotel.hotelName,
-            location: (hotel.city || hotel.hotelAddress || "Unknown").trim(),
-            price: "",
-            nights: 2,
-            rating: hotel.starCatgeory,
-            occupancy: "",
-            amenities: [],
-            image: imageUrl,
-            hotelCode: hotel.hotelCode,
-            lowestRate: hotel.lowestRate || 0,
-            slug: slugify(hotel.hotelName),
-          };
-        }
-      );
-
-      const groupedByCity: { [key: string]: PropertyListing[] } = {};
-      transformedProperties.forEach((property) => {
-        const city = property.location || "Unknown";
-        if (!groupedByCity[city]) groupedByCity[city] = [];
-        groupedByCity[city].push(property);
-      });
-      setPropertiesByCity(groupedByCity);
-    } catch (error) {
-      console.error("Failed to fetch hotels:", error);
-      setPropertiesByCity({});
-    } finally {
-      setLoading(false);
-    }
-  };
+  // (Optional) refresh list on mount the older way — now delegated to initial effect
 
   const handleHotelClick = (slug: string) => {
     window.open(`/hotels/${slug}`, "_blank", "noopener,noreferrer");
@@ -362,7 +327,7 @@ export default function Home() {
               Loading hotels...
             </div>
           </div>
-        ) : Object.keys(propertiesByCity).length === 0 ? (
+        ) : Object.keys(groupedSections).length === 0 ? (
           <div className="flex justify-center items-center py-10 sm:py-20 px-4">
             <div className="text-base sm:text-lg text-gray-600 font-urbanist text-center">
               {searchParams.hotelName && !searchParams.destination
@@ -373,11 +338,11 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          Object.entries(propertiesByCity).map(([city, properties]) => (
+          Object.entries(groupedSections).map(([sectionTitle, properties]) => (
             <PropertyListings
-              key={city}
-              title={city}
-              destination={city}
+              key={sectionTitle}
+              title={sectionTitle}
+              destination={sectionTitle}
               properties={properties}
               onHotelClick={(slug) => window.open(`/hotels/${slug}`, "_blank")}
             />
