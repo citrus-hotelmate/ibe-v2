@@ -11,6 +11,7 @@ import { CurrencySelector } from "@/components/currency-selector";
 import { getAllHotels } from "@/controllers/ibeController";
 import HotelCard from "@/components/hotelCards";
 import { Hotel } from "lucide-react";
+import { useRef } from "react";
 
 interface Hotel {
   hotelID: number;
@@ -74,6 +75,9 @@ const slugify = (name: string) =>
     .replace(/(^-|-$)/g, "");
 
 // Your exact UI PropertyListings component with click functionality
+
+
+// Your exact UI PropertyListings component with click functionality
 function PropertyListings({
   title,
   destination,
@@ -85,6 +89,17 @@ function PropertyListings({
   properties: PropertyListing[];
   onHotelClick: (slug: string) => void;
 }) {
+  // use a safe id (no spaces) and always scroll the INNER row
+  const rowId = `scroll-${slugify(title)}`;
+
+  const scrollByCards = (dir: "left" | "right") => {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const first = row.querySelector<HTMLElement>("[data-card]");
+    const step = first ? first.offsetWidth + 16 : 320; // 16 = gap
+    row.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
+  };
+
   return (
     <div className="px-2 sm:px-4 md:px-6 p-2">
       <div className="border-t border-gray-300 mb-4 sm:mb-6">
@@ -95,44 +110,44 @@ function PropertyListings({
 
           <div className="hidden sm:flex gap-2">
             <button
-              onClick={() => {
-                const el = document.getElementById(`scroll-${title}`);
-                if (el) el.scrollBy({ left: -300, behavior: "smooth" });
-              }}
+              onClick={() => scrollByCards("left")}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+              aria-label="Scroll left"
             >
               ‹
             </button>
             <button
-              onClick={() => {
-                const el = document.getElementById(`scroll-${title}`);
-                if (el) el.scrollBy({ left: 300, behavior: "smooth" });
-              }}
+              onClick={() => scrollByCards("right")}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+              aria-label="Scroll right"
             >
               ›
             </button>
           </div>
         </div>
       </div>
-      <div
-        className="w-full max-w-[1920px] mx-auto overflow-x-auto sm:overflow-x-visible scroll-smooth scrollbar-hide"
-        id={`scroll-${title}`}
-      >
+
+      {/* OUTER wrapper: no horizontal scroll here */}
+      <div className="w-full max-w-[1920px] mx-auto">
+        {/* INNER row: the ONLY horizontally scrollable element */}
         <div
+          id={rowId}
           className="
-    flex overflow-x-auto scroll-smooth scrollbar-hide
-    sm:grid sm:overflow-x-visible
-    sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6
-    gap-3 sm:gap-4
-  "
+            flex overflow-x-auto scroll-smooth scrollbar-hide
+            gap-3 sm:gap-4
+            snap-x snap-mandatory
+          "
           style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
         >
           {properties.map((property: PropertyListing) => (
             <div
               key={property.id}
+              data-card
               className="
-            flex-shrink-0 w-[42%] xs:w-[50%] sm:w-auto flex justify-center scrollbar-hide overflow-hidden"
+                flex-shrink-0 w-[42%] xs:w-[50%] sm:w-auto
+                flex justify-center overflow-hidden
+                snap-start
+              "
             >
               <HotelCard
                 title={property.type}

@@ -7,6 +7,7 @@ export const RoomType = "RoomType";
 export const RoomFeature = "RoomFeature";
 export const MealPlan = "MealPlan";
 export const HotelRatePlans = "HotelRatePlans";
+export const HotelRoomTypeImage = "HotelRoomTypeImage";
 
 
 

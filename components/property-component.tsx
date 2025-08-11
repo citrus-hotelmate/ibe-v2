@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { getHotelRoomTypeImagesByHotelId } from "@/controllers/hotelRoomTypeImageController";
 import { CalendarIcon, DeleteIcon, Trash2 } from "lucide-react";
 import { GuestSelector } from "@/components/guest-selector";
 import { DateRangePicker } from "react-date-range";
@@ -45,7 +46,8 @@ export default function PropertyPage() {
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[] | null>(
     null
   );
-  const [defaultRate, setDefaultRate] = useState();
+  const [defaultRate, setDefaultRate] = useState<number>();
+  const [roomTypeImages, setRoomTypeImages] = useState<Record<number, string>>({});
 
   const [guests, setGuests] = useState<{
     adults: number;
@@ -58,7 +60,7 @@ export default function PropertyPage() {
   });
 
   useEffect(() => {
-    const fetchRatePlans = async () => {
+    const fetchInitialData = async () => {
       try {
         const hotelDataString = localStorage.getItem("hotelData");
         if (!hotelDataString) return;
@@ -68,15 +70,31 @@ export default function PropertyPage() {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
         if (!token || !hotelId) return;
 
-        const data = await getHotelRatePlans({ token, hotelId });
+        // Fetch rate plans
+        const ratePlansData = await getHotelRatePlans({ token, hotelId });
+        setRatePlans(ratePlansData);
 
-        setRatePlans(data);
+        // Fetch room type images
+        const imagesData = await getHotelRoomTypeImagesByHotelId({ hotelId, token });
+        console.log('Room Type Images Data:', imagesData);
+        const imagesMap = imagesData.reduce((acc: Record<number, string>, img) => {
+          // Check if it's the main image and has a URL
+          if (img.hotelRoomTypeID && img.isMain && img.imageURL) {
+            // Trim the URL to remove query parameters
+            const trimmedUrl = img.imageURL.split('?')[0];
+            console.log('Room Type ID:', img.hotelRoomTypeID, 'Original URL:', img.imageURL, 'Trimmed URL:', trimmedUrl);
+            acc[img.hotelRoomTypeID] = trimmedUrl;
+          }
+          return acc;
+        }, {});
+        console.log('Final Images Map:', imagesMap);
+        setRoomTypeImages(imagesMap);
       } catch (error) {
-        console.error("Failed to fetch hotel rate plans:", error);
+        console.error("Failed to fetch initial data:", error);
       }
     };
 
-    fetchRatePlans();
+    fetchInitialData();
   }, []);
 
   // Handler to fetch available rooms on button click
@@ -365,6 +383,7 @@ useEffect(() => {
                     adultCount={roomGroup.adultCount}
                     childCount={roomGroup.childCount}
                     roomTypeId={roomGroup.roomTypeID}
+                    imageUrl={roomTypeImages[roomGroup.roomTypeID]}
                     showQuantitySelector={
                       Array.isArray(bookingDetails.selectedRooms) &&
                       bookingDetails.selectedRooms.some(

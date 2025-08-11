@@ -90,6 +90,8 @@ export default function LandingPage() {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
         const data = await getHotelRoomFeaturesByHotelId(hotelId, token);
 
+        console.log("hotel room features",data)
+
         setRoomFeatures(data);
 
         // Process the data to create featured rooms

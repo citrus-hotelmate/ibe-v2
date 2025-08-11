@@ -21,6 +21,7 @@ interface RoomCardProps {
   childCount?: number;
   roomTypeId?: number;
   showQuantitySelector?: boolean;
+  imageUrl?: string;
 }
 
 export default function RoomCard({
@@ -33,6 +34,7 @@ export default function RoomCard({
   childCount,
   roomTypeId,
   showQuantitySelector,
+  imageUrl,
 }: RoomCardProps) {
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [childAges, setChildAges] = useState<number[]>([]);
@@ -168,13 +170,13 @@ export default function RoomCard({
   return (
     <div className="overflow-hidden rounded-md m-3 md:mx-16">
       <Card className="rounded-b-none border-none">
-        <div className="grid md:grid-cols-5 gap-4">
-          <div className="md:col-span-2 relative h-48 md:h-full">
-            <div className="cursor-pointer">
+        <div className="grid md:grid-cols-5 gap-4 relative">
+          <div className="md:col-span-2 relative min-h-[200px] h-full">
+            <div className="absolute inset-0">
               <img
-                src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500&q=80?height=300&width=500"
+                src={imageUrl || "/placeholder.svg?height=300&width=500"}
                 alt={roomName}
-                className="object-cover w-full h-full"
+                className="object-cover w-full h-full "
                 style={{ objectFit: "cover" }}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
@@ -182,9 +184,9 @@ export default function RoomCard({
                 }}
               />
             </div>
-            <Badge className="absolute top-2 left-2" variant="secondary">
+            {/* <Badge className="absolute top-2 left-2" variant="secondary">
               Popular Choice
-            </Badge>
+            </Badge> */}
             <Badge className="absolute top-2 right-2 bg-green-500 hover:bg-green-600">
               Available Today
             </Badge>
