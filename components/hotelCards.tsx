@@ -102,35 +102,31 @@ const HotelDetails = ({
 
   return (
     <div
-      className="p-3 sm:p-4 md:p-5 lg:p-6 h-full"
+      className="p-5 font-urbanist"
       style={{
-        background:
-          "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
+        background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
       }}
     >
-      <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 font-urbanist notranslate line-clamp-2">
+      <h3 className="text-lg font-semibold mb-2 line-clamp-2">
         {title}
         {hotelType && (
-          <span className="font-semibold text-[#8f8f73] ml-1 text-xs sm:text-sm md:text-base">
+          <span className="font-semibold text-[#8f8f73] ml-1 text-sm">
             - {hotelType}
           </span>
         )}
       </h3>
-      <div className="flex items-center gap-1 mb-0">
-        <MapPin className="w-4 sm:w-5 md:w-7 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
-        <span className="text-xs sm:text-sm text-[#8f8f73] notranslate truncate">{location}</span>
+      <div className="flex items-center text-sm mb-2">
+        <MapPin className="w-4 h-4 mr-1 text-[#ff9100] flex-shrink-0" />
+        <span className="text-[#8f8f73] notranslate truncate">{location}</span>
       </div>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-[1px] sm:gap-[2px] md:gap-1">
+        <div className="flex items-center gap-1">
           {renderStars()}
         </div>
-        <div className="text-right font-urbanist">
-          <span className="relative inline-block text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold">
-            <span className="absolute -left-3 sm:-left-4 md:-left-5 -top-1 text-sm sm:text-base md:text-lg lg:text-2xl font-semibold">
-              $
-            </span>
-            <span>{price}</span>
-          </span>
+        {/* Price on the right */}
+        <div className="relative inline-block font-urbanist">
+          <span className="absolute -left-5 -top-1 text-2xl font-semibold">$</span>
+          <span className="text-4xl font-medium notranslate">{price}</span>
         </div>
       </div>
     </div>
