@@ -8,7 +8,7 @@ export const RoomFeature = "RoomFeature";
 export const MealPlan = "MealPlan";
 export const HotelRatePlans = "HotelRatePlans";
 export const HotelRoomTypeImage = "HotelRoomTypeImage";
-
+export const HotelImage = "HotelImage";
 
 
 export const axiosInstance = axios.create({

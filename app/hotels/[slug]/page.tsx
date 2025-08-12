@@ -4,7 +4,9 @@ import Link from "next/link";
 import FeaturedAccommodationCard from "@/components/featuredAccommodationCard";
 import Navbar from "@/components/navbar";
 import { getHotelRoomFeaturesByHotelId } from "@/controllers/hotelRoomFeatureController";
+import { getHotelImagesByHotelId } from "@/controllers/hotelImageController";
 import { HotelRoomFeature } from "@/types/hotelRoomFeature";
+import { HotelImage } from "@/types/hotelImage";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
@@ -247,19 +249,50 @@ export default function LandingPage() {
       <div className="relative w-full flex flex-col items-center">
         {/* Hero Section */}
         {(() => {
-          // Carousel images
-          const images = [
-            "/rooms/gary-meulemans-aAgFJnedkJc-unsplash.jpg",
-            "/rooms/hotel-room.jpg",
-            "/rooms/khanh-do-bvN15iQgqog-unsplash.jpg",
-            "/rooms/yosuke-ota-0R1GMsc2E7w-unsplash.jpg",
-            "/rooms/yu-yi-tsai-UX_Pn1L2FkQ-unsplash.jpg",
-          ];
           const [currentIndex, setCurrentIndex] = useState(0);
           const scrollRefLocal = useRef<HTMLDivElement>(null);
+          const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
+          
+            useEffect(() => {
+            const fetchHotelImages = async () => {
+              try {
+              const storedHotelData = localStorage.getItem("hotelData");
+              if (!storedHotelData) return;
+              
+              const parsedHotel = JSON.parse(storedHotelData);
+              const hotelId = parsedHotel?.hotelID;
+
+              console.log("hotelId wwwwwwwww:", hotelId);
+              
+              if (!hotelId) return;
+              
+              const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+              const response = await getHotelImagesByHotelId({ token, hotelId });
+              
+              console.log("hotel images response:", response);
+
+              // Filter out the main image and get only non-main images
+              const nonMainImages = response.filter(img => !img.isMain);
+              setHotelImages(nonMainImages);
+              } catch (error) {
+              console.error("Error fetching hotel images:", error);
+              }
+            };
+            
+            fetchHotelImages();
+            }, []);
+
+            console.log("Fetched hotel images:", hotelImages);
+
           const handleNext = () => {
-            setCurrentIndex((prev) => (prev + 1) % images.length);
+            if (hotelImages.length === 0) return;
+            setCurrentIndex((prev) => (prev + 1) % hotelImages.length);
           };
+
+          if (hotelImages.length === 0) {
+            return null; // or a loading state/placeholder
+          }
+
           return (
             <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] max-w-[98rem] w-full mx-auto mt-[-10px] sm:mt-[-25px] md:mt-[-22px] mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl md:rounded-[3rem] overflow-hidden z-15 group">
               <div
@@ -269,11 +302,11 @@ export default function LandingPage() {
                   transform: `translateX(-${currentIndex * 100}%)`,
                 }}
               >
-                {images.map((img, index) => (
+                {hotelImages.map((img, index) => (
                   <div key={index} className="flex-shrink-0 w-full h-full">
                     <Image
-                      src={img}
-                      alt={`Hotel Image ${index + 1}`}
+                      src={img.imageFileName}
+                      alt={img.description || `Hotel Image ${index + 1}`}
                       width={1600}
                       height={700}
                       className="object-cover w-full h-full"
@@ -293,10 +326,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 z-30 pointer-events-none">
                 <div className="w-full h-full bg-white/10 backdrop-blur-md mask-fade" />
               </div>
-              {/* Google Translate Language Selector */}
-              {/* <div className="absolute top-4 right-4 z-40">
-                        <LanguageSelector />
-                    </div> */}
+
             </div>
           );
         })()}
