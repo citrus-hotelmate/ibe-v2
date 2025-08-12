@@ -151,7 +151,6 @@ export default function Home() {
   const [showStickySearch, setShowStickySearch] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
-  // Fetch all hotels once
   useEffect(() => {
     const fetchInitialHotels = async () => {
       setLoading(true);
@@ -171,7 +170,6 @@ export default function Home() {
     fetchInitialHotels();
   }, []);
 
-  // Handle scroll to show/hide sticky search bar
   useEffect(() => {
     let ticking = false;
 
@@ -180,7 +178,7 @@ export default function Home() {
         requestAnimationFrame(() => {
           if (searchBarRef.current) {
             const searchBarBottom = searchBarRef.current.getBoundingClientRect().bottom;
-            setShowStickySearch(searchBarBottom < -20); // Add slight offset for better UX
+            setShowStickySearch(searchBarBottom < -20);
           }
           ticking = false;
         });
@@ -189,11 +187,10 @@ export default function Home() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial state
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  /** Core filter */
   const filterHotels = (hotels: Hotel[], params: SearchParams): Hotel[] => {
     const city = params.destination.toLowerCase().trim();
     const hotelName = params.hotelName.toLowerCase().trim();
@@ -204,20 +201,16 @@ export default function Home() {
       const hotelNameLower = (hotel.hotelName || "").toLowerCase();
       const hotelTypeLower = (hotel.hotelType || "").toLowerCase();
 
-      // Apply individual filters
       let matches = true;
 
-      // City filter
       if (city) {
         matches = matches && hotelCity.startsWith(city);
       }
 
-      // Hotel name filter
       if (hotelName) {
         matches = matches && hotelNameLower.includes(hotelName);
       }
 
-      // Hotel type filter
       if (hotelType) {
         matches = matches && hotelTypeLower.includes(hotelType);
       }
@@ -226,7 +219,6 @@ export default function Home() {
     });
   };
 
-  /** Transform to your PropertyListing */
   const transform = (hotel: Hotel): PropertyListing => {
     const rawImage = hotel.hotelImage?.imageFileName;
     const decodedImage =
@@ -235,7 +227,7 @@ export default function Home() {
 
     return {
       id: hotel.hotelID,
-      type: hotel.hotelName, // card title (unchanged)
+      type: hotel.hotelName,
       location: (hotel.city || hotel.hotelAddress || "Unknown").trim(),
       rating: hotel.starCatgeory,
       image: imageUrl,
@@ -246,10 +238,6 @@ export default function Home() {
     };
   };
 
-  /** Grouping logic:
-   *  - If a destination (city) is provided → group by hotelType with section titles like "Hotels in Colombo"
-   *  - Otherwise → group by City (current behavior)
-   */
   const groupAndSet = (hotels: Hotel[], city: string, hotelName: string, hotelType: string = '') => {
     const filtered = filterHotels(hotels, {
       destination: city,
@@ -267,22 +255,19 @@ export default function Home() {
     if (hasCity) {
       const prettyCity = titleCase(city);
       if (hasHotelType) {
-        // If both city and hotel type are specified, group by hotel type in that city
         const sectionTitle = `${hotelType}s in ${prettyCity}`;
         grouped[sectionTitle] = transformed;
       } else {
-        // Group by different hotel types in the city
         transformed.forEach((prop) => {
           const type = prop.hotelType || "Other";
           const plural =
-            type.toLowerCase().endsWith("s") ? type : `${type}s`; // e.g., Villa -> Villas
+            type.toLowerCase().endsWith("s") ? type : `${type}s`;
           const sectionTitle = `${plural} in ${prettyCity}`;
           if (!grouped[sectionTitle]) grouped[sectionTitle] = [];
           grouped[sectionTitle].push(prop);
         });
       }
     } else if (hasHotelType) {
-      // If only hotel type is specified, group by cities with that hotel type
       transformed.forEach((prop) => {
         const cityKey = prop.location || "Unknown";
         const sectionTitle = `${hotelType}s in ${cityKey}`;
@@ -290,7 +275,6 @@ export default function Home() {
         grouped[sectionTitle].push(prop);
       });
     } else {
-      // Fallback: group by city (as before)
       transformed.forEach((prop) => {
         const cityKey = prop.location || "Unknown";
         if (!grouped[cityKey]) grouped[cityKey] = [];
@@ -301,7 +285,6 @@ export default function Home() {
     setGroupedSections(grouped);
   };
 
-  /** Called by SearchBar */
   const handleSearch = (city: string, hotel: string, hotelType: string = '') => {
     groupAndSet(allHotels, city, hotel, hotelType);
     setSearchParams({
@@ -327,68 +310,73 @@ export default function Home() {
     });
   };
 
-  // (Optional) refresh list on mount the older way — now delegated to initial effect
-
   const handleHotelClick = (slug: string) => {
     window.open(`/hotels/${slug}`, "_blank", "noopener,noreferrer");
     console.log(`Opening hotel with slug in new tab: ${slug}`);
   };
 
   return (
-    <main className="min-h-screen bg-[#e2e0df]">
-      <Navbar />
-
-      {/* Sticky Search Bar */}
-      <div
-        className={`fixed top-0 left-0 right-0 z-[100] bg-[#e2e0df]/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-500 ease-out transform ${showStickySearch
-            ? 'translate-y-0 opacity-100 scale-100'
-            : '-translate-y-full opacity-0 scale-95 pointer-events-none'
+    <div className="min-h-screen bg-[#e2e0df] relative">
+      <div className="absolute top-0 left-0 right-0 h-[500px] bg-[#ff9100] z-0" />
+      <div className="relative z-10 w-full">
+        <Navbar />
+        
+        {/* Sticky Search Bar */}
+        <div
+          className={`fixed top-0 left-0 right-0 z-[100] bg-[#ff9100]/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-500 ease-out transform ${
+            showStickySearch
+              ? 'translate-y-0 opacity-100 scale-100'
+              : '-translate-y-full opacity-0 scale-95 pointer-events-none'
           }`}
-        style={{
-          transitionTimingFunction: showStickySearch
-            ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-            : 'cubic-bezier(0.55, 0.06, 0.68, 0.19)'
-        }}
-      >
-        <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 transition-all duration-300 ease-out ${showStickySearch ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          style={{
+            transitionTimingFunction: showStickySearch
+              ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+              : 'cubic-bezier(0.55, 0.06, 0.68, 0.19)'
+          }}
+        >
+          <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 transition-all duration-300 ease-out ${
+            showStickySearch ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
           }`}>
-          <SearchBar onSearch={handleSearch} />
-        </div>
-      </div>
-
-      <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${showStickySearch ? 'pt-20 sm:pt-24' : ''}`}>
-        <div ref={searchBarRef} className="py-6">
-          <SearchBar onSearch={handleSearch} />
+            <SearchBar onSearch={handleSearch} />
+          </div>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center items-center py-10 sm:py-20">
-            <div className="text-base sm:text-lg text-gray-600">
-              Loading hotels...
-            </div>
+        <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${
+          showStickySearch ? 'pt-20 sm:pt-24' : ''
+        }`}>
+          <div ref={searchBarRef} className="py-6">
+            <SearchBar onSearch={handleSearch} />
           </div>
-        ) : Object.keys(groupedSections).length === 0 ? (
-          <div className="flex justify-center items-center py-10 sm:py-20 px-4">
-            <div className="text-base sm:text-lg text-gray-600 font-urbanist text-center">
-              {searchParams.hotelName && !searchParams.destination
-                ? "No hotels found matching your search."
-                : searchParams.destination && !searchParams.hotelName
-                  ? "No destination found matching your search."
-                  : "No hotels or destinations found matching your search."}
+
+          {loading ? (
+            <div className="flex justify-center items-center py-10 sm:py-20">
+              <div className="text-base sm:text-lg text-gray-600">
+                Loading hotels...
+              </div>
             </div>
-          </div>
-        ) : (
-          Object.entries(groupedSections).map(([sectionTitle, properties]) => (
-            <PropertyListings
-              key={sectionTitle}
-              title={sectionTitle}
-              destination={sectionTitle}
-              properties={properties}
-              onHotelClick={(slug) => window.open(`/hotels/${slug}`, "_blank")}
-            />
-          ))
-        )}
+          ) : Object.keys(groupedSections).length === 0 ? (
+            <div className="flex justify-center items-center py-10 sm:py-20 px-4">
+              <div className="text-base sm:text-lg text-gray-600 font-urbanist text-center">
+                {searchParams.hotelName && !searchParams.destination
+                  ? "No hotels found matching your search."
+                  : searchParams.destination && !searchParams.hotelName
+                    ? "No destination found matching your search."
+                    : "No hotels or destinations found matching your search."}
+              </div>
+            </div>
+          ) : (
+            Object.entries(groupedSections).map(([sectionTitle, properties]) => (
+              <PropertyListings
+                key={sectionTitle}
+                title={sectionTitle}
+                destination={sectionTitle}
+                properties={properties}
+                onHotelClick={(slug) => window.open(`/hotels/${slug}`, "_blank")}
+              />
+            ))
+          )}
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
