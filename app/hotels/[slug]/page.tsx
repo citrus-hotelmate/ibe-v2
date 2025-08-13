@@ -417,7 +417,7 @@ export default function LandingPage() {
   <div className="w-full max-w-[98rem]">
     {/* Header + scroll buttons */}
     <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
-      <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground">
+      <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground text-center w-full">
         Featured Accommodation
       </h2>
 

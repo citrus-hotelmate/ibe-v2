@@ -148,7 +148,7 @@ const hotelCard = ({
   return (
     <div
       onClick={onClick}
-      className="rounded-2xl sm:rounded-3xl lg:rounded-[3rem] overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow duration-200 w-full max-w-xs mx-auto mb-4 lg:mb-0 cursor-pointer"
+      className="rounded-[3rem] bg-card text-card-foreground shadow-md overflow-hidden w-[252px] h-auto flex flex-col"
     >
       <HotelImage
         image={image}

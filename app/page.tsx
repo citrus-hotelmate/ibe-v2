@@ -70,7 +70,7 @@ function PropertyListings({
   return (
     <div className="px-2 sm:px-4 md:px-6 p-2">
       <div className="border-t border-gray-300 mb-4 sm:mb-6">
-        <div className="flex items-center justify-between mb-4 mt-3 sm:mb-6">
+        <div className="flex items-center justify-between mt-3 sm:mb-6">
           <h2 className="text-base sm:text-lg md:text-xl font-semibold font-urbanist notranslate">
             {title}
           </h2>
@@ -99,7 +99,7 @@ function PropertyListings({
           id={rowId}
           className="
             flex overflow-x-auto scroll-smooth scrollbar-hide
-            gap-3 sm:gap-4
+            gap-4
             snap-x snap-mandatory
           "
           style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
@@ -109,9 +109,11 @@ function PropertyListings({
               key={property.id}
               data-card
               className="
-                flex-shrink-0 w-[42%] xs:w-[50%] sm:w-auto
+                flex-shrink-0 w-[252px]
                 flex justify-center overflow-hidden
                 snap-start
+                first:ml-2 sm:first:ml-4 md:first:ml-6
+                last:mr-[80px] sm:last:mr-[120px] md:last:mr-[160px]
               "
             >
               <HotelCard
