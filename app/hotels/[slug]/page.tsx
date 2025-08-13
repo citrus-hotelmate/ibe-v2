@@ -32,61 +32,110 @@ export default function LandingPage() {
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
   const router = useRouter();
   const { bookingDetails, updateBookingDetails } = useBooking();
-  const [hotelData, setHotelData] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentHotel, setCurrentHotel] = useState<Hotel | null>(null);
   const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
   const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
   // Track window width for responsive grid calculations
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 0
   );
+  
   // Listen to window resize for grid calculations
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Removed auto-scrolling and transition effect for hero image carousel.
 
+  // Combined fetch function for all hotel data
   useEffect(() => {
-    const fetchHotelInfo = async () => {
+    const fetchAllHotelData = async () => {
+      if (!slug) return;
+      
       try {
         setIsLoading(true);
-        const allHotels = await getAllHotels({
-          token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || "",
-        });
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+
+        // Fetch hotels data
+        const [allHotels] = await Promise.all([
+          getAllHotels({ token })
+        ]);
 
         const matchedHotel = allHotels.find(
           (h) => slugify(h.hotelName) === slug
         );
 
-        if (matchedHotel) {
-          setHotelData([matchedHotel]);
-          localStorage.setItem("hotelData", JSON.stringify(matchedHotel));
+        if (!matchedHotel) {
+          setError("Hotel not found");
+          return;
         }
+
+        setCurrentHotel(matchedHotel);
+
+        // Parallel fetch for room features and images once we have the hotel
+        const [roomFeaturesData, imagesData] = await Promise.all([
+          getHotelRoomFeaturesByHotelId(matchedHotel.hotelID, token),
+          getHotelImagesByHotelId({ token, hotelId: matchedHotel.hotelID })
+        ]);
+
+        // Process room features
+        const roomMap = new Map<number, any>();
+        roomFeaturesData.forEach((feature) => {
+          const roomTypeId = feature.hotelRoomTypeID;
+          if (!roomMap.has(roomTypeId)) {
+            const mainImage = feature.hotelRoomTypeImage?.find((img) => img.isMain) 
+              || feature.hotelRoomTypeImage?.[0];
+
+            roomMap.set(roomTypeId, {
+              id: roomTypeId,
+              name: feature.hotelRoomType.roomType,
+              adultCapacity: feature.hotelRoomType.adultSpace,
+              childCapacity: feature.hotelRoomType.childSpace,
+              totalRooms: feature.hotelRoomType.noOfRooms,
+              image: mainImage?.imageURL || mainImage?.base64Image,
+              features: [],
+              price: generateMockPrice(
+                feature.hotelRoomType.roomType,
+                feature.hotelRoomType.adultSpace
+              ),
+              rating: generateMockRating(),
+            });
+          }
+        });
+
+        // Update state with all fetched data
+        setRoomFeatures(roomFeaturesData);
+        setFeaturedRooms(Array.from(roomMap.values()));
+        setHotelImages(imagesData.filter(img => !img.isMain));
+
       } catch (error) {
-        console.error("Error fetching hotel by slug:", error);
+        console.error("Error fetching hotel data:", error);
+        setError("Failed to fetch hotel details");
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (slug) {
-      fetchHotelInfo();
-    }
+    fetchAllHotelData();
   }, [slug]);
 
   // Fetch room features and images
   useEffect(() => {
     const fetchRoomFeatures = async () => {
       try {
-        const storedHotelData = localStorage.getItem("hotelData");
-        if (!storedHotelData) return;
-
-        const parsedHotel = JSON.parse(storedHotelData);
-        const hotelId = parsedHotel?.hotelID;
+        if (!currentHotel?.hotelID) {
+          console.log("No hotel ID available yet");
+          return;
+        }
+        const hotelId = currentHotel.hotelID;
+        console.log("Fetching room features for hotel ID:", hotelId);
 
         if (!hotelId) return;
 
@@ -135,7 +184,7 @@ export default function LandingPage() {
     };
 
     fetchRoomFeatures();
-  }, []);
+  }, [currentHotel]);
 
   // Helper function to generate mock prices based on room type
   const generateMockPrice = (roomType: string, adultSpace: number): number => {
@@ -184,17 +233,9 @@ export default function LandingPage() {
     return stars;
   };
 
-  // Get hotel data from localStorage or fallback to state
+  // Get hotel data from local state
   const getHotelData = () => {
-    try {
-      const storedData = localStorage.getItem("hotelData");
-      if (storedData) {
-        return JSON.parse(storedData);
-      }
-    } catch (error) {
-      console.error("Error reading hotel data from localStorage:", error);
-    }
-    return hotelData[0] || null;
+    return currentHotel;
   };
 
   // Get hotel name with fallback
@@ -224,13 +265,15 @@ export default function LandingPage() {
       {/* Logo - stays at the top-left */}
       <div className="absolute left-4 sm:left-8 lg:left-12 top-4 sm:top-8 lg:top-12 flex items-center z-30">
         <Link href="/">
-          <Image
-            src="/logo-01.png"
-            alt="Logo"
-            width={130}
-            height={60}
-            className="rounded-md h-auto w-20 sm:w-24 md:w-28 lg:w-[130px]"
-          />
+          <div className="relative w-[130px] h-[60px]">
+            <Image
+              src="/logo-01.png"
+              alt="Logo"
+              fill
+              className="rounded-md object-contain"
+              sizes="130px"
+            />
+          </div>
         </Link>
       </div>
       {/* Hotel Name Section */}
@@ -253,34 +296,31 @@ export default function LandingPage() {
           const scrollRefLocal = useRef<HTMLDivElement>(null);
           const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
           
-            useEffect(() => {
+          useEffect(() => {
             const fetchHotelImages = async () => {
               try {
-              const storedHotelData = localStorage.getItem("hotelData");
-              if (!storedHotelData) return;
-              
-              const parsedHotel = JSON.parse(storedHotelData);
-              const hotelId = parsedHotel?.hotelID;
+                if (!currentHotel?.hotelID) return;
+                
+                console.log("Fetching images for hotel:", currentHotel.hotelName);
+                
+                const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+                const response = await getHotelImagesByHotelId({ 
+                  token, 
+                  hotelId: currentHotel.hotelID 
+                });
+                
+                console.log("Hotel images response:", response);
 
-              console.log("hotelId wwwwwwwww:", hotelId);
-              
-              if (!hotelId) return;
-              
-              const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-              const response = await getHotelImagesByHotelId({ token, hotelId });
-              
-              console.log("hotel images response:", response);
-
-              // Filter out the main image and get only non-main images
-              const nonMainImages = response.filter(img => !img.isMain);
-              setHotelImages(nonMainImages);
+                // Filter out the main image and get only non-main images
+                const nonMainImages = response.filter(img => !img.isMain);
+                setHotelImages(nonMainImages);
               } catch (error) {
-              console.error("Error fetching hotel images:", error);
+                console.error("Error fetching hotel images:", error);
               }
             };
             
             fetchHotelImages();
-            }, []);
+          }, [currentHotel]);
 
             console.log("Fetched hotel images:", hotelImages);
 

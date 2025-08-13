@@ -14,6 +14,7 @@ import { Hotel as HotelIcon } from "lucide-react";
 import { useRef } from "react";
 import { Hotel } from "@/types/ibe";
 
+
 interface PropertyListing {
   id: number;
   /** Hotel name */
@@ -312,7 +313,6 @@ export default function Home() {
 
   const handleHotelClick = (slug: string) => {
     window.open(`/hotels/${slug}`, "_blank", "noopener,noreferrer");
-    console.log(`Opening hotel with slug in new tab: ${slug}`);
   };
 
   return (
