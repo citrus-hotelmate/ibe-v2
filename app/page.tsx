@@ -69,7 +69,7 @@ function PropertyListings({
   return (
     <div className="px-2 sm:px-4 md:px-6 p-2">
       <div className="border-t border-gray-300 mb-4 sm:mb-6">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="flex items-center justify-between mb-4 mt-3 sm:mb-6">
           <h2 className="text-base sm:text-lg md:text-xl font-semibold font-urbanist notranslate">
             {title}
           </h2>

@@ -498,7 +498,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white/70 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center border border-white/30 overflow-visible relative z-10 gap-2 sm:gap-0 p-2 sm:p-0">
+    <div className="max-w-3xl mx-auto bg-white/70 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center border border-white/30 overflow-visible relative z-10 gap-2 sm:gap-0 p-2 sm:p-0">
       {/* City or Destination */}
       <div className="w-full sm:flex-1 px-2 sm:px-3 py-2 relative" ref={destinationRef}>
         <div className="flex items-center gap-1 sm:gap-2">
