@@ -36,20 +36,40 @@ export default function LandingPage() {
   const [currentHotel, setCurrentHotel] = useState<Hotel | null>(null);
   const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
   const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
+  const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Track window width for responsive grid calculations
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 0
   );
   
+  // Define featured row ID for scrolling
+  const featuredRowId = "featured-rooms-row";
+
+  // Function to handle scrolling of featured cards
+  const scrollByFeaturedCards = (direction: "left" | "right") => {
+    const container = document.getElementById(featuredRowId);
+    if (!container) return;
+    
+    const scrollAmount = 300; // Adjust this value based on your needs
+    const scrollPosition = direction === "left" 
+      ? container.scrollLeft - scrollAmount 
+      : container.scrollLeft + scrollAmount;
+    
+    container.scrollTo({
+      left: scrollPosition,
+      behavior: "smooth"
+    });
+  };
+
   // Listen to window resize for grid calculations
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Removed auto-scrolling and transition effect for hero image carousel.
@@ -58,7 +78,7 @@ export default function LandingPage() {
   useEffect(() => {
     const fetchAllHotelData = async () => {
       if (!slug) return;
-      
+
       try {
         setIsLoading(true);
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
@@ -90,7 +110,7 @@ export default function LandingPage() {
         roomFeaturesData.forEach((feature) => {
           const roomTypeId = feature.hotelRoomTypeID;
           if (!roomMap.has(roomTypeId)) {
-            const mainImage = feature.hotelRoomTypeImage?.find((img) => img.isMain) 
+            const mainImage = feature.hotelRoomTypeImage?.find((img) => img.isMain)
               || feature.hotelRoomTypeImage?.[0];
 
             roomMap.set(roomTypeId, {
@@ -295,20 +315,20 @@ export default function LandingPage() {
           const [currentIndex, setCurrentIndex] = useState(0);
           const scrollRefLocal = useRef<HTMLDivElement>(null);
           const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
-          
+
           useEffect(() => {
             const fetchHotelImages = async () => {
               try {
                 if (!currentHotel?.hotelID) return;
-                
+
                 console.log("Fetching images for hotel:", currentHotel.hotelName);
-                
+
                 const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-                const response = await getHotelImagesByHotelId({ 
-                  token, 
-                  hotelId: currentHotel.hotelID 
+                const response = await getHotelImagesByHotelId({
+                  token,
+                  hotelId: currentHotel.hotelID
                 });
-                
+
                 console.log("Hotel images response:", response);
 
                 // Filter out the main image and get only non-main images
@@ -318,11 +338,11 @@ export default function LandingPage() {
                 console.error("Error fetching hotel images:", error);
               }
             };
-            
+
             fetchHotelImages();
           }, [currentHotel]);
 
-            console.log("Fetched hotel images:", hotelImages);
+          console.log("Fetched hotel images:", hotelImages);
 
           const handleNext = () => {
             if (hotelImages.length === 0) return;
@@ -332,6 +352,16 @@ export default function LandingPage() {
           if (hotelImages.length === 0) {
             return null; // or a loading state/placeholder
           }
+          // --- Scroll helpers for Featured Accommodation row ---
+          const featuredRowId = "featured-scroll";
+
+          const scrollByFeaturedCards = (dir: "left" | "right") => {
+            const row = document.getElementById(featuredRowId);
+            if (!row) return;
+            const first = row.querySelector<HTMLElement>("[data-card]");
+            const step = first ? first.offsetWidth + 16 /* gap-4 */ : 320;
+            row.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
+          };
 
           return (
             <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] max-w-[98rem] w-full mx-auto mt-[-10px] sm:mt-[-25px] md:mt-[-22px] mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl md:rounded-[3rem] overflow-hidden z-15 group">
@@ -382,76 +412,100 @@ export default function LandingPage() {
       </div>
 
       {/* Featured Accommodations */}
-      <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
-        <div className="w-full max-w-[98rem]">
-          <div className="text-center mb-8 sm:mb-10 md:mb-12">
-            <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground">
-              Featured Accommodation
-            </h2>
+{/* Featured Accommodations */}
+<div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
+  <div className="w-full max-w-[98rem]">
+    {/* Header + scroll buttons */}
+    <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
+      <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground">
+        Featured Accommodation
+      </h2>
+
+      <div className="hidden sm:flex gap-2">
+        <button
+          onClick={() => scrollByFeaturedCards("left")}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+          aria-label="Scroll left"
+        >
+          ‹
+        </button>
+        <button
+          onClick={() => scrollByFeaturedCards("right")}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+          aria-label="Scroll right"
+        >
+          ›
+        </button>
+      </div>
+    </div>
+
+    {featuredRooms.length > 0 && (
+      <div
+        id={featuredRowId}
+        className="flex gap-4 px-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
+        style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+      >
+        {/* Room cards */}
+        {featuredRooms.map((room) => (
+          <div key={room.id} data-card className="w-[252px] flex-shrink-0">
+            <FeaturedAccommodationCard room={room} />
           </div>
-          {featuredRooms.length > 0 && (
-            <div className="w-full overflow-x-auto scrollbar-hide">
-              <div
-                className="flex gap-4 px-4 pb-2 w-full min-w-max"
-                style={{ 
-                  msOverflowStyle: "none", 
-                  scrollbarWidth: "none"
-                }}
-              >
-                <div className="flex gap-4 flex-grow-0">
-                  {featuredRooms.map((room) => (
-                    <div key={room.id} className="w-[252px] flex-shrink-0">
-                      <FeaturedAccommodationCard room={room} />
-                    </div>
-                  ))}
-                </div>
+        ))}
 
-                {/* Orange Card - expands to fill available space */}
-                <div className={`rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2 ? 'flex-1 min-w-[300px] max-w-[800px]' : 'w-[252px] flex-shrink-0'}`}>
-                  <div className="self-start">
-                    <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
-                      {getHotelName()}
-                    </h3>
-                    <div
-                      className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-60 lg:max-h-62 pr-1 scrollbar-hide"
-                      style={{
-                        msOverflowStyle: "none",
-                        scrollbarWidth: "none",
-                      }}
-                    >
-                      {getHotelData()?.hotelDesc || "Your perfect stay awaits"}
-                    </div>
-                  </div>
-                  <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
-                    <ArrowUpRight className="text-[#ff9100] w-6 h-6 lg:w-7 lg:h-7" />
-                  </div>
-                </div>
+        {/* Orange Card */}
+        <div
+          className={`rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${
+            featuredRooms.length <= 2
+              ? "flex-1 min-w-[300px] max-w-[800px]"
+              : "w-[252px] flex-shrink-0"
+          }`}
+        >
+          <div className="self-start">
+            <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
+              {getHotelName()}
+            </h3>
+            <div
+              className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-60 lg:max-h-62 pr-1 scrollbar-hide"
+              style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+            >
+              {getHotelData()?.hotelDesc || "Your perfect stay awaits"}
+            </div>
+          </div>
+          <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
+            <ArrowUpRight className="text-[#ff9100] w-6 h-6 lg:w-7 lg:h-7" />
+          </div>
+        </div>
 
-                {/* Map Card */}
-                <div className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2 ? 'flex-1 min-w-[300px] max-w-[800px]' : 'w-[252px] flex-shrink-0'}`}>
-                  <div className="h-full relative">
-                    <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-[#4285F4]/90 to-transparent">
-                      <div className="flex items-center mb-1">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <h3 className="text-lg font-bold font-urbanist">
-                          {getHotelData()?.city || "Location"}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="w-full h-full min-h-[220px]">
-                      <HotelMap
-                        latitude={getHotelData()?.latitude || ""}
-                        longitude={getHotelData()?.longitude || ""}
-                        hotelName={getHotelData()?.hotelName || ""}
-                      />
-                    </div>
-                  </div>
-                </div>
+        {/* Map Card */}
+        <div
+          className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${
+            featuredRooms.length <= 2
+              ? "flex-1 min-w-[300px] max-w-[800px]"
+              : "w-[252px] flex-shrink-0"
+          }`}
+        >
+          <div className="h-full relative">
+            <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-[#4285F4]/90 to-transparent">
+              <div className="flex items-center mb-1">
+                <MapPin className="h-4 w-4 mr-1" />
+                <h3 className="text-lg font-bold font-urbanist">
+                  {getHotelData()?.city || "Location"}
+                </h3>
               </div>
             </div>
-          )}
+            <div className="w-full h-full min-h-[220px]">
+              <HotelMap
+                latitude={getHotelData()?.latitude || ""}
+                longitude={getHotelData()?.longitude || ""}
+                hotelName={getHotelData()?.hotelName || ""}
+              />
+            </div>
+          </div>
         </div>
       </div>
+    )}
+  </div>
+</div>
       {/* Property Page Integration */}
       <div className="mt-1 w-full mx-auto sm:px-4">
         <PropertyPage />
