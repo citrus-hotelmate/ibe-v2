@@ -44,54 +44,24 @@ export default function LandingPage() {
     typeof window !== "undefined" ? window.innerWidth : 0
   );
 
-// Featured row viewport logic: show 6 full cards + 1/4 of the next (on xl+)
-const featuredRowId = "featured-rooms-row";
-const [featuredViewportPx, setFeaturedViewportPx] = useState<number | null>(null);
+  // Define featured row ID for scrolling
+  const featuredRowId = "featured-rooms-row";
 
-const recalcFeaturedViewport = () => {
-  const row = document.getElementById(featuredRowId);
-  if (!row) return;
+  // Function to handle scrolling of featured cards
+  const scrollByFeaturedCards = (direction: "left" | "right") => {
+    const container = document.getElementById(featuredRowId);
+    if (!container) return;
 
-  const firstCard = row.querySelector<HTMLElement>("[data-card]");
-  const cardW = firstCard?.offsetWidth ?? 252; // your fixed card width
-  // read actual gap from the row (fallback to Tailwind gap-4 = 16px)
-  const computedStyle = row ? window.getComputedStyle(row) : null;
-  const gapPx = computedStyle ? parseInt(computedStyle.getPropertyValue("column-gap") || "16", 10) : 16;
+    const scrollAmount = 300; // Adjust this value based on your needs
+    const scrollPosition = direction === "left"
+      ? container.scrollLeft - scrollAmount
+      : container.scrollLeft + scrollAmount;
 
-  // width = 6 cards + 5 gaps between them + 1 more gap + 1/4 of next card
-  const widthPx = (6 * cardW) + (5 * gapPx) + gapPx + (0.25 * cardW);
-
-  // Only clamp on large screens; below that, let it be fluid
-  if (window.innerWidth >= 1280) {
-    setFeaturedViewportPx(Math.round(widthPx));
-  } else {
-    setFeaturedViewportPx(null);
-  }
-};
-
-// Scroll by exactly one card (+gap)
-const scrollByFeaturedCards = (direction: "left" | "right") => {
-  const row = document.getElementById(featuredRowId);
-  if (!row) return;
-  const firstCard = row.querySelector<HTMLElement>("[data-card]");
-  const cardW = firstCard?.offsetWidth ?? 252;
-  const computedStyle = window.getComputedStyle(row);
-  const gapPx = parseInt(computedStyle.getPropertyValue("column-gap") || "16", 10);
-  const step = cardW + gapPx;
-
-  row.scrollBy({
-    left: direction === "left" ? -step : step,
-    behavior: "smooth",
-  });
-};
-
-// Recalculate when rooms render and on resize
-useEffect(() => {
-  recalcFeaturedViewport();
-  const onResize = () => recalcFeaturedViewport();
-  window.addEventListener("resize", onResize);
-  return () => window.removeEventListener("resize", onResize);
-}, [featuredRooms]);
+    container.scrollTo({
+      left: scrollPosition,
+      behavior: "smooth"
+    });
+  };
 
   // Listen to window resize for grid calculations
   useEffect(() => {
@@ -442,108 +412,98 @@ useEffect(() => {
       </div>
 
       {/* Featured Accommodations */}
-   {/* Featured Accommodations */}
-<div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
-  {/* This wrapper constrains the visible width to show 6 + 1/4 cards on xl+ */}
-  <div
-    className="w-full"
-    style={{
-      maxWidth: featuredViewportPx ? `${featuredViewportPx}px` : undefined,
-      marginInline: "auto",
-    }}
-  >
-    {/* Header + scroll buttons */}
-    <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
-      <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground text-center w-full">
-        Featured Accommodation
-      </h2>
+      {/* Featured Accommodations */}
+      <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
+        <div className="w-full max-w-[98rem]">
+          {/* Header + scroll buttons */}
+          <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
+            <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground text-center w-full">
+              Featured Accommodation
+            </h2>
 
-      <div className="hidden sm:flex gap-2">
-        <button
-          onClick={() => scrollByFeaturedCards("left")}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
-          aria-label="Scroll left"
-        >
-          ‹
-        </button>
-        <button
-          onClick={() => scrollByFeaturedCards("right")}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
-          aria-label="Scroll right"
-        >
-          ›
-        </button>
-      </div>
-    </div>
-
-    {featuredRooms.length > 0 && (
-      <div
-        id={featuredRowId}
-        // no horizontal padding so viewport math is exact
-        className="flex gap-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
-        style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-      >
-        {/* Room cards */}
-        {featuredRooms.map((room) => (
-          <div key={room.id} data-card className="w-[252px] flex-shrink-0">
-            <FeaturedAccommodationCard room={room} />
+            <div className="hidden sm:flex gap-2">
+              <button
+                onClick={() => scrollByFeaturedCards("left")}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+                aria-label="Scroll left"
+              >
+                ‹
+              </button>
+              <button
+                onClick={() => scrollByFeaturedCards("right")}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+                aria-label="Scroll right"
+              >
+                ›
+              </button>
+            </div>
           </div>
-        ))}
 
-        {/* Orange Card */}
-        <div
-          className={`rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${
-            featuredRooms.length <= 2
-              ? "flex-1 min-w-[300px] max-w-[800px]"
-              : "w-[252px] flex-shrink-0"
-          }`}
-        >
-          <div className="self-start">
-            <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
-              {getHotelName()}
-            </h3>
+          {featuredRooms.length > 0 && (
             <div
-              className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-60 lg:max-h-62 pr-1 scrollbar-hide"
+              id={featuredRowId}
+              className="flex gap-4 px-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
               style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
             >
-              {getHotelData()?.hotelDesc || "Your perfect stay awaits"}
-            </div>
-          </div>
-          <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
-            <ArrowUpRight className="text-[#ff9100] w-6 h-6 lg:w-7 lg:h-7" />
-          </div>
-        </div>
+              {/* Room cards */}
+              {featuredRooms.map((room) => (
+                <div key={room.id} data-card className="w-[252px] flex-shrink-0">
+                  <FeaturedAccommodationCard room={room} />
+                </div>
+              ))}
 
-        {/* Map Card */}
-        <div
-          className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${
-            featuredRooms.length <= 2
-              ? "flex-1 min-w-[300px] max-w-[800px]"
-              : "w-[252px] flex-shrink-0"
-          }`}
-        >
-          <div className="h-full relative">
-            <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-[#4285F4]/90 to-transparent">
-              <div className="flex items-center mb-1">
-                <MapPin className="h-4 w-4 mr-1" />
-                <h3 className="text-lg font-bold font-urbanist">
-                  {getHotelData()?.city || "Location"}
-                </h3>
+              {/* Orange Card */}
+              <div
+                className={`rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
+                    ? "flex-1 min-w-[300px] max-w-[800px]"
+                    : "w-[252px] flex-shrink-0"
+                  }`}
+              >
+                <div className="self-start">
+                  <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
+                    {getHotelName()}
+                  </h3>
+                  <div
+                    className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-60 lg:max-h-62 pr-1 scrollbar-hide"
+                    style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+                  >
+                    {getHotelData()?.hotelDesc || "Your perfect stay awaits"}
+                  </div>
+                </div>
+                <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
+                  <ArrowUpRight className="text-[#ff9100] w-6 h-6 lg:w-7 lg:h-7" />
+                </div>
+              </div>
+
+              {/* Map Card */}
+              <div
+                className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
+                    ? "flex-1 min-w-[300px] max-w-[800px]"
+                    : "w-[252px] flex-shrink-0"
+                  }`}
+              >
+                <div className="h-full relative">
+                  <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-[#4285F4]/90 to-transparent">
+                    <div className="flex items-center mb-1">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <h3 className="text-lg font-bold font-urbanist">
+                        {getHotelData()?.city || "Location"}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="w-full h-full min-h-[220px]">
+                    <HotelMap
+                      latitude={getHotelData()?.latitude || ""}
+                      longitude={getHotelData()?.longitude || ""}
+                      hotelName={getHotelData()?.hotelName || ""}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="w-full h-full min-h-[220px]">
-              <HotelMap
-                latitude={getHotelData()?.latitude || ""}
-                longitude={getHotelData()?.longitude || ""}
-                hotelName={getHotelData()?.hotelName || ""}
-              />
-            </div>
-          </div>
+          )}
         </div>
       </div>
-    )}
-  </div>
-</div>
       {/* Property Page Integration */}
       <div className="mt-1 w-full mx-auto sm:px-4">
         <PropertyPage />

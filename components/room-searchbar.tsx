@@ -20,7 +20,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     const [adults, setAdults] = useState(2);
     const [children, setChildren] = useState(0);
     const [rooms, setRooms] = useState(1);
-    
+
     // Refs for the dropdown components
     const checkInCalendarRef = useRef<HTMLDivElement>(null);
     const checkOutCalendarRef = useRef<HTMLDivElement>(null);
@@ -46,47 +46,47 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     const handleCheckOutDateChange = (date: Date) => {
         setCheckOutDate(date);
     };
-    
+
     // Handle clicks outside the dropdown components
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             // Close check-in calendar if click is outside
             if (
                 showCheckInCalendar &&
-                checkInCalendarRef.current && 
+                checkInCalendarRef.current &&
                 !checkInCalendarRef.current.contains(event.target as Node) &&
-                checkInButtonRef.current && 
+                checkInButtonRef.current &&
                 !checkInButtonRef.current.contains(event.target as Node)
             ) {
                 setShowCheckInCalendar(false);
             }
-            
+
             // Close check-out calendar if click is outside
             if (
                 showCheckOutCalendar &&
-                checkOutCalendarRef.current && 
+                checkOutCalendarRef.current &&
                 !checkOutCalendarRef.current.contains(event.target as Node) &&
-                checkOutButtonRef.current && 
+                checkOutButtonRef.current &&
                 !checkOutButtonRef.current.contains(event.target as Node)
             ) {
                 setShowCheckOutCalendar(false);
             }
-            
+
             // Close guest dropdown if click is outside
             if (
                 showGuestDropdown &&
-                guestDropdownRef.current && 
+                guestDropdownRef.current &&
                 !guestDropdownRef.current.contains(event.target as Node) &&
-                guestButtonRef.current && 
+                guestButtonRef.current &&
                 !guestButtonRef.current.contains(event.target as Node)
             ) {
                 setShowGuestDropdown(false);
             }
         }
-        
+
         // Add event listener
         document.addEventListener('mousedown', handleClickOutside);
-        
+
         // Clean up
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
@@ -94,7 +94,10 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     }, [showCheckInCalendar, showCheckOutCalendar, showGuestDropdown]);
 
     return (
-        <div className="w-full max-w-4xl mx-auto bg-white/70 rounded-3xl shadow-xl flex flex-col sm:flex-row gap-2 sm:gap-0 items-stretch sm:items-center border border-white/30 overflow-visible relative z-10">
+        <div className="w-full max-w-4xl mx-auto rounded-3xl shadow-xl flex flex-col sm:flex-row gap-2 sm:gap-0 items-stretch sm:items-center border border-white/30 overflow-visible relative z-10"
+            style={{
+                background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
+            }}>
             {/* Check In */}
             <div className="flex-1 px-2 sm:px-4 py-2 relative w-full sm:w-auto">
                 <div
@@ -117,9 +120,9 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
 
                 {/* Check In Calendar Popup */}
                 {showCheckInCalendar && (
-                    <div 
-                      ref={checkInCalendarRef}
-                      className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl z-50 overflow-hidden">
+                    <div
+                        ref={checkInCalendarRef}
+                        className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl z-50 overflow-hidden">
                         <div className="sm:w-[330px]  overflow-visible">
                             <DatePicker
                                 date={checkInDate}
@@ -153,9 +156,9 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
 
                 {/* Check Out Calendar Popup */}
                 {showCheckOutCalendar && (
-                    <div 
-                      ref={checkOutCalendarRef}
-                      className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl z-50 overflow-hidden">
+                    <div
+                        ref={checkOutCalendarRef}
+                        className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl z-50 overflow-hidden">
                         <div className=" sm:w-[330px] overflow-visible">
                             <DatePicker
                                 date={checkOutDate}
@@ -187,9 +190,9 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
             </div>
 
             {showGuestDropdown && (
-                <div 
-                  ref={guestDropdownRef}
-                  className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl p-6 w-80 sm:w-100 guest-dropdown font-urbanist notranslate">
+                <div
+                    ref={guestDropdownRef}
+                    className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl p-6 w-80 sm:w-100 guest-dropdown font-urbanist notranslate">
                     <div className="max-w-4xl mx-auto">
                         {[
                             { label: 'Adults', desc: 'Ages 13 or above', value: adults, setter: setAdults },

@@ -102,12 +102,12 @@ const HotelDetails = ({
 
   return (
     <div
-      className="p-5 font-urbanist"
+      className="p-4 font-urbanist flex flex-col "
       style={{
         background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
       }}
     >
-      <h3 className="text-lg font-semibold mb-2 line-clamp-2">
+      <h3 className="font-semibold text-base leading-snug line-clamp-2 min-h-[3rem]">
         {title}
         {hotelType && (
           <span className="font-semibold text-[#8f8f73] ml-1 text-sm">
@@ -115,18 +115,18 @@ const HotelDetails = ({
           </span>
         )}
       </h3>
-      <div className="flex items-center text-sm mb-2">
-        <MapPin className="w-4 h-4 mr-1 text-[#ff9100] flex-shrink-0" />
+      <div className="flex items-center text-xs mb-1.5">
+        <MapPin className="w-4 h-4 mr-2 text-[#ff9100] flex-shrink-0" />
         <span className="text-[#8f8f73] notranslate truncate">{location}</span>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-auto">
         <div className="flex items-center gap-1">
           {renderStars()}
         </div>
         {/* Price on the right */}
         <div className="relative inline-block font-urbanist">
-          <span className="absolute -left-5 -top-1 text-2xl font-semibold">$</span>
-          <span className="text-4xl font-medium notranslate">{price}</span>
+          <span className="absolute -left-4 -top-0.5 text-xl font-semibold">$</span>
+          <span className="text-3xl font-medium notranslate">{price}</span>
         </div>
       </div>
     </div>
