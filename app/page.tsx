@@ -317,11 +317,57 @@ export default function Home() {
     window.open(`/hotels/${slug}`, "_blank", "noopener,noreferrer");
   };
 
+  const [showWishlist, setShowWishlist] = useState(false);
+
+  const displayWishlistedHotels = () => {
+    const newWishlistState = !showWishlist;
+    setShowWishlist(newWishlistState);
+    
+    if (newWishlistState) {
+      // Show wishlist
+      const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+      if (wishlist.length > 0) {
+        const wishlistedSection = {
+          "Your Wishlist": wishlist.map((hotel: any) => ({
+            id: Math.random(), // Since we don't have hotel ID in wishlist
+            type: hotel.title,
+            location: hotel.location,
+            rating: hotel.rating,
+            image: hotel.image,
+            lowestRate: hotel.price,
+            slug: slugify(hotel.title),
+            hotelType: "Wishlisted"
+          }))
+        };
+        setGroupedSections(wishlistedSection);
+      }
+    } else {
+      // Show all hotels - reuse the existing grouping logic
+      groupAndSet(allHotels, searchParams.destination, searchParams.hotelName, searchParams.hotelType);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#e2e0df] relative">
       <div className="absolute top-0 left-0 right-0 h-[500px] bg-[#ff9100] z-0" />
       <div className="relative z-10 w-full">
         <Navbar />
+        <button
+          onClick={displayWishlistedHotels}
+          className="fixed top-4 right-[15rem] z-[101] w-8 h-8 flex items-center justify-center rounded-full bg-white/90 hover:bg-white/100 transition-all duration-200 shadow-sm hover:shadow-md"
+          title="Wishlist"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill={showWishlist ? "#ff9100" : "none"}
+            stroke={showWishlist ? "#ff9100" : "currentColor"}
+            className="w-5 h-5"
+            strokeWidth={1.5}
+          >
+            <path d="M12 21s-6-4.35-9-8.33C.52 9.28 2.24 4 6.5 4c1.74 0 3.41 1.01 4.5 2.09C12.09 5.01 13.76 4 15.5 4 19.76 4 21.48 9.28 18 12.67 15 16.65 12 21 12 21z" />
+          </svg>
+        </button>
         
         {/* Sticky Search Bar */}
         <div
