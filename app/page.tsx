@@ -69,7 +69,7 @@ function PropertyListings({
 
   return (
     <div className="px-2 sm:px-4 md:px-6 p-2">
-      <div className="border-t border-gray-300 mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6">
         <div className="flex items-center justify-between mt-3 sm:mb-6">
           <h2 className="text-base sm:text-lg md:text-xl font-semibold font-urbanist notranslate">
             {title}
@@ -346,7 +346,7 @@ export default function Home() {
         <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${
           showStickySearch ? 'pt-20 sm:pt-24' : ''
         }`}>
-          <div ref={searchBarRef} className="py-6">
+          <div ref={searchBarRef} className="py-2">
             <SearchBar onSearch={handleSearch} />
           </div>
 
