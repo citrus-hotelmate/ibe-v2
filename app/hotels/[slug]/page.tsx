@@ -390,19 +390,24 @@ export default function LandingPage() {
             </h2>
           </div>
           {featuredRooms.length > 0 && (
-            <div className="w-full overflow-x-auto md:overflow-visible scrollbar-hide">
+            <div className="w-full overflow-x-auto scrollbar-hide">
               <div
-                className="flex gap-4 sm:gap-4 overflow-x-auto md:overflow-visible px-4 md:px-6 pb-2 w-full md:grid md:grid-flow-col md:auto-cols-max md:justify-start lg:justify-center scrollbar-hide"
-                style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+                className="flex gap-4 px-4 pb-2 w-full min-w-max"
+                style={{ 
+                  msOverflowStyle: "none", 
+                  scrollbarWidth: "none"
+                }}
               >
-                {featuredRooms.map((room) => (
-                  <div key={room.id} className="w-[252px] flex-shrink-0">
-                    <FeaturedAccommodationCard room={room} />
-                  </div>
-                ))}
+                <div className="flex gap-4 flex-grow-0">
+                  {featuredRooms.map((room) => (
+                    <div key={room.id} className="w-[252px] flex-shrink-0">
+                      <FeaturedAccommodationCard room={room} />
+                    </div>
+                  ))}
+                </div>
 
-                {/* Orange Card - maintaining same width on all devices */}
-                <div className="w-[252px] md:flex-grow md:min-w-[252px] rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 flex-shrink-0">
+                {/* Orange Card - expands to fill available space */}
+                <div className={`rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2 ? 'flex-1 min-w-[300px] max-w-[800px]' : 'w-[252px] flex-shrink-0'}`}>
                   <div className="self-start">
                     <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
                       {getHotelName()}
@@ -423,7 +428,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Map Card */}
-                <div className="w-[252px] md:flex-grow md:min-w-[252px] rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 flex-shrink-0">
+                <div className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2 ? 'flex-1 min-w-[300px] max-w-[800px]' : 'w-[252px] flex-shrink-0'}`}>
                   <div className="h-full relative">
                     <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-[#4285F4]/90 to-transparent">
                       <div className="flex items-center mb-1">
