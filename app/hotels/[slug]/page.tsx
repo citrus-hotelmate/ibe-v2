@@ -43,25 +43,55 @@ export default function LandingPage() {
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 0
   );
-  
-  // Define featured row ID for scrolling
-  const featuredRowId = "featured-rooms-row";
 
-  // Function to handle scrolling of featured cards
-  const scrollByFeaturedCards = (direction: "left" | "right") => {
-    const container = document.getElementById(featuredRowId);
-    if (!container) return;
-    
-    const scrollAmount = 300; // Adjust this value based on your needs
-    const scrollPosition = direction === "left" 
-      ? container.scrollLeft - scrollAmount 
-      : container.scrollLeft + scrollAmount;
-    
-    container.scrollTo({
-      left: scrollPosition,
-      behavior: "smooth"
-    });
-  };
+// Featured row viewport logic: show 6 full cards + 1/4 of the next (on xl+)
+const featuredRowId = "featured-rooms-row";
+const [featuredViewportPx, setFeaturedViewportPx] = useState<number | null>(null);
+
+const recalcFeaturedViewport = () => {
+  const row = document.getElementById(featuredRowId);
+  if (!row) return;
+
+  const firstCard = row.querySelector<HTMLElement>("[data-card]");
+  const cardW = firstCard?.offsetWidth ?? 252; // your fixed card width
+  // read actual gap from the row (fallback to Tailwind gap-4 = 16px)
+  const computedStyle = row ? window.getComputedStyle(row) : null;
+  const gapPx = computedStyle ? parseInt(computedStyle.getPropertyValue("column-gap") || "16", 10) : 16;
+
+  // width = 6 cards + 5 gaps between them + 1 more gap + 1/4 of next card
+  const widthPx = (6 * cardW) + (5 * gapPx) + gapPx + (0.25 * cardW);
+
+  // Only clamp on large screens; below that, let it be fluid
+  if (window.innerWidth >= 1280) {
+    setFeaturedViewportPx(Math.round(widthPx));
+  } else {
+    setFeaturedViewportPx(null);
+  }
+};
+
+// Scroll by exactly one card (+gap)
+const scrollByFeaturedCards = (direction: "left" | "right") => {
+  const row = document.getElementById(featuredRowId);
+  if (!row) return;
+  const firstCard = row.querySelector<HTMLElement>("[data-card]");
+  const cardW = firstCard?.offsetWidth ?? 252;
+  const computedStyle = window.getComputedStyle(row);
+  const gapPx = parseInt(computedStyle.getPropertyValue("column-gap") || "16", 10);
+  const step = cardW + gapPx;
+
+  row.scrollBy({
+    left: direction === "left" ? -step : step,
+    behavior: "smooth",
+  });
+};
+
+// Recalculate when rooms render and on resize
+useEffect(() => {
+  recalcFeaturedViewport();
+  const onResize = () => recalcFeaturedViewport();
+  window.addEventListener("resize", onResize);
+  return () => window.removeEventListener("resize", onResize);
+}, [featuredRooms]);
 
   // Listen to window resize for grid calculations
   useEffect(() => {
@@ -412,9 +442,16 @@ export default function LandingPage() {
       </div>
 
       {/* Featured Accommodations */}
-{/* Featured Accommodations */}
+   {/* Featured Accommodations */}
 <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
-  <div className="w-full max-w-[98rem]">
+  {/* This wrapper constrains the visible width to show 6 + 1/4 cards on xl+ */}
+  <div
+    className="w-full"
+    style={{
+      maxWidth: featuredViewportPx ? `${featuredViewportPx}px` : undefined,
+      marginInline: "auto",
+    }}
+  >
     {/* Header + scroll buttons */}
     <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
       <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground text-center w-full">
@@ -442,7 +479,8 @@ export default function LandingPage() {
     {featuredRooms.length > 0 && (
       <div
         id={featuredRowId}
-        className="flex gap-4 px-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
+        // no horizontal padding so viewport math is exact
+        className="flex gap-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
         style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
       >
         {/* Room cards */}
