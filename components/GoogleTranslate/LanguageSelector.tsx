@@ -185,7 +185,7 @@ const LanguageSelector: React.FC = () => {
                     <Button 
                         variant="outline" 
                         size="sm"
-                        className="bg-white/80 backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-200 shadow-lg notranslate flex items-center justify-center rounded-full w-10 h-10"
+                        className="bg-white backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-200 shadow-lg notranslate flex items-center justify-center rounded-full w-10 h-10"
                         disabled={!isTranslateReady}
                     >
                         <Globe className="h-4 w-4 text-black" />

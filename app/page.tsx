@@ -322,7 +322,7 @@ export default function Home() {
   const displayWishlistedHotels = () => {
     const newWishlistState = !showWishlist;
     setShowWishlist(newWishlistState);
-    
+
     if (newWishlistState) {
       // Show wishlist
       const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
@@ -349,49 +349,32 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#e2e0df] relative">
-      <div className="absolute top-0 left-0 right-0 h-[500px] bg-[#ff9100] z-0" />
+      <div className="absolute top-0 left-0 right-0 h-[460px] bg-[#ff9100] z-0" />
       <div className="relative z-10 w-full">
-        <Navbar />
-        <button
-          onClick={displayWishlistedHotels}
-          className="fixed top-4 right-[15rem] z-[101] w-8 h-8 flex items-center justify-center rounded-full bg-white/90 hover:bg-white/100 transition-all duration-200 shadow-sm hover:shadow-md"
-          title="Wishlist"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill={showWishlist ? "#ff9100" : "none"}
-            stroke={showWishlist ? "#ff9100" : "currentColor"}
-            className="w-5 h-5"
-            strokeWidth={1.5}
-          >
-            <path d="M12 21s-6-4.35-9-8.33C.52 9.28 2.24 4 6.5 4c1.74 0 3.41 1.01 4.5 2.09C12.09 5.01 13.76 4 15.5 4 19.76 4 21.48 9.28 18 12.67 15 16.65 12 21 12 21z" />
-          </svg>
-        </button>
-        
+        <Navbar
+          showWishlist={showWishlist}
+          onToggleWishlistAction={displayWishlistedHotels}
+        />
         {/* Sticky Search Bar */}
         <div
-          className={`fixed top-0 left-0 right-0 z-[100] bg-[#ff9100]/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-500 ease-out transform ${
-            showStickySearch
+          className={`fixed top-0 left-0 right-0 z-[100] bg-[#ff9100]/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-500 ease-out transform ${showStickySearch
               ? 'translate-y-0 opacity-100 scale-100'
               : '-translate-y-full opacity-0 scale-95 pointer-events-none'
-          }`}
+            }`}
           style={{
             transitionTimingFunction: showStickySearch
               ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
               : 'cubic-bezier(0.55, 0.06, 0.68, 0.19)'
           }}
         >
-          <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 transition-all duration-300 ease-out ${
-            showStickySearch ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-          }`}>
+          <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 transition-all duration-300 ease-out ${showStickySearch ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+            }`}>
             <SearchBar onSearch={handleSearch} />
           </div>
         </div>
 
-        <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${
-          showStickySearch ? 'pt-20 sm:pt-24' : ''
-        }`}>
+        <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${showStickySearch ? 'pt-20 sm:pt-24' : ''
+          }`}>
           <div ref={searchBarRef} className="py-2">
             <SearchBar onSearch={handleSearch} />
           </div>
