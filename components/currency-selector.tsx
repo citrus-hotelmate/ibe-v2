@@ -18,11 +18,13 @@ export function CurrencySelector() {
 
   return (
     <Select value={currency} onValueChange={setCurrency}>
-      <SelectTrigger className="w-20 h-10 flex items-center justify-center rounded-full bg-white shadow hover:bg-gray-50 border">
-        <SelectValue placeholder="Currency">
-          <CircleDollarSign className="h-6 w-6 text-black mx-auto" />
-        </SelectValue>
-      </SelectTrigger>
+ <SelectTrigger
+  className="w-13 h-10 flex items-center justify-center rounded-full bg-white shadow hover:bg-gray-50 [&>svg]:hidden"
+>
+  <SelectValue placeholder="Currency">
+    <CircleDollarSign className="h-6 w-6 text-black mx-auto" />
+  </SelectValue>
+</SelectTrigger>
       <SelectContent className="max-h-[300px] overflow-auto">
         {filteredCurrencies.map((curr) => (
           <SelectItem key={curr.code} value={curr.code}>

@@ -283,15 +283,21 @@ export default function LandingPage() {
     >
       {/* <Navbar /> */}
       {/* Logo - stays at the top-left */}
-      <div className="absolute left-4 sm:left-8 lg:left-12 top-4 sm:top-8 lg:top-12 flex items-center z-30">
+      <div
+        className="absolute flex items-center z-30"
+        style={{
+          left: "1rem",
+          top: "0.5rem",
+        }}
+      >
         <Link href="/">
-          <div className="relative w-[130px] h-[60px]">
+          <div className="relative w-[90px] h-[36px] sm:w-[130px] sm:h-[60px]">
             <Image
               src="/logo-01.png"
               alt="Logo"
               fill
               className="rounded-md object-contain"
-              sizes="130px"
+              sizes="(max-width: 640px) 90px, 130px"
             />
           </div>
         </Link>
