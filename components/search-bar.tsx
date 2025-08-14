@@ -636,7 +636,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
           </div>
         </div>
         {showHotelSuggestions && (
-          <div className="absolute z-[110] mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3">
+          <div className="absolute z-[110] mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-80 overflow-auto left-0 right-0 w-full sm:w-auto sm:min-w-full p-3 space-y-3 hotel-suggestions-scroll">
             {/* Recent Hotel Searches */}
             {recentHotelSearches.length > 0 && !hotelNameInput.trim() && (
               <div>

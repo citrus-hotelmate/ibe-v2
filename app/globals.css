@@ -327,3 +327,12 @@ body.translated-rtl {
 [class*="trans-"] {
   transition: none !important;
 }
+
+/* Hotel suggestions dropdown custom scrollbar */
+.hotel-suggestions-scroll::-webkit-scrollbar {       
+  background-color: transparent; 
+}
+
+.hotel-suggestions-scroll:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* Show on hover */
+}

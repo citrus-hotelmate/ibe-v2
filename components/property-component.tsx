@@ -359,7 +359,9 @@ useEffect(() => {
                 Available Room Types
               </h2>
               {availableRooms && availableRooms.length > 0 ? (
-                availableRooms.map((roomGroup: any) => (
+                availableRooms
+                  .filter((roomGroup: any) => mealPlanMap[roomGroup.roomTypeID])
+                  .map((roomGroup: any) => (
                   <RoomCard
                     key={roomGroup.roomTypeID}
                     roomName={roomGroup.roomType}
