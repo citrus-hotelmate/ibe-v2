@@ -397,7 +397,7 @@ export default function PaymentPage() {
       <div className="container max-w-7xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-4 mt-2">
           <h2 className="text-3xl font-bold">Payment</h2>
-          <CurrencySelector allowedCurrencies={["USD", "LKR"]} defaultCurrency="USD" />
+          {/* <CurrencySelector allowedCurrencies={["USD", "LKR"]} defaultCurrency="USD" /> */}
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">

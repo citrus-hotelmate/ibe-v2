@@ -328,7 +328,7 @@ export default function BookPage() {
             <h1 className="text-3xl font-bold">Complete Your Booking</h1>
             <p className="text-sm text-muted-foreground">Please fill in your details to proceed with your reservation</p>
           </div>
-          <CurrencySelector />
+          {/* <CurrencySelector /> */}
         </div>
 
         <Suspense fallback={null}>
