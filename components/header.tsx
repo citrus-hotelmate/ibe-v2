@@ -113,12 +113,12 @@ export default function Header() {
 
         {/* Right: Google Translate Language Selector */}
         <div className="hidden md:flex items-center notranslate">
-          {/* <div className="w-[130px] mr-2">
+          <div className="w-[130px] mr-2">
             <LanguageSelector />
           </div>
           <div className="w-[140px]">
             <CurrencySelector />
-          </div> */}
+          </div>
         </div>
 
         {/* Mobile menu button */}

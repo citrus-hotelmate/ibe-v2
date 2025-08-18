@@ -44,6 +44,7 @@ export default function RoomCard({
     bookingDetails,
     updateBookingDetails,
     addRoom,
+    updateRoom,
     incrementRoomQuantity,
     decrementRoomQuantity,
     removeRoom,
@@ -77,12 +78,6 @@ export default function RoomCard({
     children: number,
     ages?: number[]
   ) => {
-    // Enforce maximum limits for adults and children
-    const maxAdult = 3;
-    const maxChild = 2;
-
-    if (adults > maxAdult) adults = maxAdult;
-    if (children > maxChild) children = maxChild;
 
     // Store child ages if provided
     if (ages) setChildAges(ages);
@@ -158,8 +153,14 @@ export default function RoomCard({
     // Round to whole number for display
     setPrice(Math.round(calculatedPrice));
 
-    // Optionally sync with booking context if needed
-    // updateBookingDetails({...}); // If you want to update context here
+    // Update the booking context with new guest counts for this room
+    if (selectedRoom && roomTypeId) {
+      updateRoom(roomTypeId.toString(), {
+        adults: adults,
+        children: children,
+        price: Math.round(calculatedPrice)
+      });
+    }
   };
 
   // Check if minimum stay requirement is met
@@ -285,6 +286,8 @@ export default function RoomCard({
                     adults={adultCount || 2}
                     children={childCount || 0}
                     onChange={(adults, children, ages) => {
+                      console.log(adults, children,"aaaaaaaaaaaaaaaaaaaaaaaaa");
+
                       // Use our enhanced handleGuestChange function
                       handleGuestChange(adults, children, ages);
                     }}
@@ -334,9 +337,10 @@ export default function RoomCard({
                     <Button
                       onClick={() => {
                         const roomData: any = {
+                          roomId: roomTypeId?.toString() || "",
                           roomName,
-                          adultCount,
-                          childCount,
+                          adults: adultCount || 2,
+                          children: childCount || 0,
                           mealPlanId:
                             mealPlans[0]?.mealPlanID.toString() || "0",
                           price: price,

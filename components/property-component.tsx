@@ -14,6 +14,8 @@ import { CalendarIcon, DeleteIcon, Trash2 } from "lucide-react";
 import { GuestSelector } from "@/components/guest-selector";
 import { DateRangePicker } from "react-date-range";
 import {
+  getCalculatedHotelRatePlan,
+  getHotelDetailsById,
   getHotelRatePlanAvailability,
   getHotelRatePlans,
 } from "@/controllers/hotelRatePlansController";
@@ -48,6 +50,7 @@ export default function PropertyPage() {
   );
   const [defaultRate, setDefaultRate] = useState<number>();
   const [roomTypeImages, setRoomTypeImages] = useState<Record<number, string>>({});
+  const [calculatedRatePlans, setCalculatedRatePlans] = useState<any | null>(null);
 
   const [guests, setGuests] = useState<{
     adults: number;
@@ -133,18 +136,41 @@ export default function PropertyPage() {
           token,
         });
         allRooms = rooms;
+
+        const hotelDetails = await getHotelDetailsById({
+          token,
+          hotelId,
+        });
+
+        const filteredData = hotelDetails.filter((item: any) => item.rateCode.rateCodeID === 2).map((item: any) => item);
+
+        const hotelCal = await getCalculatedHotelRatePlan({
+          token,
+          hotelId,
+          ratePlanId: filteredData.rateCode.rateCodeID,
+          currencyCode: filteredData.currencyCode,
+          mealPlanId: filteredData.mealPlanID,
+          roomTypeId: filteredData.hotelRoomType.hotelRoomTypeID,
+          startDate,
+          endDate,
+        });
+
+        setCalculatedRatePlans(hotelCal);
+
       } catch (err) {
         console.error("Error fetching available rooms for room types:", err);
         alert("Failed to fetch available rooms. Please try again.");
         return;
       }
 
-      const totalGuestCount = guests.adults + guests.children;
-
       const filteredRooms = allRooms
         .filter((item: any) => {
-          const roomTotalCapacity = item.adultCount + item.childCount;
-          return roomTotalCapacity >= totalGuestCount;
+          // Check if room can accommodate the specific adult and children counts
+          console.log("Item:ccc", item);
+          const canAccommodateAdults = item.adultCount >= guests.adults;
+          const canAccommodateChildren = item.childCount >= guests.children;
+          
+          return canAccommodateAdults && canAccommodateChildren;
         })
         .map((item: any) => {
           return {
@@ -152,6 +178,8 @@ export default function PropertyPage() {
             totalCapacity: item.adultCount + item.childCount,
           };
         });
+
+
 
       const groupedRooms = Object.values(
         filteredRooms.reduce((acc: any, room: any) => {
@@ -176,12 +204,11 @@ export default function PropertyPage() {
       console.error("Failed to fetch available rooms:", error);
     }
   };
+console.log(availableRooms,"Available RoomsavailableRooms");
 
 useEffect(() => {
-  const roomOnlyRatePlan = ratePlans?.find(
-    (plan) => plan.title === "IBE-Room Only"
-  );
-  const defaultRateForRoomOnly = roomOnlyRatePlan?.defaultRate;
+    
+  const defaultRateForRoomOnly = calculatedRatePlans?.averageRate;
   setDefaultRate(defaultRateForRoomOnly);
 }, [ratePlans]);
 
@@ -223,14 +250,38 @@ useEffect(() => {
         });
         allRooms = rooms;
 
-        // Calculate total number of guests
-        const totalGuestCount = guests.adults + guests.children;
+        console.log("All Rooms:", allRooms);
 
-        // Filter rooms that have sufficient capacity for all guests
+        const hotelDetails = await getHotelDetailsById({
+          token,
+          hotelId,
+        });
+
+       
+
+        const filteredData = hotelDetails.filter((item: any) => item.rateCode.rateCodeID === 2).map((item: any) => item);
+
+        const hotelCal = await getCalculatedHotelRatePlan({
+          token,
+          hotelId,
+          ratePlanId: filteredData.rateCode.rateCodeID,
+          currencyCode: filteredData.currencyCode,
+          mealPlanId: filteredData.mealPlanID,
+          roomTypeId: filteredData.hotelRoomType.hotelRoomTypeID,
+          startDate,
+          endDate,
+        });
+
+        setCalculatedRatePlans(hotelCal);
+
+        // Filter rooms that have sufficient capacity for specific adult and children counts
         const filteredRooms = allRooms
           .filter((item: any) => {
-            const roomTotalCapacity = item.adultCount + item.childCount;
-            return roomTotalCapacity >= totalGuestCount;
+            // Check if room can accommodate the specific adult and children counts
+            const canAccommodateAdults = item.adultCount >= guests.adults;
+            const canAccommodateChildren = item.childCount >= guests.children;
+            
+            return canAccommodateAdults && canAccommodateChildren;
           })
           .map((item: any) => {
             return {
@@ -238,6 +289,9 @@ useEffect(() => {
               totalCapacity: item.adultCount + item.childCount,
             };
           });
+
+
+        console.log("Filtered Rooms:", filteredRooms);
 
         // Process the rooms after fetching
         const groupedRooms = Object.values(
@@ -266,10 +320,10 @@ useEffect(() => {
     fetchRoomsForDateRange();
   }, [
     ratePlans,
-    bookingDetails.checkIn,
-    bookingDetails.checkOut,
-    bookingDetails.adults,
-    bookingDetails.children,
+    dateRange.from,
+    dateRange.to,
+    guests.adults,
+    guests.children,
   ]);
 
   return (
@@ -452,7 +506,7 @@ useEffect(() => {
                                   {room.roomName.toUpperCase()}
                                 </div>
                                 <div className="text-sm text-gray-600">
-                                  {room.quantity} room • {room.adults} adults
+                                  {room.quantity} room • {room.adults} adults • {room.children} children
                                 </div>
                                 <div className="text-sm text-gray-600">
                                   Meal Plan:{" "}
