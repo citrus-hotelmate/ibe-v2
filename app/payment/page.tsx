@@ -112,7 +112,7 @@ export default function PaymentPage() {
 
   // Calculate total price
   const roomsTotal = bookingDetails.selectedRooms.reduce((total, room) => {
-    return total + room.price * room.quantity * bookingDetails.nights;
+    return total + (room.averageRate ?? 0) * room.quantity * bookingDetails.nights;
   }, 0);
   const baseTotal = roomsTotal;
 
@@ -397,7 +397,7 @@ export default function PaymentPage() {
       <div className="container max-w-7xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-4 mt-2">
           <h2 className="text-3xl font-bold">Payment</h2>
-          <CurrencySelector allowedCurrencies={["USD", "LKR"]} defaultCurrency="USD" />
+          {/* <CurrencySelector allowedCurrencies={["USD", "LKR"]} defaultCurrency="USD" /> */}
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
@@ -485,7 +485,7 @@ export default function PaymentPage() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Booking Summary</CardTitle>
+                <CardTitle>Booking Summary-2</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 {bookingDetails.selectedRooms.map((roomBooking) => (
@@ -507,7 +507,7 @@ export default function PaymentPage() {
                         }`}
                     </p>
                     <div className="text-sm mt-1 text-muted-foreground">
-                      {formatPrice(convertPrice(roomBooking.price))} per night
+                      {formatPrice(convertPrice(roomBooking.averageRate ?? 0))} per night
                       {roomBooking.mealPlanId && (
                         <div className="text-xs mt-1">
                           Meal Plan: {roomBooking.mealPlanId}

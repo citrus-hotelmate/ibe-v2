@@ -97,6 +97,17 @@ export default function LandingPage() {
           return;
         }
 
+        // Save hotel name and image to local storage
+        const hotelToSave = {
+          name: matchedHotel.hotelName,
+          image: matchedHotel.hotelImage?.base64Image || null,
+          // Store additional hotel details that might be useful
+          id: matchedHotel.hotelID,
+          city: matchedHotel.city,
+          rating: matchedHotel.starCatgeory
+        };
+        localStorage.setItem('selectedHotel', JSON.stringify(hotelToSave));
+
         setCurrentHotel(matchedHotel);
 
         // Parallel fetch for room features and images once we have the hotel

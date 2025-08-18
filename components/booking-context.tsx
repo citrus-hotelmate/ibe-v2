@@ -22,6 +22,8 @@ export type RoomBooking = {
   children: number
   quantity: number
   roomCount?:number
+  averageRate?: number
+  hotelCode?: number
 }
 
 type BookingDetails = {
@@ -41,6 +43,8 @@ type BookingDetails = {
   selectedRooms: RoomBooking[]
   rooms: number
   roomCount?:  number
+  hotelName?: string // Optional field for hotel name
+  hotelImageUrl?: string // Optional field for hotel image URL
 }
 
 const defaultBookingDetails: BookingDetails = {

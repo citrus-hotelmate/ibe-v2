@@ -13,6 +13,7 @@ import HotelCard from "@/components/hotelCards";
 import { Hotel as HotelIcon } from "lucide-react";
 import { useRef } from "react";
 import { Hotel } from "@/types/ibe";
+import { useBooking } from "@/components/booking-context";
 
 
 interface PropertyListing {
@@ -66,6 +67,7 @@ function PropertyListings({
     const step = first ? first.offsetWidth + 16 : 320; // 16 = gap
     row.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
+  
 
   return (
     <div className="px-2 sm:px-4 md:px-6 p-2">
@@ -153,6 +155,7 @@ export default function Home() {
   const [allHotels, setAllHotels] = useState<Hotel[]>([]);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const { bookingDetails, updateBookingDetails, addRoom } = useBooking();
 
   useEffect(() => {
     const fetchInitialHotels = async () => {
@@ -402,7 +405,9 @@ export default function Home() {
                 title={sectionTitle}
                 destination={sectionTitle}
                 properties={properties}
-                onHotelClick={(slug) => window.open(`/hotels/${slug}`, "_blank")}
+                onHotelClick={(slug) => {
+                  window.open(`/hotels/${slug}`, "_blank")
+                }}
               />
             ))
           )}

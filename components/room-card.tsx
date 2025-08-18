@@ -9,13 +9,14 @@ import { GuestSelector } from "@/components/guest-selector";
 import { RoomGuestSelector } from "./room-guest-selector";
 import { useBooking, RoomBooking } from "./booking-context";
 import { set } from "date-fns";
-import { is } from "date-fns/locale";
+import { ca, is } from "date-fns/locale";
 
 interface RoomCardProps {
   roomName: string;
   roomsLeft: number;
   mealPlanId: number;
   defaultRate?: number;
+  averageRate?: number;
   onAddToBooking: (room: RoomBooking) => void;
   adultCount?: number;
   childCount?: number;
@@ -29,6 +30,7 @@ export default function RoomCard({
   roomsLeft,
   mealPlanId,
   defaultRate,
+  averageRate,
   onAddToBooking,
   adultCount,
   childCount,
@@ -44,7 +46,6 @@ export default function RoomCard({
     bookingDetails,
     updateBookingDetails,
     addRoom,
-    updateRoom,
     incrementRoomQuantity,
     decrementRoomQuantity,
     removeRoom,
@@ -78,6 +79,12 @@ export default function RoomCard({
     children: number,
     ages?: number[]
   ) => {
+    // Enforce maximum limits for adults and children
+    const maxAdult = 3;
+    const maxChild = 2;
+
+    if (adults > maxAdult) adults = maxAdult;
+    if (children > maxChild) children = maxChild;
 
     // Store child ages if provided
     if (ages) setChildAges(ages);
@@ -153,14 +160,8 @@ export default function RoomCard({
     // Round to whole number for display
     setPrice(Math.round(calculatedPrice));
 
-    // Update the booking context with new guest counts for this room
-    if (selectedRoom && roomTypeId) {
-      updateRoom(roomTypeId.toString(), {
-        adults: adults,
-        children: children,
-        price: Math.round(calculatedPrice)
-      });
-    }
+    // Optionally sync with booking context if needed
+    // updateBookingDetails({...}); // If you want to update context here
   };
 
   // Check if minimum stay requirement is met
@@ -206,21 +207,21 @@ export default function RoomCard({
                 </div>
                 <div className="text-right">
                   <div className="text-md font-bold">
-                    {defaultRate && bookingDetails.nights
-                      ? `$${(defaultRate * bookingDetails.nights).toFixed(2)}`
-                      : `$${defaultRate?.toFixed(2)}`}
+                   {averageRate && bookingDetails.nights
+                      ? `$${(averageRate * bookingDetails.nights).toFixed(2)}`
+                      : `$${averageRate?.toFixed(2)}`}
                     <span className="text-sm font-normal text-muted-foreground">
                       /period
                     </span>
                   </div>
                   {bookingDetails.nights > 0 && (
                     <div className="text-sm text-muted-foreground">
-                      {`($${defaultRate?.toFixed(2)} = per night × ${
+                      {`($${averageRate?.toFixed(2)} = per night × ${
                         bookingDetails.nights
                       })`}
                     </div>
                   )}
-                  {defaultRate && defaultRate > 100 && (
+                  {averageRate && averageRate > 100 && (
                     <div className="text-sm text-green-600 font-medium">
                       20% off
                     </div>
@@ -260,12 +261,12 @@ export default function RoomCard({
                       mealPlans.map((plan) => (
                         <option key={plan.mealPlanID}>
                           {plan.mealPlan} -{" "}
-                          {defaultRate && bookingDetails.nights
-                            ? `$${(defaultRate * bookingDetails.nights).toFixed(
+                          {averageRate && bookingDetails.nights
+                            ? `$${(averageRate * bookingDetails.nights).toFixed(
                                 2
                               )}`
-                            : `$${defaultRate?.toFixed(2)}`}
-                          <span className="text-sm font-normal text-muted-foreground">
+                            : `$${averageRate?.toFixed(2)}`}                       
+                            <span className="text-sm font-normal text-muted-foreground">
                             /period
                           </span>
                         </option>
@@ -286,8 +287,6 @@ export default function RoomCard({
                     adults={adultCount || 2}
                     children={childCount || 0}
                     onChange={(adults, children, ages) => {
-                      console.log(adults, children,"aaaaaaaaaaaaaaaaaaaaaaaaa");
-
                       // Use our enhanced handleGuestChange function
                       handleGuestChange(adults, children, ages);
                     }}
@@ -337,10 +336,9 @@ export default function RoomCard({
                     <Button
                       onClick={() => {
                         const roomData: any = {
-                          roomId: roomTypeId?.toString() || "",
                           roomName,
-                          adults: adultCount || 2,
-                          children: childCount || 0,
+                          adultCount,
+                          childCount,
                           mealPlanId:
                             mealPlans[0]?.mealPlanID.toString() || "0",
                           price: price,

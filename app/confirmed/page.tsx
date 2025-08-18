@@ -52,7 +52,7 @@ export default function ConfirmedPage() {
           // Use parsedBooking as base if prev is null (first load), otherwise use prev
           const previous = prev ?? parsedBooking;
           const roomTotal = parsedReservation.selectedRooms?.reduce((sum: number, room: any) => {
-            return sum + room.price * room.quantity * parsedReservation.nights;
+            return sum + room.averageRate * room.quantity * parsedReservation.nights;
           }, 0) || 0;
 
           const packageTotal = parsedReservation.selectedPackages?.reduce((sum: number, pkg: any) => {
@@ -87,9 +87,10 @@ export default function ConfirmedPage() {
   useEffect(() => {
     const fetchHotelDetails = async () => {
       try {
-        const res = await fetch("https://ipg.citrusibe.com/API/GetHotelDetail.aspx")
-        const data = await res.json()
-        setHotelDetails(data)
+        const res = await getAllHotels({ token: localStorage.getItem("token") || "" })
+        
+          setHotelDetails(res);
+        
       } catch (error) {
         console.error("Failed to fetch hotel details", error)
       }
@@ -175,6 +176,9 @@ export default function ConfirmedPage() {
   const mapRoomTypeToRoom = (roomType: RoomType | undefined): Room | undefined => {
     if (!roomType) return undefined
     // Provide default values for missing Room fields
+
+    const total = bookingDetails?.selectedRooms.reduce((sum: number, room: any) => sum + room.averageRate, 0) || 0;
+    console.log("Total Room Price:", total);
     return {
       ...roomType,
       triplerate: 0,
@@ -245,7 +249,9 @@ export default function ConfirmedPage() {
 
     window.location.href = `mailto:${bookingDetails.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
+const selectedHotel = JSON.parse(localStorage.getItem('selectedHotel'));
 
+console.log(selectedHotel,"JUDE")
   return (
     <div className="container max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-end mb-4">
@@ -273,7 +279,7 @@ export default function ConfirmedPage() {
             <div className="flex items-center gap-4 ml-8">
               <div className="w-28 h-28 relative rounded-md overflow-hidden bg-gray-100 p-2">
                 <Image
-                  src={selectedRoom?.image || hotelDetails?.IBE_LogoURL || "/placeholder.svg?height=80&width=80"}
+                  src={selectedHotel?.image || selectedHotel?.image || "/placeholder.svg?height=80&width=80"}
                   alt="Property"
                   fill
                   className="object-contain"
@@ -281,7 +287,7 @@ export default function ConfirmedPage() {
                 />
               </div>
               <div>
-                <h3 className="font-semibold">{hotelDetails?.HotelName || "Hotel Name"}</h3>
+                <h3 className="font-semibold">{selectedHotel?.name || "Hotel Name"}</h3>
                 {hotelDetails?.Address && <p className="text-sm text-muted-foreground">{hotelDetails.Address}</p>}
               </div>
             </div>
@@ -343,7 +349,7 @@ export default function ConfirmedPage() {
                       `, ${roomBooking.children} ${roomBooking.children === 1 ? "child" : "children"}`}
                   </p>
                   <div className="text-sm mt-1 text-muted-foreground">
-                    {formatPrice(convertPrice(roomBooking.price))} per night
+                    {formatPrice(convertPrice(roomBooking.averageRate ?? 0))} per night
                     {roomBooking.mealPlanId && (
                       <div className="text-xs mt-1">
                         Meal Plan: {roomBooking.mealPlanId}
@@ -360,7 +366,7 @@ export default function ConfirmedPage() {
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Subtotal</span>
                     <span className="text-sm font-medium text-foreground">
-                      {formatPrice(convertPrice(bookingDetails.selectedRooms.reduce((sum: number, room: any) => sum + room.price, 0)))}
+                      {formatPrice(convertPrice(bookingDetails.total ?? 0))}
                     </span>
                   </div>
 
@@ -371,14 +377,14 @@ export default function ConfirmedPage() {
                         {bookingDetails.selectedPackages.map((pkg: any, idx: number) => (
                           <li key={idx} className="flex justify-between">
                             <span>{pkg.Description}</span>
-                            <span className="text-sm font-medium text-foreground">{formatPrice(convertPrice(pkg.Price))}</span>
+                            <span className="text-sm font-medium text-foreground">{formatPrice(convertPrice(pkg.averageRate))}</span>
                           </li>
                         ))}
                       </ul>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Total Package Cost</span>
                         <span className="text-sm font-medium text-foreground">
-                          {formatPrice(convertPrice(bookingDetails.selectedPackages.reduce((sum: number, pkg: any) => sum + pkg.Price, 0)))}
+                          {formatPrice(convertPrice(bookingDetails.selectedPackages.reduce((sum: number, pkg: any) => sum + pkg.averageRate, 0)))}
                         </span>
                       </div>
                     </>

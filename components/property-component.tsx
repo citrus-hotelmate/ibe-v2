@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-// TypeScript interfaces for hotel room types and rate plans
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,21 +9,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { getHotelRoomTypeImagesByHotelId } from "@/controllers/hotelRoomTypeImageController";
-import { CalendarIcon, DeleteIcon, Trash2 } from "lucide-react";
+import { CalendarIcon, Trash2 } from "lucide-react";
 import { GuestSelector } from "@/components/guest-selector";
 import { DateRangePicker } from "react-date-range";
 import {
-  getCalculatedHotelRatePlan,
-  getHotelDetailsById,
   getHotelRatePlanAvailability,
   getHotelRatePlans,
 } from "@/controllers/hotelRatePlansController";
-import { getAvailableRooms } from "@/controllers/roomTypeController";
 import { AvailableRoom } from "@/types/roomType";
 import RoomCard from "@/components/room-card";
 import { HotelRatePlan } from "@/types/hotelRatePlans";
 import { useBooking } from "@/components/booking-context";
-import { max } from "date-fns";
 
 export default function PropertyPage() {
   // Get booking context
@@ -48,10 +43,7 @@ export default function PropertyPage() {
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[] | null>(
     null
   );
-  const [defaultRate, setDefaultRate] = useState<number>();
   const [roomTypeImages, setRoomTypeImages] = useState<Record<number, string>>({});
-  const [calculatedRatePlans, setCalculatedRatePlans] = useState<any | null>(null);
-
   const [guests, setGuests] = useState<{
     adults: number;
     children: number;
@@ -136,41 +128,18 @@ export default function PropertyPage() {
           token,
         });
         allRooms = rooms;
-
-        const hotelDetails = await getHotelDetailsById({
-          token,
-          hotelId,
-        });
-
-        const filteredData = hotelDetails.filter((item: any) => item.rateCode.rateCodeID === 2).map((item: any) => item);
-
-        const hotelCal = await getCalculatedHotelRatePlan({
-          token,
-          hotelId,
-          ratePlanId: filteredData.rateCode.rateCodeID,
-          currencyCode: filteredData.currencyCode,
-          mealPlanId: filteredData.mealPlanID,
-          roomTypeId: filteredData.hotelRoomType.hotelRoomTypeID,
-          startDate,
-          endDate,
-        });
-
-        setCalculatedRatePlans(hotelCal);
-
       } catch (err) {
         console.error("Error fetching available rooms for room types:", err);
         alert("Failed to fetch available rooms. Please try again.");
         return;
       }
 
+      const totalGuestCount = guests.adults + guests.children;
+
       const filteredRooms = allRooms
         .filter((item: any) => {
-          // Check if room can accommodate the specific adult and children counts
-          console.log("Item:ccc", item);
-          const canAccommodateAdults = item.adultCount >= guests.adults;
-          const canAccommodateChildren = item.childCount >= guests.children;
-          
-          return canAccommodateAdults && canAccommodateChildren;
+          const roomTotalCapacity = item.adultCount + item.childCount;
+          return roomTotalCapacity >= totalGuestCount;
         })
         .map((item: any) => {
           return {
@@ -178,9 +147,6 @@ export default function PropertyPage() {
             totalCapacity: item.adultCount + item.childCount,
           };
         });
-
-
-
       const groupedRooms = Object.values(
         filteredRooms.reduce((acc: any, room: any) => {
           if (!acc[room.roomTypeId]) {
@@ -191,6 +157,7 @@ export default function PropertyPage() {
               totalCapacity: room.totalCapacity,
               adultCount: room.adultCount,
               childCount: room.childCount,
+              averageRate: room.averageRate,
               rooms: [],
             };
           }
@@ -204,20 +171,13 @@ export default function PropertyPage() {
       console.error("Failed to fetch available rooms:", error);
     }
   };
-console.log(availableRooms,"Available RoomsavailableRooms");
-
-useEffect(() => {
-    
-  const defaultRateForRoomOnly = calculatedRatePlans?.averageRate;
-  setDefaultRate(defaultRateForRoomOnly);
-}, [ratePlans]);
 
   // Create a mapping from roomTypeID to mealPlanID
   const mealPlanMap = ratePlans
     ? ratePlans.reduce((acc: Record<number, number>, plan: any) => {
-        acc[plan.hotelRoomType.hotelRoomTypeID] = plan.mealPlanID;
-        return acc;
-      }, {})
+      acc[plan.hotelRoomType.hotelRoomTypeID] = plan.mealPlanID;
+      return acc;
+    }, {})
     : {};
 
   useEffect(() => {
@@ -250,38 +210,14 @@ useEffect(() => {
         });
         allRooms = rooms;
 
-        console.log("All Rooms:", allRooms);
+        // Calculate total number of guests
+        const totalGuestCount = guests.adults + guests.children;
 
-        const hotelDetails = await getHotelDetailsById({
-          token,
-          hotelId,
-        });
-
-       
-
-        const filteredData = hotelDetails.filter((item: any) => item.rateCode.rateCodeID === 2).map((item: any) => item);
-
-        const hotelCal = await getCalculatedHotelRatePlan({
-          token,
-          hotelId,
-          ratePlanId: filteredData.rateCode.rateCodeID,
-          currencyCode: filteredData.currencyCode,
-          mealPlanId: filteredData.mealPlanID,
-          roomTypeId: filteredData.hotelRoomType.hotelRoomTypeID,
-          startDate,
-          endDate,
-        });
-
-        setCalculatedRatePlans(hotelCal);
-
-        // Filter rooms that have sufficient capacity for specific adult and children counts
+        // Filter rooms that have sufficient capacity for all guests
         const filteredRooms = allRooms
           .filter((item: any) => {
-            // Check if room can accommodate the specific adult and children counts
-            const canAccommodateAdults = item.adultCount >= guests.adults;
-            const canAccommodateChildren = item.childCount >= guests.children;
-            
-            return canAccommodateAdults && canAccommodateChildren;
+            const roomTotalCapacity = item.adultCount + item.childCount;
+            return roomTotalCapacity >= totalGuestCount;
           })
           .map((item: any) => {
             return {
@@ -289,9 +225,6 @@ useEffect(() => {
               totalCapacity: item.adultCount + item.childCount,
             };
           });
-
-
-        console.log("Filtered Rooms:", filteredRooms);
 
         // Process the rooms after fetching
         const groupedRooms = Object.values(
@@ -304,6 +237,7 @@ useEffect(() => {
                 totalCapacity: room.totalCapacity,
                 adultCount: room.adultCount,
                 childCount: room.childCount,
+                averageRate: room.averageRate,
                 rooms: [],
               };
             }
@@ -311,6 +245,8 @@ useEffect(() => {
             return acc;
           }, {})
         ) as AvailableRoom[];
+        console.log("Grouped Rooms:", groupedRooms);
+        
         setAvailableRooms(groupedRooms);
       } catch (err) {
         console.error("Error fetching available rooms for room types:", err);
@@ -327,7 +263,7 @@ useEffect(() => {
   ]);
 
   return (
-    <div className="container max-w-10xl mx-auto">
+    <div className="container w-full max-w-[98rem]">
       {/* Top Bar: Dates, Guests, Promo, Button */}
       <Card className="mb-4 mx-2">
         <CardContent className="p-4">
@@ -419,7 +355,7 @@ useEffect(() => {
                     roomName={roomGroup.roomType}
                     roomsLeft={roomGroup.roomCount}
                     mealPlanId={mealPlanMap[roomGroup.roomTypeID] || 0}
-                    defaultRate={defaultRate}
+                    averageRate={roomGroup.averageRate}
                     onAddToBooking={(room) => {
                       // Add the selected room to booking context
                       addRoom({
@@ -432,6 +368,7 @@ useEffect(() => {
                         adults: roomGroup.adultCount || 0, // Use the values from API
                         children: roomGroup.childCount || 0, // Use the values from API
                         quantity: 1,
+                        averageRate: roomGroup.averageRate || 0
                       });
                     }}
                     adultCount={roomGroup.adultCount}
@@ -493,7 +430,7 @@ useEffect(() => {
                   <div className="pt-2 mt-2 border-t">
                     <div className="font-medium mb-2">Selected Rooms:</div>
                     {bookingDetails.selectedRooms &&
-                    bookingDetails.selectedRooms.length > 0 ? (
+                      bookingDetails.selectedRooms.length > 0 ? (
                       bookingDetails.selectedRooms.map(
                         (room: any, idx: number) => (
                           <div
@@ -506,7 +443,7 @@ useEffect(() => {
                                   {room.roomName.toUpperCase()}
                                 </div>
                                 <div className="text-sm text-gray-600">
-                                  {room.quantity} room • {room.adults} adults • {room.children} children
+                                   {room.quantity} room • {room.adults} adults • {room.children} children
                                 </div>
                                 <div className="text-sm text-gray-600">
                                   Meal Plan:{" "}
@@ -521,14 +458,14 @@ useEffect(() => {
                                   {(() => {
                                     if (!dateRange.from || !dateRange.to) return '0.00';
                                     const nights = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-                                    return ((defaultRate || 0) * nights * room.quantity).toFixed(2);
+                                    return ((room.averageRate || 0) * nights * room.quantity).toFixed(2);
                                   })()}
                                 </div>
                                 <div className="text-sm text-gray-600">
                                   ${(() => {
                                     if (!dateRange.from || !dateRange.to) return '0.00';
                                     const nights = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-                                    return ((defaultRate || 0) * nights * room.quantity).toFixed(2);
+                                    return ((room.averageRate || 0) * nights * room.quantity).toFixed(2);
                                   })()}/night
                                 </div>
                               </div>
@@ -569,7 +506,7 @@ useEffect(() => {
                 {bookingDetails.checkIn &&
                   bookingDetails.checkOut &&
                   bookingDetails.checkIn.toDateString() ===
-                    new Date().toDateString() && (
+                  new Date().toDateString() && (
                     <div className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded-md mt-4 mb-2">
                       <div className="rounded-full bg-green-100 p-1">
                         <svg
@@ -607,11 +544,11 @@ useEffect(() => {
                           return "0.00";
                         const nights = Math.ceil(
                           (dateRange.to.getTime() - dateRange.from.getTime()) /
-                            (1000 * 60 * 60 * 24)
+                          (1000 * 60 * 60 * 24)
                         );
                         const total = bookingDetails.selectedRooms.reduce(
                           (acc, room) =>
-                            acc + (defaultRate || 0) * room.quantity,
+                            acc + (room.averageRate || 0) * room.quantity,
                           0
                         );
                         return (total * nights).toFixed(2);

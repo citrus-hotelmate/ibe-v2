@@ -292,7 +292,7 @@ export default function BookPage() {
 
   // Calculate totals
   const baseTotal = bookingDetails.selectedRooms.reduce((total, room) => {
-    return total + room.price * room.quantity * bookingDetails.nights
+    return total + room.averageRate * room.quantity * bookingDetails.nights
   }, 0)
   const packagesTotal = bookingDetails.selectedPackages?.reduce((total, pkg) => {
     return total + pkg.Price;
@@ -328,7 +328,7 @@ export default function BookPage() {
             <h1 className="text-3xl font-bold">Complete Your Booking</h1>
             <p className="text-sm text-muted-foreground">Please fill in your details to proceed with your reservation</p>
           </div>
-          <CurrencySelector />
+          {/* <CurrencySelector /> */}
         </div>
 
         <Suspense fallback={null}>
@@ -602,7 +602,7 @@ export default function BookPage() {
             <div className="sticky top-24 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Booking Summary</CardTitle>
+                  <CardTitle>Booking Summary-</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   {bookingDetails.selectedRooms.map((roomBooking) => (
@@ -615,7 +615,7 @@ export default function BookPage() {
                           `, ${roomBooking.children} ${roomBooking.children === 1 ? "child" : "children"}`}
                       </p>
                       <div className="text-sm mt-1 text-muted-foreground">
-                        {formatPrice(convertPrice(roomBooking.price))} per night
+                        {formatPrice(convertPrice(roomBooking.averageRate))} per night
                         {roomBooking.mealPlanId && (
                           <div className="text-xs mt-1">Meal Plan: {roomBooking.mealPlanId}</div>
                         )}
