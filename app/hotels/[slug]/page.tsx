@@ -522,8 +522,10 @@ export default function LandingPage() {
         </div>
       </div>
       {/* Property Page Integration */}
-      <div className="mt-1 w-full mx-auto sm:px-4">
-        <PropertyPage />
+      <div className="mt-2 flex justify-center">
+        <div className="w-full max-w-[98rem]">
+          <PropertyPage />
+        </div>
       </div>
     </div>
   );
