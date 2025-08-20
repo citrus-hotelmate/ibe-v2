@@ -87,7 +87,7 @@ export default function ConfirmedPage() {
   useEffect(() => {
     const fetchHotelDetails = async () => {
       try {
-        const res = await getAllHotels({ token: localStorage.getItem("token") || "" })
+        const res = await getAllHotels({ token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || "" })
         
           setHotelDetails(res);
         
