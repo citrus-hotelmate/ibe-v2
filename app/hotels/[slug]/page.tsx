@@ -500,7 +500,7 @@ export default function LandingPage() {
                   }`}
               >
                 <div className="h-full relative">
-                  <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-[#4285F4]/90 to-transparent">
+                  <div className="absolute top-0 left-0 w-full p-4 z-10 ">
                     <div className="flex items-center mb-1">
                       <MapPin className="h-4 w-4 mr-1" />
                       <h3 className="text-lg font-bold font-urbanist">
