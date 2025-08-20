@@ -5,6 +5,15 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Wallet } from "lucide-react";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { getAllHotels } from "@/controllers/adminController";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,6 +40,10 @@ export default function PaymentPage() {
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherAmount, setVoucherAmount] = useState(0);
+  const [voucherError, setVoucherError] = useState("");
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const [allowPayAtProperty, setAllowPayAtProperty] = useState(false);
@@ -68,14 +81,21 @@ export default function PaymentPage() {
   useEffect(() => {
     const fetchPaymentOptions = async () => {
       try {
-        const res = await fetch(
-          "https://ipg.citrusibe.com/API/GetHotelDetail.aspx"
-        );
-        const data = await res.json();
-        setAllowPayAtProperty(data?.IBE_AllowPayAtProperty === true);
-        setIsIPGActive(data?.IBE_isIPGActive === true);
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+        const data = await getAllHotels({ token: token || "" });
+        
+        // Hardcoded values for testing - remove these when API is updated
+        setAllowPayAtProperty(true); // Hardcoded for testing
+        setIsIPGActive(true); // Hardcoded for testing
+        
+        // Once API is updated, use these lines instead:
+        // setAllowPayAtProperty(data?.IBE_AllowPayAtProperty === true);
+        // setIsIPGActive(data?.IBE_isIPGActive === true);
       } catch (error) {
         console.error("Error fetching hotel payment settings", error);
+        // Set default values in case of error
+        setAllowPayAtProperty(true);
+        setIsIPGActive(true);
       }
     };
 
@@ -101,6 +121,26 @@ export default function PaymentPage() {
     paymentMethod?: string;
     bookingId?: string;
     currency: "USD" | "LKR";
+    promoCode?: string;
+    promoDetails?: {
+      Value: number;
+      PromoCode?: string;
+      [key: string]: any;
+    };
+    specialRequests?: string;
+    selectedPackages?: Array<{
+      Description: string;
+      Price: number;
+      [key: string]: any;
+    }>;
+    name?: string;
+    email?: string;
+    phone?: string;
+    nationality?: string;
+    totalPrice?: number;
+    children?: number;
+    adults?: number;
+    averageRate?: number;
   }
 
   interface MealPlan {
@@ -118,7 +158,7 @@ export default function PaymentPage() {
 
   // Packages, promo, and final total calculations (from booking step)
   const packagesTotal =
-    bookingDetails.selectedPackages?.reduce((total, pkg) => {
+    bookingDetails.selectedPackages?.reduce((total: number, pkg: { Price: number }) => {
       return total + pkg.Price;
     }, 0) || 0;
 
@@ -402,14 +442,19 @@ export default function PaymentPage() {
 
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <form onSubmit={handlePaymentSubmit}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setShowConfirmModal(true);
+              }}
+            >
               <Card>
                 <CardHeader>
                   <CardTitle>Payment Method</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <RadioGroup
-                    value={bookingDetails.paymentMethod}
+                    value={bookingDetails.paymentMethod ?? ""}
                     onValueChange={(value) => {
                       updateBookingDetails({ paymentMethod: value });
                       if (value === "arrival") {
@@ -440,11 +485,70 @@ export default function PaymentPage() {
                           className="flex items-center gap-2 cursor-pointer"
                         >
                           <Wallet className="w-5 h-5" />
-                          Pay on Arrival
+                          Pay Later
                         </Label>
                       </div>
                     )}
                   </RadioGroup>
+
+                  {/* Voucher input */}
+                  <div className="mt-6 bg-green-50 border border-green-200 rounded-md p-4">
+                    <Label
+                      htmlFor="voucher"
+                      className="text-sm font-medium text-green-700"
+                    >
+                      Voucher Code
+                    </Label>
+                    <div className="mt-2 flex items-center space-x-2 bg-white border border-green-300 rounded-md p-3">
+                      <Wallet className="w-5 h-5 text-green-600" />
+                      <input
+                        id="voucher"
+                        type="text"
+                        className="w-full px-2 py-1 text-sm text-green-700 placeholder-green-500 focus:outline-none"
+                        placeholder="Enter voucher code"
+                        value={voucherCode}
+                        onChange={(e) => setVoucherCode(e.target.value)}
+                      />
+                    </div>
+                    {voucherAmount > 0 && (
+                      <div className="mt-3 flex items-center space-x-2 bg-green-50 border border-green-300 text-green-700 px-3 py-2 rounded-md text-sm">
+                        <svg
+                          className="h-4 w-4 text-green-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <span>
+                          Voucher applied: {formatPrice(convertPrice(voucherAmount))}
+                        </span>
+                      </div>
+                    )}
+                    {voucherError && (
+                      <div className="mt-3 flex items-center space-x-2 bg-red-50 border border-red-300 text-red-700 px-3 py-2 rounded-md text-sm">
+                        <svg
+                          className="h-4 w-4 text-red-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                        <span>{voucherError}</span>
+                      </div>
+                    )}
+                  </div>
 
                   {bookingDetails.paymentMethod === "stripe" && null}
 
@@ -463,23 +567,63 @@ export default function PaymentPage() {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full"
-                      disabled={isProcessing}
+                      className="w-full btn-dynamic"
+                      disabled={isProcessing || !bookingDetails.paymentMethod}
                     >
                       {isProcessing
                         ? "Processing..."
                         : bookingDetails.paymentMethod === "arrival"
                         ? "Get Booking Confirmation"
-                        : `Pay ${
+                        : isMounted
+                        ? `Pay ${
                             bookingDetails.currency === "LKR"
                               ? formatPrice(finalTotal)
                               : formatPrice(convertPrice(finalTotal))
-                          }`}
+                          }`
+                        : `Pay $${finalTotal.toFixed(2)}`}
                     </Button>
                   </div>
                 </CardFooter>
               </Card>
             </form>
+
+            <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Your Booking</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">
+                  {bookingDetails.paymentMethod === "arrival"
+                    ? "You have selected to pay at the hotel. Are you sure you want to confirm your booking?"
+                    : "You have selected to pay now. Are you sure you want to confirm and proceed with payment?"}
+                </p>
+                <DialogFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowConfirmModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  {bookingDetails.paymentMethod === "arrival" ? (
+                    <Button
+                      className="btn-dynamic"
+                      onClick={handlePaymentSubmit}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? "Processing..." : "Confirm & Pay at Hotel"}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="btn-dynamic"
+                      onClick={handlePaymentSubmit}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? "Processing..." : "Confirm & Pay Now"}
+                    </Button>
+                  )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div>
