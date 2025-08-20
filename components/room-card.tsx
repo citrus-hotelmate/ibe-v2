@@ -170,10 +170,10 @@ export default function RoomCard({
   console.log(defaultRate, "DF");
   // Room is ready for booking
   return (
-    <div className="overflow-hidden rounded-md m-3 md:mx-16">
-      <Card className="rounded-b-none border-none">
+    <div className="overflow-hidden rounded-md m-3 md:mx-8 lg:mx-4 xl:mx-0 max-w-[1200px] mx-auto">
+      <Card className="rounded-b-none border-none w-full">
         <div className="grid md:grid-cols-5 gap-4 relative">
-          <div className="md:col-span-2 relative min-h-[200px] h-full">
+          <div className="md:col-span-2 relative min-h-[300px] h-full">
             <div className="absolute inset-0">
               <img
                 src={imageUrl || "/placeholder.svg?height=300&width=500"}

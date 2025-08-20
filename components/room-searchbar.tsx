@@ -94,10 +94,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     }, [showCheckInCalendar, showCheckOutCalendar, showGuestDropdown]);
 
     return (
-        <div className="w-full max-w-4xl mx-auto rounded-3xl shadow-xl flex flex-col sm:flex-row gap-2 sm:gap-0 items-stretch sm:items-center border border-white/30 overflow-visible relative z-10"
-            style={{
-                background: "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
-            }}>
+        <div className="w-full max-w-4xl mx-auto rounded-3xl shadow-xl flex flex-col sm:flex-row gap-2 sm:gap-0 items-stretch sm:items-center border border-white overflow-visible relative z-10 bg-white">
             {/* Check In */}
             <div className="flex-1 px-2 sm:px-4 py-2 relative w-full sm:w-auto">
                 <div
