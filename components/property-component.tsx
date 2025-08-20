@@ -57,10 +57,10 @@ export default function PropertyPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const hotelDataString = localStorage.getItem("hotelData");
+        const hotelDataString = localStorage.getItem("selectedHotel");
         if (!hotelDataString) return;
         const hotelData = JSON.parse(hotelDataString);
-        const hotelId = hotelData.hotelID;
+        const hotelId = hotelData.id;  // Changed from hotelID to id to match the stored data
 
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
         if (!token || !hotelId) return;
@@ -94,14 +94,15 @@ export default function PropertyPage() {
 
   // Handler to fetch available rooms on button click
   const handleViewAvailableRooms = async () => {
+  
     if (!ratePlans || ratePlans.length === 0) return;
-
     try {
-      const hotelDataString = localStorage.getItem("hotelData");
+      const hotelDataString = localStorage.getItem("selectedHotel");
       if (!hotelDataString) return;
 
       const hotelData = JSON.parse(hotelDataString);
-      const hotelId = hotelData.hotelID;
+      console.log("Hotel Data:", hotelData);
+      const hotelId = hotelData.id;
       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
       if (!token || !hotelId) return;
 
