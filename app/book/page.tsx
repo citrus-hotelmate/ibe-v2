@@ -54,12 +54,8 @@ interface RoomType {
   // Add other fields as needed
 }
 
-// Define Country type if not imported
-type Country = {
-  code: string
-  name: string
-}
-
+import { Country } from "@/types/country"
+import { getCountries } from "@/controllers/countryController"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { PhoneInput } from "@/components/phone-input"
 import { Textarea } from "@/components/ui/textarea"
@@ -85,6 +81,7 @@ interface BookingDetails {
   email: string
   phone: string
   nationality: string
+  dialCode: string
   checkIn: Date | null
   checkOut: Date | null
   nights: number
@@ -149,26 +146,17 @@ export default function BookPage() {
   // Countries state and fetch
   const [countries, setCountries] = useState<Country[]>([])
   useEffect(() => {
-    const getAllCountries = async () => {
+    const fetchCountries = async () => {
       try {
-        const response = await fetch("https://restcountries.com/v3.1/all")
-        if (!response.ok) throw new Error("Failed to fetch countries")
-
-        const data = await response.json()
-        const formattedCountries = data
-          .map((c: any) => ({
-            code: c.cca2,
-            name: c.name.common,
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name))
-        setCountries(formattedCountries)
+        const data = await getCountries();
+        setCountries(data.sort((a, b) => a.country.localeCompare(b.country)));
       } catch (err) {
-        console.error("Failed to fetch countries", err)
-        setCountries([])
+        console.error("Failed to fetch countries", err);
+        setCountries([]);
       }
-    }
+    };
 
-    getAllCountries()
+    fetchCountries();
   }, [])
 
   // Hotel policies state and fetch
@@ -491,15 +479,22 @@ export default function BookPage() {
                     <Label htmlFor="nationality">Nationality</Label>
                     <Select
                       value={bookingDetails.nationality}
-                      onValueChange={(value) => updateBookingDetails({ nationality: value })}
+                      onValueChange={(value) => {
+                        const selectedCountry = countries.find(c => c.countryId.toString() === value);
+                        updateBookingDetails({ 
+                          nationality: value,
+                          dialCode: selectedCountry?.dialCode || ''
+                        });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select nationality" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
-                        {countries.map((country: Country) => (
-                          <SelectItem key={country.code} value={country.code}>
-                            {country.name}
+                        {countries.map((country) => (
+                          <SelectItem key={country.countryId} value={country.countryId.toString()}>
+                            <span className="mr-2">{country.country}</span>
+                         
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -513,6 +508,7 @@ export default function BookPage() {
                       value={bookingDetails.phone}
                       onChange={(value) => updateBookingDetails({ phone: value })}
                       countryCode={bookingDetails.nationality}
+                      dialCode={bookingDetails.dialCode}
                       error={formErrors.phone}
                       required
                     />

@@ -429,7 +429,6 @@ export default function LandingPage() {
       </div>
 
       {/* Featured Accommodations */}
-      {/* Featured Accommodations */}
       <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
         <div className="w-full max-w-[98rem]">
           {/* Header + scroll buttons */}
