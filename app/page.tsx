@@ -14,6 +14,7 @@ import { Hotel as HotelIcon } from "lucide-react";
 import { useRef } from "react";
 import { Hotel } from "@/types/ibe";
 import { useBooking } from "@/components/booking-context";
+import { Spinner } from "@/components/ui/spinner";
 
 
 interface PropertyListing {
@@ -384,9 +385,11 @@ export default function Home() {
 
           {loading ? (
             <div className="flex justify-center items-center py-10 sm:py-20">
-              <div className="text-base sm:text-lg text-gray-600">
-                Loading hotels...
-              </div>
+              <Spinner size="large">
+                <span className="mt-4 text-base sm:text-lg text-gray-600">
+                  Loading hotels...
+                </span>
+              </Spinner>
             </div>
           ) : Object.keys(groupedSections).length === 0 ? (
             <div className="flex justify-center items-center py-10 sm:py-20 px-4">
