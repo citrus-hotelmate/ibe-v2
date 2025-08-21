@@ -72,6 +72,7 @@ export default function PropertyPage() {
   );
   const [isLoadingRooms, setIsLoadingRooms] = useState<boolean>(false);
   const [roomTypeImages, setRoomTypeImages] = useState<Record<number, string>>({});
+  const [currentHotelId, setCurrentHotelId] = useState<number | null>(null);
   const [guests, setGuests] = useState<{
     adults: number;
     children: number;
@@ -82,23 +83,77 @@ export default function PropertyPage() {
     rooms: bookingDetails.rooms || 1,
   });
 
+  // Detect hotel changes and update currentHotelId
+  useEffect(() => {
+    const hotelDataString = localStorage.getItem("selectedHotel");
+    if (hotelDataString) {
+      try {
+        const hotelData = JSON.parse(hotelDataString);
+        const newHotelId = hotelData.id;
+        
+        // Only update if hotel actually changed
+        if (newHotelId !== currentHotelId) {
+          console.log("🏨 Hotel changed from", currentHotelId, "to", newHotelId);
+          setCurrentHotelId(newHotelId);
+          
+          // Clear previous hotel data
+          setRatePlans(null);
+          setAvailableRooms(null);
+          setRoomTypeImages({});
+        }
+      } catch (error) {
+        console.error("Failed to parse selectedHotel from localStorage", error);
+      }
+    }
+  }, []); // Run once on mount, then we'll use an interval to detect changes
+
+  // Poll for hotel changes in localStorage (since localStorage changes don't trigger React updates across components)
+  useEffect(() => {
+    const checkForHotelChanges = () => {
+      const hotelDataString = localStorage.getItem("selectedHotel");
+      if (hotelDataString) {
+        try {
+          const hotelData = JSON.parse(hotelDataString);
+          const newHotelId = hotelData.id;
+          
+          if (newHotelId !== currentHotelId) {
+            console.log("🏨 Hotel changed detected via polling:", currentHotelId, "→", newHotelId);
+            setCurrentHotelId(newHotelId);
+            
+            // Clear previous hotel data
+            setRatePlans(null);
+            setAvailableRooms(null);
+            setRoomTypeImages({});
+          }
+        } catch (error) {
+          console.error("Failed to parse selectedHotel from localStorage", error);
+        }
+      }
+    };
+
+    // Check every 500ms for hotel changes
+    const interval = setInterval(checkForHotelChanges, 500);
+    
+    return () => clearInterval(interval);
+  }, [currentHotelId]);
+
+  // Fetch initial data when hotel changes
   useEffect(() => {
     const fetchInitialData = async () => {
+      if (!currentHotelId) return;
+      
       try {
-        const hotelDataString = localStorage.getItem("selectedHotel");
-        if (!hotelDataString) return;
-        const hotelData = JSON.parse(hotelDataString);
-        const hotelId = hotelData.id;  // Changed from hotelID to id to match the stored data
-
+        console.log("🔄 Fetching initial data for hotel ID:", currentHotelId);
+        
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-        if (!token || !hotelId) return;
+        if (!token) return;
 
         // Fetch rate plans
-        const ratePlansData = await getHotelRatePlans({ token, hotelId });
+        const ratePlansData = await getHotelRatePlans({ token, hotelId: currentHotelId });
         setRatePlans(ratePlansData);
 
         // Fetch room type images
-        const imagesData = await getHotelRoomTypeImagesByHotelId({ hotelId, token });
+        const imagesData = await getHotelRoomTypeImagesByHotelId({ hotelId: currentHotelId, token });
         console.log('Room Type Images Data:', imagesData);
         const imagesMap = imagesData.reduce((acc: Record<number, string>, img) => {
           // Check if it's the main image and has a URL
@@ -112,13 +167,15 @@ export default function PropertyPage() {
         }, {});
         console.log('Final Images Map:', imagesMap);
         setRoomTypeImages(imagesMap);
+        
+        console.log("✅ Initial data fetched successfully for hotel ID:", currentHotelId);
       } catch (error) {
-        console.error("Failed to fetch initial data:", error);
+        console.error("❌ Failed to fetch initial data:", error);
       }
     };
 
     fetchInitialData();
-  }, []);
+  }, [currentHotelId]); // Now depends on currentHotelId!
 
   // Manual refresh handler (backup option)
   const handleViewAvailableRooms = async () => {
@@ -132,24 +189,19 @@ export default function PropertyPage() {
       return;
     }
 
+    if (!currentHotelId) {
+      alert("Hotel information not available. Please refresh the page.");
+      return;
+    }
+
     // Since live filtering is already working, this is mainly for manual refresh
-    console.log("🔄 Manual refresh triggered");
+    console.log("🔄 Manual refresh triggered for hotel ID:", currentHotelId);
     setIsLoadingRooms(true);
     
-    // The useEffect will automatically handle the room fetching
-    // This serves as a backup in case live filtering fails
     try {
-      const hotelDataString = localStorage.getItem("selectedHotel");
-      if (!hotelDataString) {
-        alert("Hotel information not found. Please go back and select a hotel.");
-        return;
-      }
-
-      const hotelData = JSON.parse(hotelDataString);
-      const hotelId = hotelData.id;
       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
       
-      if (!token || !hotelId) {
+      if (!token) {
         alert("Configuration error. Please refresh the page.");
         return;
       }
@@ -158,7 +210,7 @@ export default function PropertyPage() {
       const endDate = dateRange.to.toISOString().split("T")[0];
 
       const rooms = await getHotelRatePlanAvailability({
-        hotelId,
+        hotelId: currentHotelId,
         startDate,
         endDate,
         token,
@@ -224,28 +276,24 @@ export default function PropertyPage() {
         !dateRange.from ||
         !dateRange.to ||
         !ratePlans ||
-        ratePlans.length === 0
+        ratePlans.length === 0 ||
+        !currentHotelId
       )
         return;
       
       setIsLoadingRooms(true);
       let allRooms: any[] = [];
       try {
-        const hotelDataString = localStorage.getItem("selectedHotel");
-        if (!hotelDataString) return;
-
-        const hotelData = JSON.parse(hotelDataString);
-        const hotelId = hotelData.id;  // Fixed: use 'id' instead of 'hotelID'
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-        if (!token || !hotelId) return;
+        if (!token) return;
 
         const startDate = dateRange.from.toISOString().split("T")[0];
         const endDate = dateRange.to.toISOString().split("T")[0];
 
-        console.log("🔄 Live filtering rooms for dates:", startDate, "to", endDate);
+        console.log("🔄 Live filtering rooms for hotel ID:", currentHotelId, "dates:", startDate, "to", endDate);
 
         const rooms = await getHotelRatePlanAvailability({
-          hotelId,
+          hotelId: currentHotelId,
           startDate,
           endDate,
           token,
@@ -302,6 +350,7 @@ export default function PropertyPage() {
 
     fetchRoomsForDateRange();
   }, [
+    currentHotelId,  // Added this - now triggers when hotel changes!
     ratePlans,
     dateRange.from,
     dateRange.to,
