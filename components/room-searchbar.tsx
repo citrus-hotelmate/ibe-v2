@@ -6,20 +6,24 @@ import { Calendar as DatePicker } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { format } from "date-fns";
+import { useBooking } from "@/components/booking-context";
 
 interface RoomSearchBarProps {
     onSearch?: (checkIn: string, checkOut: string, adults: number, children: number, rooms: number) => void;
 }
 
 export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
-    const [checkInDate, setCheckInDate] = useState(new Date());
-    const [checkOutDate, setCheckOutDate] = useState(new Date(new Date().getTime() + 24 * 60 * 60 * 1000)); // Tomorrow
+    const { bookingDetails, updateBookingDetails } = useBooking();
+    
+    // Initialize state from booking context
+    const [checkInDate, setCheckInDate] = useState(bookingDetails.checkIn || new Date());
+    const [checkOutDate, setCheckOutDate] = useState(bookingDetails.checkOut || new Date(new Date().getTime() + 24 * 60 * 60 * 1000)); // Tomorrow
     const [showCheckInCalendar, setShowCheckInCalendar] = useState(false);
     const [showCheckOutCalendar, setShowCheckOutCalendar] = useState(false);
     const [showGuestDropdown, setShowGuestDropdown] = useState(false);
-    const [adults, setAdults] = useState(2);
-    const [children, setChildren] = useState(0);
-    const [rooms, setRooms] = useState(1);
+    const [adults, setAdults] = useState(bookingDetails.adults || 2);
+    const [children, setChildren] = useState(bookingDetails.children || 0);
+    const [rooms, setRooms] = useState(bookingDetails.rooms || 1);
 
     // Refs for the dropdown components
     const checkInCalendarRef = useRef<HTMLDivElement>(null);
@@ -28,6 +32,41 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     const checkInButtonRef = useRef<HTMLDivElement>(null);
     const checkOutButtonRef = useRef<HTMLDivElement>(null);
     const guestButtonRef = useRef<HTMLDivElement>(null);
+
+    // Sync with booking context changes
+    useEffect(() => {
+        if (bookingDetails.checkIn) {
+            setCheckInDate(bookingDetails.checkIn);
+        }
+        if (bookingDetails.checkOut) {
+            setCheckOutDate(bookingDetails.checkOut);
+        }
+        if (bookingDetails.adults !== undefined) {
+            setAdults(bookingDetails.adults);
+        }
+        if (bookingDetails.children !== undefined) {
+            setChildren(bookingDetails.children);
+        }
+        if (bookingDetails.rooms !== undefined) {
+            setRooms(bookingDetails.rooms);
+        }
+    }, [bookingDetails.checkIn, bookingDetails.checkOut, bookingDetails.adults, bookingDetails.children, bookingDetails.rooms]);
+
+    // Enhanced setters that sync with booking context
+    const updateAdults = (value: number) => {
+        setAdults(value);
+        updateBookingDetails({ adults: value });
+    };
+
+    const updateChildren = (value: number) => {
+        setChildren(value);
+        updateBookingDetails({ children: value });
+    };
+
+    const updateRooms = (value: number) => {
+        setRooms(value);
+        updateBookingDetails({ rooms: value });
+    };
 
     const handleSearch = () => {
         const checkIn = checkInDate.toISOString().split('T')[0];
@@ -39,12 +78,27 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
         setCheckInDate(date);
         // If check-out is before check-in, adjust it
         if (checkOutDate <= date) {
-            setCheckOutDate(new Date(date.getTime() + 24 * 60 * 60 * 1000));
+            const newCheckOut = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+            setCheckOutDate(newCheckOut);
+            // Update booking context with both dates
+            updateBookingDetails({
+                checkIn: date,
+                checkOut: newCheckOut,
+            });
+        } else {
+            // Update booking context with just check-in
+            updateBookingDetails({
+                checkIn: date,
+            });
         }
     };
 
     const handleCheckOutDateChange = (date: Date) => {
         setCheckOutDate(date);
+        // Update booking context
+        updateBookingDetails({
+            checkOut: date,
+        });
     };
 
     // Handle clicks outside the dropdown components
@@ -192,9 +246,9 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                     className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-2xl shadow-xl p-6 w-80 sm:w-100 guest-dropdown font-urbanist notranslate">
                     <div className="max-w-4xl mx-auto">
                         {[
-                            { label: 'Adults', desc: 'Ages 13 or above', value: adults, setter: setAdults },
-                            { label: 'Children', desc: 'Ages 2–12', value: children, setter: setChildren },
-                            { label: 'Rooms', desc: 'Number of rooms', value: rooms, setter: setRooms },
+                            { label: 'Adults', desc: 'Ages 13 or above', value: adults, setter: updateAdults },
+                            { label: 'Children', desc: 'Ages 2–12', value: children, setter: updateChildren },
+                            { label: 'Rooms', desc: 'Number of rooms', value: rooms, setter: updateRooms },
                         ].map(({ label, desc, value, setter }) => (
                             <div key={label} className="flex items-center justify-between py-2 border-b last:border-0">
                                 <div>

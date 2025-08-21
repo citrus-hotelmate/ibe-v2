@@ -31,19 +31,40 @@ export default function PropertyPage() {
     return Math.min(...availability.map(item => item.count));
   };
 
-  // Initialize local state from booking context if available
+  // Initialize local state from booking context if available and keep them in sync
   useEffect(() => {
+    // Sync dates from booking context
     if (bookingDetails.checkIn && bookingDetails.checkOut) {
       setDateRange({
         from: bookingDetails.checkIn,
         to: bookingDetails.checkOut,
       });
     }
+    
+    // Sync guests from booking context
+    if (bookingDetails.adults !== undefined && bookingDetails.children !== undefined) {
+      setGuests({
+        adults: bookingDetails.adults,
+        children: bookingDetails.children,
+        rooms: bookingDetails.rooms || 1,
+      });
+    }
+  }, [bookingDetails.checkIn, bookingDetails.checkOut, bookingDetails.adults, bookingDetails.children, bookingDetails.rooms]);
+
+  // One-time initialization effect to ensure we load any existing booking context data on mount
+  useEffect(() => {
+    console.log("🔧 Initializing property component with booking context:", {
+      checkIn: bookingDetails.checkIn,
+      checkOut: bookingDetails.checkOut,
+      adults: bookingDetails.adults,
+      children: bookingDetails.children,
+      rooms: bookingDetails.rooms
+    });
   }, []);
 
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
-    from: undefined,
-    to: undefined,
+    from: bookingDetails.checkIn || undefined,
+    to: bookingDetails.checkOut || undefined,
   });
   const [ratePlans, setRatePlans] = useState<HotelRatePlan[] | null>(null);
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[] | null>(
@@ -56,9 +77,9 @@ export default function PropertyPage() {
     children: number;
     rooms: number;
   }>({
-    adults: 0,
-    children: 0,
-    rooms: 0,
+    adults: bookingDetails.adults || 2,
+    children: bookingDetails.children || 0,
+    rooms: bookingDetails.rooms || 1,
   });
 
   useEffect(() => {
@@ -340,7 +361,19 @@ export default function PropertyPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Guests</label>
-              <GuestSelector setGuestCount={setGuests} />
+              <GuestSelector 
+                setGuestCount={setGuests}
+                onChange={(guestData) => {
+                  // Update local state
+                  setGuests(guestData);
+                  // Update booking context to keep in sync
+                  updateBookingDetails({
+                    adults: guestData.adults,
+                    children: guestData.children,
+                    rooms: guestData.rooms,
+                  });
+                }}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Promo Code</label>
