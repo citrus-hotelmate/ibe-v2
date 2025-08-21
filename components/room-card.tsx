@@ -276,20 +276,14 @@ export default function RoomCard({
                   <select className="w-full sm:w-60 border rounded p-2 cursor-pointer text-sm">
                     {mealPlans.length > 0 ? (
                       mealPlans.map((plan) => (
-                        <option key={plan.mealPlanID}>
-                          {plan.mealPlan} -{" "}
-                          {averageRate && bookingDetails.nights
-                            ? `$${(averageRate * bookingDetails.nights).toFixed(
-                                2
-                              )}`
-                            : `$${averageRate?.toFixed(2)}`}                       
-                            <span className="text-sm font-normal text-muted-foreground">
-                            /period
-                          </span>
+                        <option key={plan.mealPlanID} value={plan.mealPlanID}>
+                          {plan.mealPlan} - {averageRate && bookingDetails.nights
+                            ? `$${(averageRate * bookingDetails.nights).toFixed(2)}`
+                            : `$${averageRate?.toFixed(2)}`} /period
                         </option>
                       ))
                     ) : (
-                      <option>N/A</option>
+                      <option value="">N/A</option>
                     )}
                   </select>
                 </div>
