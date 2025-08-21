@@ -2,6 +2,35 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
+export const INITIAL_BOOKING_DETAILS: BookingDetails = {
+  checkIn: null,
+  checkOut: null,
+  adults: 2,
+  children: 0,
+  guests: 2,
+  nights: 0,
+  totalPrice: 0,
+  name: "",
+  email: "",
+  phone: "",
+  paymentMethod: "",
+  bookingId: "",
+  nationality: "",
+  selectedRooms: [],
+  rooms: 0,
+  currency: "USD",
+  totalAmount: 0,
+  hotelId: "",
+  roomId: "",
+  selectedPackages: [],
+  promoCode: "",
+  promoDetails: null,
+  specialRequests: "",
+  additionalNotes: "",
+  roomCount: 0,
+  status: "new"
+}
+
 export type BookingContextType = {
   bookingDetails: BookingDetails;
   updateBookingDetails: (details: Partial<BookingDetails>) => void;
@@ -26,7 +55,7 @@ export type RoomBooking = {
   hotelCode?: number
 }
 
-type BookingDetails = {
+interface BookingDetails {
   checkIn: Date | null
   checkOut: Date | null
   adults: number
@@ -42,12 +71,27 @@ type BookingDetails = {
   nationality: string
   selectedRooms: RoomBooking[]
   rooms: number
-  roomCount?:  number
-  hotelName?: string // Optional field for hotel name
-  hotelImageUrl?: string // Optional field for hotel image URL
+  roomCount?: number
+  hotelName?: string
+  hotelImageUrl?: string
+  currency: string
+  promoCode?: string
+  promoDetails?: any
+  specialRequests?: string
+  selectedPackages?: Array<{
+    id: string;
+    name: string;
+    Price: number;
+  }>;
+  additionalNotes?: string
+  totalAmount: number
+  bookingRevision?: string
+  status?: string
+  hotelId: string
+  roomId: string
 }
 
-const defaultBookingDetails: BookingDetails = {
+const _defaultBookingDetails: BookingDetails = {
   checkIn: null,
   checkOut: null,
   adults: 2,
@@ -58,17 +102,28 @@ const defaultBookingDetails: BookingDetails = {
   name: "",
   email: "",
   phone: "",
-  paymentMethod:"",
+  paymentMethod: "",
   bookingId: "",
   nationality: "",
   selectedRooms: [],
   rooms: 1,
+  currency: "USD",
+  promoCode: "",
+  promoDetails: null,
+  specialRequests: "",
+  selectedPackages: [],
+  additionalNotes: "",
+  totalAmount: 0,
+  status: "new",
+  hotelId: "",
+  roomId: "",
+  roomCount: 0
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined)
 
 export function BookingProvider({ children }: { children: ReactNode }) {
-  const [bookingDetails, setBookingDetails] = useState<BookingDetails>(defaultBookingDetails)
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails>(_defaultBookingDetails)
 
   // Load booking details from localStorage on initial render
   useEffect(() => {
@@ -129,7 +184,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   }
 
   const resetBookingDetails = () => {
-    setBookingDetails(defaultBookingDetails)
+    setBookingDetails(_defaultBookingDetails)
     localStorage.removeItem("bookingDetails")
   }
 

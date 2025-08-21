@@ -14,6 +14,40 @@ export interface HotelImage {
   base64Image: string;
 }
 
+export interface BookingDetails {
+  hotelId: string;
+  roomId: string;
+  currency: string;
+  promoCode?: string;
+  promoDetails?: any;
+  specialRequests?: string;
+  selectedPackages?: Array<{
+    id: string;
+    name: string;
+    Price: number;
+  }>;
+  selectedRooms: Array<{
+    averageRate?: number;
+    quantity: number;
+  }>;
+  bookingId?: string;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  additionalNotes?: string;
+  roomCount: number;
+  status?: string;
+  totalAmount: number;
+  bookingRevision?: string;
+  paymentMethod?: string;
+  nights: number;
+}
+
 export interface Hotel {
   hotelID: number;
   hotelGUID: string;

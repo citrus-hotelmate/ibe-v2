@@ -25,6 +25,12 @@ export default function PropertyPage() {
   // Get booking context
   const { bookingDetails, updateBookingDetails, addRoom } = useBooking();
 
+  // Helper function to calculate minimum available rooms across dates
+  const calculateMinimumAvailability = (availability: Array<{date: string, count: number}>) => {
+    if (!availability || availability.length === 0) return 0;
+    return Math.min(...availability.map(item => item.count));
+  };
+
   // Initialize local state from booking context if available
   useEffect(() => {
     if (bookingDetails.checkIn && bookingDetails.checkOut) {
@@ -143,9 +149,12 @@ export default function PropertyPage() {
           return roomTotalCapacity >= totalGuestCount;
         })
         .map((item: any) => {
+          // Calculate minimum availability across the stay period
+          const minAvailability = calculateMinimumAvailability(item.availability);
           return {
             ...item,
             totalCapacity: item.adultCount + item.childCount,
+            minRoomsLeft: minAvailability,
           };
         });
       const groupedRooms = Object.values(
@@ -154,7 +163,7 @@ export default function PropertyPage() {
             acc[room.roomTypeId] = {
               roomTypeID: room.roomTypeId, // Maintain your existing property name for consistency
               roomType: room.roomType,
-              roomCount: room.roomCount,
+              roomCount: room.minRoomsLeft, // Use minimum availability instead of total room count
               totalCapacity: room.totalCapacity,
               adultCount: room.adultCount,
               childCount: room.childCount,
@@ -221,9 +230,12 @@ export default function PropertyPage() {
             return roomTotalCapacity >= totalGuestCount;
           })
           .map((item: any) => {
+            // Calculate minimum availability across the stay period
+            const minAvailability = calculateMinimumAvailability(item.availability);
             return {
               ...item,
               totalCapacity: item.adultCount + item.childCount,
+              minRoomsLeft: minAvailability,
             };
           });
 
@@ -234,7 +246,7 @@ export default function PropertyPage() {
               acc[room.roomTypeId] = {
                 roomTypeID: room.roomTypeId,
                 roomType: room.roomType,
-                roomCount: room.roomCount,
+                roomCount: room.minRoomsLeft, // Use minimum availability instead of total room count
                 totalCapacity: room.totalCapacity,
                 adultCount: room.adultCount,
                 childCount: room.childCount,

@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Wallet } from "lucide-react";
 import Image from "next/image";
+import { createBookingFeed } from "@/controllers/reservationController";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +35,10 @@ import { CurrencySelector } from "@/components/currency-selector";
 
 export default function PaymentPage() {
   const router = useRouter();
-  const { bookingDetails, updateBookingDetails } = useBooking();
+  const { bookingDetails, updateBookingDetails } = useBooking() as {
+    bookingDetails: BookingDetails;
+    updateBookingDetails: (details: Partial<BookingDetails>) => void;
+  };
   const { convertPrice, formatPrice } = useCurrency();
   const [isProcessing, setIsProcessing] = useState(false);
   const [cardNumber, setCardNumber] = useState("");
@@ -57,6 +61,7 @@ export default function PaymentPage() {
   }, []);
 
   useEffect(() => {
+    // Get reservation summary
     const saved = localStorage.getItem("reservationSummary");
     if (saved) {
       const parsed = JSON.parse(saved);
@@ -74,6 +79,27 @@ export default function PaymentPage() {
         } catch (e) {
           console.error("Failed to parse stored promo details", e);
         }
+      }
+    }
+    
+    // Get selected hotel details
+    const savedHotel = localStorage.getItem("selectedHotel");
+    console.log("Saved hotel from localStorage:", savedHotel);
+    
+    if (savedHotel) {
+      try {
+        const hotelData = JSON.parse(savedHotel);
+        console.log("Parsed hotel data:", hotelData);
+        
+        updateBookingDetails({
+          hotelId: hotelData.id.toString(),
+          hotelName: hotelData.name,
+          hotelImageUrl: hotelData.image
+        });
+        
+        console.log("Updated booking details with hotel ID:", hotelData.id.toString());
+      } catch (e) {
+        console.error("Failed to parse stored hotel details", e);
       }
     }
   }, []);
@@ -114,7 +140,7 @@ export default function PaymentPage() {
   }
 
   interface BookingDetails {
-    selectedRooms: RoomBooking[];
+    selectedRooms: Array<RoomBooking & { price?: number; averageRate?: number }>;
     checkIn?: Date;
     checkOut?: Date;
     nights: number;
@@ -128,6 +154,9 @@ export default function PaymentPage() {
       [key: string]: any;
     };
     specialRequests?: string;
+    hotelId: string;
+    hotelName?: string;
+    hotelImageUrl?: string;
     selectedPackages?: Array<{
       Description: string;
       Price: number;
@@ -140,7 +169,6 @@ export default function PaymentPage() {
     totalPrice?: number;
     children?: number;
     adults?: number;
-    averageRate?: number;
   }
 
   interface MealPlan {
@@ -172,11 +200,19 @@ export default function PaymentPage() {
     const bookingId = generateBookingId();
     updateBookingDetails({ bookingId });
 
+    console.log("Current booking details before payment:", bookingDetails);
+    
     if (bookingDetails.paymentMethod === "arrival") {
       try {
-        // Build payload dynamically from bookingDetails
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
+        if (!token) {
+          throw new Error("No access token available");
+        }
+
+        const bookingId = generateBookingId();
+        updateBookingDetails({ bookingId });
+
         const {
-          bookingId,
           checkIn,
           checkOut,
           selectedRooms,
@@ -187,171 +223,186 @@ export default function PaymentPage() {
           promoCode,
           promoDetails,
           specialRequests,
-          paymentMethod,
           nights,
           selectedPackages,
-          totalPrice,
           currency,
           children,
-          adults
+          adults,
+          hotelId
         } = bookingDetails;
 
+        console.log("Hotel ID being used:", hotelId);
+        console.log("Selected rooms data:", selectedRooms);
+        console.log("Room meal plan IDs:", selectedRooms.map(room => ({ 
+          roomId: room.roomId, 
+          mealPlanId: room.mealPlanId,
+          parsedMealPlanId: parseInt(room.mealPlanId || "1") || 1
+        })));
+
         const payload = {
+          bookingRevision: 1,
           data: [
             {
-              id: bookingId,
               attributes: {
                 id: bookingId,
                 meta: {
                   ruid: bookingId,
+                  is_genius: false,
                 },
                 status: "new",
                 services: [],
                 currency: currency || "USD",
-                amount: totalPrice.toFixed(2),
-                agent: null,
+                amount: finalTotal.toFixed(2),
+                rate_code_id: selectedRooms.length > 0 ? parseInt(selectedRooms[0].roomId) : null,
+                created_by: name || "",
+                remarks_internal: "",
+                remarks_guest: specialRequests || "",
+                guest_profile_id: 0,
+                agent: "",
                 inserted_at: new Date().toISOString(),
-                ota_name: "CitrusIBE",
-                property_id: "",
                 channel_id: "",
-                unique_id: parseInt(bookingId.replace(/\D/g, "").slice(0, 10)) || Date.now(),
-                system_id: "",
+                property_id: "",
+                hotel_id: parseInt(hotelId) || 0,
+                unique_id: (parseInt(bookingId?.replace(/\D/g, "").slice(0, 10) || "") || Date.now()).toString(),
+                system_id: "FIT",
+                ota_name: "HotelMateIBE",
                 booking_id: bookingId,
-                notes: specialRequests || "No remarks",
+                notes: specialRequests || "",
                 arrival_date: checkIn ? format(new Date(checkIn), "MM/dd/yyyy") : "",
-                arrival_hour: "12.00AM",
-                departure_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
-                promotion: {
-                  code: promoCode || null,
-                  discount_amount: promoDetails?.Value || null,
-                },
+                arrival_hour: "12:00 PM",
                 customer: {
                   meta: {
+                    ruid: "",
                     is_genius: false,
                   },
-                  name,
-                  surname: "",
+                  name: name || "",
+                  zip: "",
                   address: "",
-                  country: nationality,
+                  country: nationality || "",
                   city: "",
-                  zip: null,
-                  mail: email,
-                  phone,
+                  language: "en",
+                  mail: email || "",
+                  phone: phone || "",
+                  surname: "",
+                  company: "",
                 },
-                payment_collect: "paid",
-                deposits: null,
-                guarantee: null,
-                rooms: selectedRooms.map((room, idx) => ({
-                  meta: {
-                    mapping_id: `mapping-id-${idx}`,
-                    parent_rate_plan_id: `rate-plan-${idx}`,
-                    rate_plan_code: 9536508,
-                    room_type_code: room.roomId,
-                    days_breakdown: [
-                      {
-                        date: checkIn ? format(new Date(checkIn), "yyyy-MM-dd") : "",
-                        amount: (room.price * room.quantity).toFixed(2),
-                        promotion: {
-                          code: promoCode || null,
-                          discount_amount: promoDetails?.Value || null,
-                        },
-                        rate_code: 9536508,
-                        rate_plan: `rate-plan-${idx}`,
-                      }
-                    ],
-                    cancel_penalties: [
-                      {
-                        amount: "0.00",
-                        currency: currency || "USD",
-                        from: new Date().toISOString()
-                      }
-                    ],
-                    meal_plan: room.mealPlanId || "BB",
-                    policies: null,
-                    room_remarks: [],
-                    smoking_preferences: null
-                  },
-                  taxes: [],
-                  amount: (room.price * room.quantity).toFixed(2),
-                  services: [],
-                  days: {
-                    [checkIn ? format(new Date(checkIn), "yyyy-MM-dd") : ""]: (room.price * room.quantity).toFixed(2)
-                  },
-                  booking_room_id: `room-booking-${idx}`,
-                  rate_plan_id: `rate-plan-${idx}`,
-                  room_type_id: room.roomId,
-                  guests: [
-                    {
-                      name,
-                      surname: "",
-                    }
-                  ],
-                  occupancy: {
-                    children: room.children || 0,
-                    adults: room.adults || 2,
-                    infants: 0
-                  },
-                  ota_commission: "00.00",
-                  checkin_date: checkIn ? format(new Date(checkIn), "MM/dd/yyyy") : "",
-                  checkout_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
-                  is_cancelled: false,
-                  ota_unique_id: null
-                })),
-                secondary_ota: null,
-                occupancy: {
-                  children,
-                  adults,
-                  infants: 0
-                },
-                acknowledge_status: "pending",
-                ota_commission: "00.00",
+                departure_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
+                deposits: [],
+                ota_commission: "0",
                 ota_reservation_code: bookingId,
-                raw_message: "{}"
+                payment_collect: "property",
+                payment_type: "",
+                rooms: selectedRooms.map((room, idx) => {
+                  // Build days object inline
+                  const daysObj: Record<string, string> = {};
+                  if (checkIn && checkOut) {
+                    const checkInDate = new Date(checkIn);
+                    const checkOutDate = new Date(checkOut);
+                    const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+                    
+                    for (let i = 0; i < totalNights; i++) {
+                      const currentDate = new Date(checkInDate);
+                      currentDate.setDate(currentDate.getDate() + i);
+                      const dateStr = currentDate.toISOString().split('T')[0];
+                      const dailyRate = (room.averageRate || room.price || 0);
+                      daysObj[dateStr] = dailyRate.toFixed(2);
+                    }
+                  }
+                  
+                  const roomAmount = Object.values(daysObj).reduce((sum, v) => sum + parseFloat(v), 0);
+                  
+                  // Ensure we have a valid rate plan ID (don't use 0 as it causes errors)
+                  const validRatePlanId = parseInt(room.mealPlanId || "1") || 1;
+                  if (validRatePlanId === 0) {
+                    console.warn(`Invalid rate plan ID (0) for room ${room.roomId}, using default value 1`);
+                  }
+                  
+                  return {
+                    reservation_status_id: 1,
+                    is_foc: false,
+                    taxes: [],
+                    services: [],
+                    amount: roomAmount.toFixed(2),
+                    days: daysObj,
+                    guest_profile_id: 0,
+                    ota_commission: "0",
+                    guests: [],
+                    occupancy: {
+                      children: room.children || 0,
+                      adults: room.adults || 2,
+                      ages: [],
+                      infants: 0,
+                    },
+                    rate_plan_id: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
+                    room_type_id: "0",
+                    hotel_room_type_id: parseInt(room.roomId) || 0,
+                    booking_room_id: `room-${idx}`,
+                    checkin_date: checkIn ? format(new Date(checkIn), "MM/dd/yyyy") : "",
+                    checkout_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
+                    is_cancelled: false,
+                    ota_unique_id: "",
+                    disc_percen: 0,
+                    discount: 0,
+                    child_rate: 0,
+                    suppliment: 0,
+                    net_rate: room.averageRate || room.price || 0,
+                    is_day_room: false,
+                    parent_rate_plan_id: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
+                    meta: {
+                      meal_plan: room.mealPlanId || "BB",
+                      mapping_id: `mapping-id-${idx}`,
+                      parent_rate_plan_id: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
+                      rate_plan_code: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
+                      room_type_code: room.roomId,
+                    },
+                  };
+                }),
+                occupancy: {
+                  children: children || 0,
+                  adults: adults || 2,
+                  ages: [],
+                  infants: 0,
+                },
+                guarantee: undefined,
+                secondary_ota: "",
+                acknowledge_status: "pending",
+                raw_message: "{}",
+                is_crs_revision: false,
+                is_day_room: false,
+                ref_no: "",
+                group_name: "",
+                tour_no: "",
               },
+              id: bookingId,
+              type: "booking_revision",
               relationships: {
                 data: {
-                  property: {
-                    id: "",
-                    type: "property"
-                  },
-                  booking: {
-                    id: "",
-                    type: "booking"
-                  }
-                }
-              }
-            }
+                  property: { id: hotelId?.toString() || "0", type: "property" },
+                  booking: { id: bookingId, type: "booking" },
+                },
+              },
+            },
           ],
           meta: {
             total: 1,
             limit: 10,
             order_by: "inserted_at",
             page: 1,
-            order_direction: "asc"
-          }
-        };
-        const response = await fetch("/api/post-booking", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+            order_direction: "asc",
           },
-          body: JSON.stringify(payload),
-        });
+          dateTime: new Date().toISOString(),
+        };
 
-        const result = await response.json();
-
-        if (result.status === "success") {
+        console.log("Full payload being sent:", JSON.stringify(payload, null, 2));
+        const response = await createBookingFeed({ token, payload });
+        if (response) {
           router.push("/confirmed");
-          return;
         } else {
-       
-          setIsProcessing(false);
-          return;
+          throw new Error("Failed to create booking");
         }
       } catch (error) {
         console.error("Booking error:", error);
         setIsProcessing(false);
-        return;
       }
     } else if (bookingDetails.paymentMethod === "stripe") {
       try {
@@ -701,13 +752,13 @@ export default function PaymentPage() {
                       </span>
                     </div>
                     {/* Packages */}
-                    {bookingDetails.selectedPackages?.length > 0 && (
+                    {(bookingDetails.selectedPackages || []).length > 0 && (
                       <>
                         <div className="text-sm font-semibold text-foreground mt-4 mb-2">
                           Packages
                         </div>
                         <ul className="text-sm text-muted-foreground space-y-1 mb-1">
-                          {bookingDetails.selectedPackages.map((pkg, idx) => (
+                          {(bookingDetails.selectedPackages || []).map((pkg, idx) => (
                             <li key={idx} className="flex justify-between">
                               <span>{pkg.Description}</span>
                               <span className="text-sm font-medium text-foreground">
