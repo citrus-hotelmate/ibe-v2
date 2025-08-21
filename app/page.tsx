@@ -39,8 +39,14 @@ interface SearchParams {
   searchType: "destinations" | "hotel name" | "both" | "none" | "all" | "destination-type" | "hotel-type" | "hotel type";
 }
 
-const slugify = (name: string) =>
-  name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const slugify = (name: string, city?: string) => {
+  const baseName = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  if (city) {
+    const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return `${baseName}-${citySlug}`;
+  }
+  return baseName;
+};
 
 const titleCase = (s: string) =>
   (s || "")
@@ -240,7 +246,7 @@ export default function Home() {
       image: imageUrl,
       hotelCode: hotel.hotelCode,
       lowestRate: hotel.lowestRate || 0,
-      slug: slugify(hotel.hotelName),
+      slug: slugify(hotel.hotelName, hotel.city), // Pass city to slugify
       hotelType: titleCase(hotel.hotelType || "Other"),
     };
   };
@@ -339,7 +345,7 @@ export default function Home() {
             rating: hotel.rating,
             image: hotel.image,
             lowestRate: hotel.price,
-            slug: slugify(hotel.title),
+            slug: slugify(hotel.title, hotel.location), // Include location in slug for wishlist items
             hotelType: "Wishlisted"
           }))
         };

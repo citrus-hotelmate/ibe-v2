@@ -21,11 +21,35 @@ import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
 import PropertyPage from "@/components/property-component";
 
-const slugify = (name: string) =>
-  name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+const slugify = (name: string, city?: string) => {
+  const baseName = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  if (city) {
+    const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return `${baseName}-${citySlug}`;
+  }
+  return baseName;
+};
+
+// Helper function to extract hotel name from slug (remove city part)
+const extractHotelNameFromSlug = (slug: string, hotels: Hotel[]): string | null => {
+  // Try to find a hotel that matches the slug pattern
+  for (const hotel of hotels) {
+    const hotelSlug = slugify(hotel.hotelName);
+    const fullSlug = slugify(hotel.hotelName, hotel.city);
+    
+    // Check if the slug matches either the full slug or starts with hotel name
+    if (slug === fullSlug || slug.startsWith(hotelSlug + "-")) {
+      return hotel.hotelName;
+    }
+  }
+  
+  // Fallback: convert slug back to readable name (remove potential city suffix)
+  return slug
+    .split("-")
+    .slice(0, -1) // Remove last part (likely city)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 export default function LandingPage() {
   const params = useParams();
@@ -88,8 +112,11 @@ export default function LandingPage() {
           getAllHotels({ token })
         ]);
 
+        // Find hotel using the new slug format (hotel-name-city)
         const matchedHotel = allHotels.find(
-          (h) => slugify(h.hotelName) === slug
+          (h) => slugify(h.hotelName, h.city) === slug
+        ) || allHotels.find(
+          (h) => slugify(h.hotelName) === slug // Fallback for old slug format
         );
 
         if (!matchedHotel) {
