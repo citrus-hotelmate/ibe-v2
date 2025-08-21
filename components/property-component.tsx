@@ -49,6 +49,7 @@ export default function PropertyPage() {
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[] | null>(
     null
   );
+  const [isLoadingRooms, setIsLoadingRooms] = useState<boolean>(false);
   const [roomTypeImages, setRoomTypeImages] = useState<Record<number, string>>({});
   const [guests, setGuests] = useState<{
     adults: number;
@@ -98,58 +99,58 @@ export default function PropertyPage() {
     fetchInitialData();
   }, []);
 
-  // Handler to fetch available rooms on button click
+  // Manual refresh handler (backup option)
   const handleViewAvailableRooms = async () => {
-  
-    if (!ratePlans || ratePlans.length === 0) return;
+    if (!dateRange.from || !dateRange.to) {
+      alert("Please select check-in and check-out dates.");
+      return;
+    }
+    
+    if (!ratePlans || ratePlans.length === 0) {
+      alert("Hotel rate plans are still loading. Please try again in a moment.");
+      return;
+    }
+
+    // Since live filtering is already working, this is mainly for manual refresh
+    console.log("🔄 Manual refresh triggered");
+    setIsLoadingRooms(true);
+    
+    // The useEffect will automatically handle the room fetching
+    // This serves as a backup in case live filtering fails
     try {
       const hotelDataString = localStorage.getItem("selectedHotel");
-      if (!hotelDataString) return;
+      if (!hotelDataString) {
+        alert("Hotel information not found. Please go back and select a hotel.");
+        return;
+      }
 
       const hotelData = JSON.parse(hotelDataString);
-      console.log("Hotel Data:", hotelData);
       const hotelId = hotelData.id;
       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-      if (!token || !hotelId) return;
-
-      const startDate = dateRange.from
-        ? dateRange.from.toISOString().split("T")[0]
-        : "";
-      const endDate = dateRange.to
-        ? dateRange.to.toISOString().split("T")[0]
-        : "";
-      if (!startDate || !endDate) {
-        alert("Please select check-in and check-out dates.");
+      
+      if (!token || !hotelId) {
+        alert("Configuration error. Please refresh the page.");
         return;
       }
 
-      let allRooms: any[] = [];
-      // Run API call when the dates change
+      const startDate = dateRange.from.toISOString().split("T")[0];
+      const endDate = dateRange.to.toISOString().split("T")[0];
 
-      // For the button click, we'll keep a simplified version
-      try {
-        const rooms = await getHotelRatePlanAvailability({
-          hotelId,
-          startDate,
-          endDate,
-          token,
-        });
-        allRooms = rooms;
-      } catch (err) {
-        console.error("Error fetching available rooms for room types:", err);
-        alert("Failed to fetch available rooms. Please try again.");
-        return;
-      }
+      const rooms = await getHotelRatePlanAvailability({
+        hotelId,
+        startDate,
+        endDate,
+        token,
+      });
 
       const totalGuestCount = guests.adults + guests.children;
 
-      const filteredRooms = allRooms
+      const filteredRooms = rooms
         .filter((item: any) => {
           const roomTotalCapacity = item.adultCount + item.childCount;
           return roomTotalCapacity >= totalGuestCount;
         })
         .map((item: any) => {
-          // Calculate minimum availability across the stay period
           const minAvailability = calculateMinimumAvailability(item.availability);
           return {
             ...item,
@@ -157,13 +158,14 @@ export default function PropertyPage() {
             minRoomsLeft: minAvailability,
           };
         });
+        
       const groupedRooms = Object.values(
         filteredRooms.reduce((acc: any, room: any) => {
           if (!acc[room.roomTypeId]) {
             acc[room.roomTypeId] = {
-              roomTypeID: room.roomTypeId, // Maintain your existing property name for consistency
+              roomTypeID: room.roomTypeId,
               roomType: room.roomType,
-              roomCount: room.minRoomsLeft, // Use minimum availability instead of total room count
+              roomCount: room.minRoomsLeft,
               totalCapacity: room.totalCapacity,
               adultCount: room.adultCount,
               childCount: room.childCount,
@@ -177,8 +179,12 @@ export default function PropertyPage() {
       ) as AvailableRoom[];
 
       setAvailableRooms(groupedRooms);
+      console.log("✅ Manual refresh completed");
     } catch (error) {
-      console.error("Failed to fetch available rooms:", error);
+      console.error("❌ Manual refresh failed:", error);
+      alert("Failed to fetch available rooms. Please try again.");
+    } finally {
+      setIsLoadingRooms(false);
     }
   };
 
@@ -190,6 +196,7 @@ export default function PropertyPage() {
     }, {})
     : {};
 
+  // Live filtering effect - automatically fetch rooms when dates or guests change
   useEffect(() => {
     const fetchRoomsForDateRange = async () => {
       if (
@@ -199,18 +206,22 @@ export default function PropertyPage() {
         ratePlans.length === 0
       )
         return;
+      
+      setIsLoadingRooms(true);
       let allRooms: any[] = [];
       try {
-        const hotelDataString = localStorage.getItem("hotelData");
+        const hotelDataString = localStorage.getItem("selectedHotel");
         if (!hotelDataString) return;
 
         const hotelData = JSON.parse(hotelDataString);
-        const hotelId = hotelData.hotelID;
+        const hotelId = hotelData.id;  // Fixed: use 'id' instead of 'hotelID'
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
         if (!token || !hotelId) return;
 
         const startDate = dateRange.from.toISOString().split("T")[0];
         const endDate = dateRange.to.toISOString().split("T")[0];
+
+        console.log("🔄 Live filtering rooms for dates:", startDate, "to", endDate);
 
         const rooms = await getHotelRatePlanAvailability({
           hotelId,
@@ -258,11 +269,13 @@ export default function PropertyPage() {
             return acc;
           }, {})
         ) as AvailableRoom[];
-        console.log("Grouped Rooms:", groupedRooms);
         
+        console.log("✅ Live filtered rooms updated:", groupedRooms.length, "room types");
         setAvailableRooms(groupedRooms);
       } catch (err) {
-        console.error("Error fetching available rooms for room types:", err);
+        console.error("❌ Error in live room filtering:", err);
+      } finally {
+        setIsLoadingRooms(false);
       }
     };
 
@@ -358,10 +371,19 @@ export default function PropertyPage() {
               <TabsTrigger value="promotions">Promotions</TabsTrigger>
             </TabsList>
             <TabsContent value="rooms" className="pt-4">
-              <h2 className="text-xl font-semibold mb-4">
-                Available Room Types
-              </h2>
-              {availableRooms && availableRooms.length > 0 ? (
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">
+                  Available Room Types
+                </h2>
+              </div>
+              {isLoadingRooms ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                    <span className="text-muted-foreground">Loading available rooms...</span>
+                  </div>
+                </div>
+              ) : availableRooms && availableRooms.length > 0 ? (
                 availableRooms.map((roomGroup: any) => (
                   <RoomCard
                     key={roomGroup.roomTypeID}
@@ -397,7 +419,13 @@ export default function PropertyPage() {
                   />
                 ))
               ) : (
-                <p>No rooms available.</p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    {dateRange.from && dateRange.to 
+                      ? "No rooms available for the selected dates and guest count." 
+                      : "Please select check-in and check-out dates to view available rooms."}
+                  </p>
+                </div>
               )}
             </TabsContent>
             <TabsContent value="packages" className="pt-4">
