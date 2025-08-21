@@ -41,6 +41,10 @@ export default function RoomCard({
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [childAges, setChildAges] = useState<number[]>([]);
   const [price, setPrice] = useState<number>(100); // Default room price
+  
+  // Track the actual selected guest count (not room capacity)
+  const [selectedAdults, setSelectedAdults] = useState<number>(2); // Default to 2 adults
+  const [selectedChildren, setSelectedChildren] = useState<number>(0); // Default to 0 children
 
   const {
     bookingDetails,
@@ -79,6 +83,10 @@ export default function RoomCard({
     children: number,
     ages?: number[]
   ) => {
+    // Update the selected guest count state
+    setSelectedAdults(adults);
+    setSelectedChildren(children);
+    
     // Enforce maximum limits for adults and children
     const maxAdult = 3;
     const maxChild = 2;
@@ -233,7 +241,7 @@ export default function RoomCard({
                 <div className="flex items-center gap-1 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {`${adultCount} adults and ${childCount} children`}
+                    {`${selectedAdults} adults and ${selectedChildren} children`}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
@@ -284,8 +292,8 @@ export default function RoomCard({
                     Guests for this room:
                   </div>
                   <RoomGuestSelector
-                    adults={adultCount || 2}
-                    children={childCount || 0}
+                    adults={selectedAdults} // Use selected adults, not room capacity
+                    children={selectedChildren} // Use selected children, not room capacity
                     onChange={(adults, children, ages) => {
                       // Use our enhanced handleGuestChange function
                       handleGuestChange(adults, children, ages);
@@ -337,12 +345,13 @@ export default function RoomCard({
                       onClick={() => {
                         const roomData: any = {
                           roomName,
-                          adultCount,
-                          childCount,
+                          adults: selectedAdults, // Use selected guest count, not room capacity
+                          children: selectedChildren, // Use selected guest count, not room capacity
                           mealPlanId:
                             mealPlans[0]?.mealPlanID.toString() || "0",
                           price: price,
                           quantity: 1,
+                          roomId: roomTypeId?.toString() || "",
                         };
 
                         onAddToBooking(roomData);

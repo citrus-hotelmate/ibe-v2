@@ -378,8 +378,8 @@ export default function PropertyPage() {
                         mealPlanId: String(
                           mealPlanMap[roomGroup.roomTypeID] || 0
                         ),
-                        adults: roomGroup.adultCount || 0, // Use the values from API
-                        children: roomGroup.childCount || 0, // Use the values from API
+                        adults: room.adults || 0, // Use selected guest count from room card
+                        children: room.children || 0, // Use selected guest count from room card
                         quantity: 1,
                         averageRate: roomGroup.averageRate || 0
                       });
