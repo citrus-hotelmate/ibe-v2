@@ -182,7 +182,7 @@ export default function RoomCard({
   };
 
   // Check if minimum stay requirement is met
-  const minimumStayRequired = 2; // Minimum nights required for this room
+  const minimumStayRequired = 1; // Minimum nights required for this room
   const minimumStayNotMet = bookingDetails.nights < minimumStayRequired;
   console.log(defaultRate, "DF");
   // Room is ready for booking
@@ -219,7 +219,7 @@ export default function RoomCard({
                     {Math.max(0, roomsLeft - quantity)} rooms left
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Minimum stay: 2 nights
+                    Minimum stay: 1 night
                   </p>
                 </div>
                 <div className="text-right">
