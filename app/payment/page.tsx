@@ -239,6 +239,20 @@ export default function PaymentPage() {
           parsedMealPlanId: parseInt(room.mealPlanId || "1") || 1
         })));
 
+        // Expand rooms with quantity > 1 into separate room entries
+        const expandedRooms = selectedRooms.reduce((acc: typeof selectedRooms, room) => {
+          for (let i = 0; i < room.quantity; i++) {
+            acc.push({
+              ...room,
+              quantity: 1 // Each expanded room has quantity 1
+            });
+          }
+          return acc;
+        }, []);
+
+        console.log("Expanded rooms for payload:", expandedRooms);
+        console.log("Total rooms being booked:", expandedRooms.length);
+
         const payload = {
           bookingRevision: 1,
           data: [
@@ -253,7 +267,7 @@ export default function PaymentPage() {
                 services: [],
                 currency: currency || "USD",
                 amount: finalTotal.toFixed(2),
-                rate_code_id: selectedRooms.length > 0 ? parseInt(selectedRooms[0].roomId) : null,
+                rate_code_id: expandedRooms.length > 0 ? parseInt(expandedRooms[0].roomId) : null,
                 created_by: name || "",
                 remarks_internal: "",
                 remarks_guest: specialRequests || "",
@@ -292,7 +306,7 @@ export default function PaymentPage() {
                 ota_reservation_code: bookingId,
                 payment_collect: "property",
                 payment_type: "",
-                rooms: selectedRooms.map((room, idx) => {
+                rooms: expandedRooms.map((room, idx) => {
                   // Build days object inline
                   const daysObj: Record<string, string> = {};
                   if (checkIn && checkOut) {
@@ -394,6 +408,8 @@ export default function PaymentPage() {
         };
 
         console.log("Full payload being sent:", JSON.stringify(payload, null, 2));
+        console.log("Total rooms in payload:", payload.data[0].attributes.rooms.length);
+        console.log("Room booking IDs:", payload.data[0].attributes.rooms.map(r => r.booking_room_id));
         const response = await createBookingFeed({ token, payload });
         if (response) {
           router.push("/confirmed");

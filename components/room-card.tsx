@@ -50,6 +50,7 @@ export default function RoomCard({
     bookingDetails,
     updateBookingDetails,
     addRoom,
+    updateRoom,
     incrementRoomQuantity,
     decrementRoomQuantity,
     removeRoom,
@@ -86,6 +87,14 @@ export default function RoomCard({
     // Update the selected guest count state
     setSelectedAdults(adults);
     setSelectedChildren(children);
+    
+    // Update the booking context if this room is already added
+    if (selectedRoom) {
+      updateRoom(roomTypeId?.toString() || "", {
+        adults: adults,
+        children: children
+      });
+    }
     
     // Enforce maximum limits for adults and children
     const maxAdult = 3;
@@ -241,7 +250,7 @@ export default function RoomCard({
                 <div className="flex items-center gap-1 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {`${selectedAdults} adults and ${selectedChildren} children`}
+                    {`${adultCount} adults and ${childCount} children`}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
