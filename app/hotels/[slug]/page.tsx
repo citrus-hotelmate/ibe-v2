@@ -367,7 +367,12 @@ export default function LandingPage() {
           };
 
           if (hotelImages.length === 0) {
-            return null; // or a loading state/placeholder
+            // When no images, add spacing to prevent hotel name overlap with search bar
+            return (
+              <div className="w-full sm:h-[2vh] md:h-[2vh] max-w-[98rem] mx-auto mb-4 sm:mb-6">
+                {/* Empty spacer div to prevent overlap */}
+              </div>
+            );
           }
           // --- Scroll helpers for Featured Accommodation row ---
           const featuredRowId = "featured-scroll";
