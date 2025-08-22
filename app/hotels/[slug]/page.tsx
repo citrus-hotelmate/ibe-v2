@@ -30,25 +30,27 @@ const slugify = (name: string, city?: string) => {
   return baseName;
 };
 
-// Helper function to extract hotel name from slug (remove city part)
-const extractHotelNameFromSlug = (slug: string, hotels: Hotel[]): string | null => {
-  // Try to find a hotel that matches the slug pattern
-  for (const hotel of hotels) {
-    const hotelSlug = slugify(hotel.hotelName);
-    const fullSlug = slugify(hotel.hotelName, hotel.city);
-    
-    // Check if the slug matches either the full slug or starts with hotel name
-    if (slug === fullSlug || slug.startsWith(hotelSlug + "-")) {
-      return hotel.hotelName;
-    }
+// Helper function to parse hotel name and city from slug
+const parseSlug = (slug: string): { hotelName: string; city: string } => {
+  const parts = slug.split("-");
+  
+  // Assume the last part is the city and the rest is the hotel name
+  if (parts.length < 2) {
+    // Fallback: if no city separator, treat entire slug as hotel name
+    return {
+      hotelName: parts.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" "),
+      city: ""
+    };
   }
   
-  // Fallback: convert slug back to readable name (remove potential city suffix)
-  return slug
-    .split("-")
-    .slice(0, -1) // Remove last part (likely city)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  // Last part is city, everything else is hotel name
+  const city = parts[parts.length - 1];
+  const hotelNameParts = parts.slice(0, -1);
+  
+  return {
+    hotelName: hotelNameParts.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" "),
+    city: city.charAt(0).toUpperCase() + city.slice(1)
+  };
 };
 
 export default function LandingPage() {
@@ -107,22 +109,48 @@ export default function LandingPage() {
         setIsLoading(true);
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
 
-        // Fetch hotels data
-        const [allHotels] = await Promise.all([
-          getAllHotels({ token })
-        ]);
+        // Parse hotel name and city from slug
+        const { hotelName, city } = parseSlug(slug);
+        console.log("🔍 Searching for hotel:", { hotelName, city, originalSlug: slug });
 
-        // Find hotel using the new slug format (hotel-name-city)
-        const matchedHotel = allHotels.find(
+        // Fetch hotel data using the updated API with parameters
+        const hotelsData = await getAllHotels({ 
+          token, 
+          hotelName, 
+          city 
+        });
+
+        console.log("📊 API returned hotels:", hotelsData.length);
+
+        // Find the exact match from the filtered results
+        let matchedHotel = hotelsData.find(
           (h) => slugify(h.hotelName, h.city) === slug
-        ) || allHotels.find(
-          (h) => slugify(h.hotelName) === slug // Fallback for old slug format
         );
+
+        // Fallback: try without city or with partial matching
+        if (!matchedHotel && hotelsData.length > 0) {
+          matchedHotel = hotelsData.find(
+            (h) => slugify(h.hotelName) === slug.split('-').slice(0, -1).join('-')
+          ) || hotelsData[0]; // Take first result if we have any
+        }
+
+        if (!matchedHotel) {
+          console.log("❌ No hotel found, trying fallback with getAllHotels...");
+          // Fallback to old method if new API doesn't return results
+          const allHotels = await getAllHotels({ token });
+          matchedHotel = allHotels.find(
+            (h) => slugify(h.hotelName, h.city) === slug
+          ) || allHotels.find(
+            (h) => slugify(h.hotelName) === slug
+          );
+        }
 
         if (!matchedHotel) {
           setError("Hotel not found");
           return;
         }
+
+        console.log("✅ Found hotel:", matchedHotel.hotelName, "in", matchedHotel.city);
 
         // Save hotel name and image to local storage
         const hotelToSave = {

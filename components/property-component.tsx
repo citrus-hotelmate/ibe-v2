@@ -340,6 +340,7 @@ export default function PropertyPage() {
         ) as AvailableRoom[];
         
         console.log("✅ Live filtered rooms updated:", groupedRooms.length, "room types");
+        console.log("Rooms types:", groupedRooms.map(room => room.roomType).join(", "));
         setAvailableRooms(groupedRooms);
       } catch (err) {
         console.error("❌ Error in live room filtering:", err);
