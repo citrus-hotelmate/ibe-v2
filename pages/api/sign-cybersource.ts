@@ -48,15 +48,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const secretKey = ipgCredentials[0].secretKey;
+    const isSandBoxMode = ipgCredentials[0].isSandBoxMode;
+    
     if (!secretKey) {
       return res.status(500).json({ error: 'Secret key not found' });
     }
 
     const signature = signFields(fields, secretKey);
     
-    console.log("✅ CyberSource signature generated for hotel:", hotelId);
+    // Determine the correct endpoint based on sandbox mode
+    const endpoint = isSandBoxMode 
+      ? "https://testsecureacceptance.cybersource.com/pay"
+      : "https://secureacceptance.cybersource.com/pay";
     
-    return res.status(200).json({ signature });
+    console.log("✅ CyberSource signature generated for hotel:", hotelId);
+    console.log("🔗 Endpoint determined:", endpoint, "(Sandbox:", isSandBoxMode + ")");
+    
+    return res.status(200).json({ 
+      signature,
+      endpoint,
+      isSandBoxMode 
+    });
     
   } catch (error) {
     console.error('Error generating CyberSource signature:', error);

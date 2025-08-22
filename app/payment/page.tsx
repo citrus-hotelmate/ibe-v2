@@ -500,13 +500,14 @@ export default function PaymentPage() {
           throw new Error(`Failed to generate signature: ${response.statusText}`);
         }
 
-        const { signature } = await response.json();
+        const { signature, endpoint } = await response.json();
         console.log("✅ Signature generated successfully");
+        console.log("🔗 Using CyberSource endpoint:", endpoint);
 
         // Create form and submit to CyberSource
         const form = document.createElement("form");
         form.method = "POST";
-        form.action = "https://testsecureacceptance.cybersource.com/pay"; // Use test endpoint
+        form.action = endpoint; // Use endpoint from server
         form.name = "cybersource_payment_form";
 
         // Add all fields to form
