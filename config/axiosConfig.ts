@@ -11,6 +11,7 @@ export const HotelRoomTypeImage = "HotelRoomTypeImage";
 export const HotelImage = "HotelImage";
 export const Country = "Country";
 export const Reservation = "Reservation";
+export const HotelIPG = "HotelIPG";
 
 
 export const axiosInstance = axios.create({

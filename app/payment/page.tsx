@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getAllHotels } from "@/controllers/adminController";
+import { getHotelIPGByHotelId } from "@/controllers/hotelIPGController";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,6 +53,8 @@ export default function PaymentPage() {
 
   const [allowPayAtProperty, setAllowPayAtProperty] = useState(false);
   const [isIPGActive, setIsIPGActive] = useState(false);
+  const [ipgCredentials, setIpgCredentials] = useState<any>(null);
+  const [currentHotelId, setCurrentHotelId] = useState<number | null>(null);
 
   // isMounted state for client-only rendering
   const [isMounted, setIsMounted] = useState(false);
@@ -108,20 +111,43 @@ export default function PaymentPage() {
     const fetchPaymentOptions = async () => {
       try {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-        const data = await getAllHotels({ token: token || "" });
         
-        // Hardcoded values for testing - remove these when API is updated
-        setAllowPayAtProperty(true); // Hardcoded for testing
-        setIsIPGActive(true); // Hardcoded for testing
+        // Get hotel ID from localStorage
+        const savedHotel = localStorage.getItem("selectedHotel");
+        if (savedHotel) {
+          const hotelData = JSON.parse(savedHotel);
+          const hotelId = hotelData.id;
+          setCurrentHotelId(hotelId);
+          
+          // Fetch IPG credentials for this hotel
+          try {
+            const ipgData = await getHotelIPGByHotelId({ 
+              token: token || "", 
+              hotelId 
+            });
+            
+            if (ipgData && ipgData.length > 0) {
+              setIpgCredentials(ipgData[0]);
+              setIsIPGActive(ipgData[0].isIPGActive);
+              console.log("✅ IPG credentials loaded:", ipgData[0]);
+            } else {
+              console.log("⚠️ No IPG credentials found for hotel:", hotelId);
+              setIsIPGActive(false);
+            }
+          } catch (ipgError) {
+            console.error("❌ Failed to fetch IPG credentials:", ipgError);
+            setIsIPGActive(false);
+          }
+        }
         
-        // Once API is updated, use these lines instead:
-        // setAllowPayAtProperty(data?.IBE_AllowPayAtProperty === true);
-        // setIsIPGActive(data?.IBE_isIPGActive === true);
+        // For now, always allow pay at property
+        setAllowPayAtProperty(true);
+        
       } catch (error) {
-        console.error("Error fetching hotel payment settings", error);
+        console.error("Error fetching payment options:", error);
         // Set default values in case of error
         setAllowPayAtProperty(true);
-        setIsIPGActive(true);
+        setIsIPGActive(false);
       }
     };
 
@@ -420,48 +446,100 @@ export default function PaymentPage() {
         console.error("Booking error:", error);
         setIsProcessing(false);
       }
-    } else if (bookingDetails.paymentMethod === "stripe") {
+    } else if (bookingDetails.paymentMethod === "cybersource") {
       try {
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = "https://testsecureacceptance.cybersource.com/pay";
-        form.name = "myform";
+        if (!ipgCredentials) {
+          alert("Payment gateway not configured for this hotel.");
+          setIsProcessing(false);
+          return;
+        }
 
-        const addHiddenField = (name: string, value: string) => {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = name;
-          input.value = value;
-          form.appendChild(input);
+        if (!currentHotelId) {
+          alert("Hotel information not available.");
+          setIsProcessing(false);
+          return;
+        }
+
+        const finalBookingId = bookingDetails.bookingId || generateBookingId();
+        
+        // Calculate final total
+        const roomsTotal = bookingDetails.selectedRooms.reduce(
+          (total, room) => total + room.price * room.quantity,
+          0
+        );
+        const finalTotal = roomsTotal - voucherAmount;
+
+        // Prepare fields for CyberSource
+        const fields: Record<string, string> = {
+          access_key: ipgCredentials.accessKeyUSD,
+          profile_id: ipgCredentials.profileIdUSD,
+          transaction_uuid: finalBookingId,
+          signed_field_names: "access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_address1,bill_city,bill_country",
+          unsigned_field_names: "",
+          signed_date_time: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+          locale: "en",
+          transaction_type: "sale",
+          reference_number: finalBookingId,
+          amount: finalTotal.toFixed(2),
+          currency: bookingDetails.currency || "USD",
+          bill_address1: "Address",
+          bill_city: "City",
+          bill_country: bookingDetails.nationality || "US",
         };
 
-        // Static fields
-        addHiddenField("access_key", "9511dcceccde31438d7e46bab222241c");
-        addHiddenField("profile_id", "F87AFFC2-E55B-403D-93F5-BE17FC99A2BA");
-        addHiddenField("transaction_uuid", bookingDetails.bookingId || generateBookingId());
-        addHiddenField("signed_field_names", "access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_address1,bill_city,bill_country");
-        addHiddenField("unsigned_field_names", "");
-        addHiddenField("signed_date_time", new Date().toISOString());
-        addHiddenField("locale", "en");
+        console.log("🔄 Generating CyberSource signature...");
+        
+        // Generate signature via API
+        const response = await fetch("/api/sign-cybersource", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hotelId: currentHotelId, ...fields }),
+        });
 
-        // Payment details
-        addHiddenField("transaction_type", "sale");
-        addHiddenField("reference_number", bookingDetails.bookingId || "");
-        addHiddenField("amount", finalTotal.toFixed(2));
-        addHiddenField("currency", bookingDetails.currency || "USD");
+        if (!response.ok) {
+          throw new Error(`Failed to generate signature: ${response.statusText}`);
+        }
 
-        // Billing info
-        addHiddenField("bill_address1", "215SS");
-        addHiddenField("bill_city", "HORANA");
-        addHiddenField("bill_country", "US");
+        const { signature } = await response.json();
+        console.log("✅ Signature generated successfully");
+
+        // Create form and submit to CyberSource
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "https://testsecureacceptance.cybersource.com/pay"; // Use test endpoint
+        form.name = "cybersource_payment_form";
+
+        // Add all fields to form
+        Object.entries(fields).forEach(([key, value]) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        });
+
+        // Add signature
+        const sigInput = document.createElement("input");
+        sigInput.type = "hidden";
+        sigInput.name = "signature";
+        sigInput.value = signature;
+        form.appendChild(sigInput);
+
+        console.log("🚀 Submitting payment to CyberSource...");
+        console.log("Payment Details:", {
+          amount: fields.amount,
+          currency: fields.currency,
+          bookingId: finalBookingId,
+          hotelId: currentHotelId
+        });
 
         document.body.appendChild(form);
         form.submit();
-        return;
+        
       } catch (error) {
-        console.error("Payment redirection error:", error);
+        console.error("❌ CyberSource payment error:", error);
+        alert("Failed to process payment. Please try again.");
         setIsProcessing(false);
-        return;
       }
     }
 
@@ -526,7 +604,7 @@ export default function PaymentPage() {
                       updateBookingDetails({ paymentMethod: value });
                       if (value === "arrival") {
                         localStorage.setItem("payment_collect", "hotelcollect");
-                      } else if (value === "stripe") {
+                      } else if (value === "cybersource") {
                         localStorage.setItem("payment_collect", "paid");
                       }
                     }}
@@ -534,9 +612,9 @@ export default function PaymentPage() {
                   >
                     {isIPGActive && (
                       <div className="flex items-center space-x-2 border rounded-md p-4">
-                        <RadioGroupItem value="stripe" id="stripe" />
+                        <RadioGroupItem value="cybersource" id="cybersource" />
                         <Label
-                          htmlFor="stripe"
+                          htmlFor="cybersource"
                           className="flex items-center gap-2 cursor-pointer"
                         >
                           <CreditCard className="w-5 h-5" />
@@ -617,7 +695,7 @@ export default function PaymentPage() {
                     )}
                   </div>
 
-                  {bookingDetails.paymentMethod === "stripe" && null}
+                  {bookingDetails.paymentMethod === "cybersource" && null}
 
                   {bookingDetails.paymentMethod === "arrival" && (
                     <div className="mt-6 text-sm text-muted-foreground">
@@ -696,7 +774,7 @@ export default function PaymentPage() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Booking Summary-2</CardTitle>
+                <CardTitle>Booking Summary</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 {bookingDetails.selectedRooms.map((roomBooking) => (
