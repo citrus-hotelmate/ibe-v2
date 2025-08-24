@@ -30,6 +30,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { format } from "date-fns";
 import { useBooking } from "@/components/booking-context";
 import { generateBookingId } from "@/lib/utils";
+import { generateRefNo } from "@/lib/randomNumberGenerator";
 import Header from "@/components/header";
 import { useCurrency } from "@/components/currency-context";
 import { CurrencySelector } from "@/components/currency-selector";
@@ -438,7 +439,9 @@ export default function PaymentPage() {
         console.log("Room booking IDs:", payload.data[0].attributes.rooms.map(r => r.booking_room_id));
         const response = await createBookingFeed({ token, payload });
         if (response) {
-          router.push("/confirmed");
+          const refNo = generateRefNo();
+          localStorage.setItem("payment_collect", "later");
+          router.push(`/confirmed?refno=${refNo}`);
         } else {
           throw new Error("Failed to create booking");
         }
@@ -546,7 +549,9 @@ export default function PaymentPage() {
 
     setTimeout(() => {
       setIsProcessing(false);
-      router.push("/confirmed");
+      const refNo = generateRefNo();
+      localStorage.setItem("payment_collect", "paid");
+      router.push(`/confirmed?refno=${refNo}`);
     }, 2000);
   };
 
