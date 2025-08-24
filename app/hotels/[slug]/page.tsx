@@ -15,11 +15,12 @@ import { Button } from "@/components/ui/button";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
 import { Hotel } from "@/types/ibe";
 import { getAllHotels } from "@/controllers/ibeController";
-import { ArrowRight, ArrowUpRight, MapPin, Star, StarHalf } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, MapPin, Star, StarHalf } from "lucide-react";
 import HotelMap from "@/components/hotel-map";
 import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
 import PropertyPage from "@/components/property-component";
+
 
 const slugify = (name: string, city?: string) => {
   const baseName = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -33,7 +34,7 @@ const slugify = (name: string, city?: string) => {
 // Helper function to parse hotel name and city from slug
 const parseSlug = (slug: string): { hotelName: string; city: string } => {
   const parts = slug.split("-");
-  
+
   // Assume the last part is the city and the rest is the hotel name
   if (parts.length < 2) {
     // Fallback: if no city separator, treat entire slug as hotel name
@@ -42,11 +43,11 @@ const parseSlug = (slug: string): { hotelName: string; city: string } => {
       city: ""
     };
   }
-  
+
   // Last part is city, everything else is hotel name
   const city = parts[parts.length - 1];
   const hotelNameParts = parts.slice(0, -1);
-  
+
   return {
     hotelName: hotelNameParts.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" "),
     city: city.charAt(0).toUpperCase() + city.slice(1)
@@ -64,6 +65,7 @@ export default function LandingPage() {
   const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
   const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showWishlist, setShowWishlist] = useState(false);
 
   // Track window width for responsive grid calculations
   const [windowWidth, setWindowWidth] = useState<number>(
@@ -114,10 +116,10 @@ export default function LandingPage() {
         console.log("🔍 Searching for hotel:", { hotelName, city, originalSlug: slug });
 
         // Fetch hotel data using the updated API with parameters
-        const hotelsData = await getAllHotels({ 
-          token, 
-          hotelName, 
-          city 
+        const hotelsData = await getAllHotels({
+          token,
+          hotelName,
+          city
         });
 
         console.log("📊 API returned hotels:", hotelsData.length);
@@ -347,29 +349,13 @@ export default function LandingPage() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: "#e2e0df" }}
     >
-      {/* <Navbar /> */}
-      {/* Logo - stays at the top-left */}
-      <div
-        className="absolute flex items-center z-30"
-        style={{
-          left: "1rem",
-          top: "0.5rem",
-        }}
-      >
-        <Link href="/">
-          <div className="relative w-[90px] h-[36px] sm:w-[130px] sm:h-[60px]">
-            <Image
-              src="/logo-01.png"
-              alt="Logo"
-              fill
-              className="rounded-md object-contain"
-              sizes="(max-width: 640px) 90px, 130px"
-            />
-          </div>
-        </Link>
-      </div>
+      {/* ✅ Navbar goes here */}
+      <Navbar
+        showWishlist={showWishlist}
+        onToggleWishlistAction={() => setShowWishlist(!showWishlist)}
+      />
       {/* Hotel Name Section */}
-      <div className="relative z-20 text-center mt-6 sm:mt-8 md:mt-10 px-4">
+      <div className="relative z-20 text-center sm:mt-8 md:mt-10 px-4">
         <h1 className="font-urbanist text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[80px] 2xl:text-[100px] tracking-tight leading-tight relative inline-block notranslate">
           {/* Unblurred main text */}
           <span className="relative z-10 block">{getHotelName()}</span>
@@ -381,7 +367,7 @@ export default function LandingPage() {
       </div>
 
       {/* Hero + SearchBar Wrapper */}
-      <div className="relative w-full flex flex-col items-center">
+      <div className="relative w-full flex flex-col items-center mt-2">
         {/* Hero Section */}
         {(() => {
           const [currentIndex, setCurrentIndex] = useState(0);
@@ -419,6 +405,12 @@ export default function LandingPage() {
           const handleNext = () => {
             if (hotelImages.length === 0) return;
             setCurrentIndex((prev) => (prev + 1) % hotelImages.length);
+          };
+
+          // NEW: go left (wrap around)
+          const handlePrev = () => {
+            if (hotelImages.length === 0) return;
+            setCurrentIndex((prev) => (prev - 1 + hotelImages.length) % hotelImages.length);
           };
 
           if (hotelImages.length === 0) {
@@ -462,9 +454,20 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
+              {/* Left arrow */}
+              <button
+                onClick={handlePrev}
+                className="hidden md:group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 left-2 sm:left-4"
+                aria-label="Previous image"
+              >
+                <ArrowLeft className="text-white w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
+              </button>
+
+              {/* Right arrow (existing) */}
               <button
                 onClick={handleNext}
                 className="hidden md:group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 right-2 sm:right-4"
+                aria-label="Next image"
               >
                 <ArrowRight className="text-white w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
               </button>
@@ -531,8 +534,8 @@ export default function LandingPage() {
               {/* Orange Card */}
               <div
                 className={`rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
-                    ? "flex-1 min-w-[300px] max-w-[800px]"
-                    : "w-[252px] flex-shrink-0"
+                  ? "flex-1 min-w-[300px] max-w-[800px]"
+                  : "w-[252px] flex-shrink-0"
                   }`}
               >
                 <div className="self-start">
@@ -554,8 +557,8 @@ export default function LandingPage() {
               {/* Map Card */}
               <div
                 className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
-                    ? "flex-1 min-w-[300px] max-w-[800px]"
-                    : "w-[252px] flex-shrink-0"
+                  ? "flex-1 min-w-[300px] max-w-[800px]"
+                  : "w-[252px] flex-shrink-0"
                   }`}
               >
                 <div className="h-full relative">
