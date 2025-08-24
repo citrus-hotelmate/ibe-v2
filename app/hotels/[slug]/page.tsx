@@ -389,9 +389,17 @@ export default function LandingPage() {
 
                 console.log("Hotel images response:", response);
 
-                // Filter out the main image and get only non-main images
-                const nonMainImages = response.filter(img => !img.isMain);
-                setHotelImages(nonMainImages);
+                // ✅ Prefer isMain, else take the first image
+                let images: HotelImage[] = [];
+                const mainImage = response.find(img => img.isMain);
+
+                if (mainImage) {
+                  images = response; // keep all, hero will naturally start with isMain
+                } else if (response.length > 0) {
+                  images = [response[0], ...response.slice(1)]; // first image + rest
+                }
+
+                setHotelImages(images);
               } catch (error) {
                 console.error("Error fetching hotel images:", error);
               }

@@ -231,25 +231,32 @@ export default function Home() {
       return matches;
     });
   };
+const transform = (hotel: Hotel): PropertyListing => {
+  let imageUrl = "";
 
-  const transform = (hotel: Hotel): PropertyListing => {
-    const rawImage = hotel.hotelImage?.imageFileName;
-    const decodedImage =
-      rawImage && hotel.hotelImage?.isMain ? decodeURIComponent(rawImage) : null;
-    const imageUrl = decodedImage ? decodedImage.split("?")[0] : "";
+  if (hotel.hotelImage) {
+    // hotelImage can be single object or array (depending on API)
+    const images = Array.isArray(hotel.hotelImage) ? hotel.hotelImage : [hotel.hotelImage];
+    const mainImage = images.find((img) => img.isMain);
 
-    return {
-      id: hotel.hotelID,
-      type: hotel.hotelName,
-      location: (hotel.city || hotel.hotelAddress || "Unknown").trim(),
-      rating: hotel.starCatgeory,
-      image: imageUrl,
-      hotelCode: hotel.hotelCode,
-      lowestRate: hotel.lowestRate || 0,
-      slug: slugify(hotel.hotelName, hotel.city), // Pass city to slugify
-      hotelType: titleCase(hotel.hotelType || "Other"),
-    };
+    const chosenImage = mainImage || images[0]; // Prefer isMain, else first
+    if (chosenImage?.imageFileName) {
+      imageUrl = decodeURIComponent(chosenImage.imageFileName.split("?")[0]);
+    }
+  }
+
+  return {
+    id: hotel.hotelID,
+    type: hotel.hotelName,
+    location: (hotel.city || hotel.hotelAddress || "Unknown").trim(),
+    rating: hotel.starCatgeory,
+    image: imageUrl,
+    hotelCode: hotel.hotelCode,
+    lowestRate: hotel.lowestRate || 0,
+    slug: slugify(hotel.hotelName, hotel.city),
+    hotelType: titleCase(hotel.hotelType || "Other"),
   };
+};
 
   const groupAndSet = (hotels: Hotel[], city: string, hotelName: string, hotelType: string = '') => {
     const filtered = filterHotels(hotels, {
