@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Confetti from "react-confetti"
 import { useWindowSize } from "@react-hook/window-size"
@@ -18,10 +18,20 @@ import { CurrencySelector } from "@/components/currency-selector"
 
 import { useCurrency } from "@/components/currency-context"
 
-export default function ConfirmedPage() {
-  const [width, height] = useWindowSize()
+// Component to handle search params with Suspense
+function SearchParamsHandler({ onRefNoChange }: { onRefNoChange: (refNo: string | null) => void }) {
   const searchParams = useSearchParams()
-  const [refNo, setRefNo] = useState<string | null>(null)
+
+  useEffect(() => {
+    const refNoParam = searchParams.get('refno')
+    onRefNoChange(refNoParam)
+  }, [searchParams, onRefNoChange])
+
+  return null
+}
+
+function ConfirmedPageContent({ refNo }: { refNo: string | null }) {
+  const [width, height] = useWindowSize()
   const [bookingDetails, setBookingDetails] = useState<any>(null)
   const [showConfetti, setShowConfetti] = useState(true)
   const [hotelDetails, setHotelDetails] = useState<any>(null)
@@ -30,12 +40,6 @@ export default function ConfirmedPage() {
   const { currency, convertPrice } = useCurrency()
 
   const formatPrice = (value: number) => `${currency} ${value.toFixed(2)}`
-
-  // Get refno from URL parameters
-  useEffect(() => {
-    const refNoParam = searchParams.get('refno')
-    setRefNo(refNoParam)
-  }, [searchParams])
 
   // Load booking details from localStorage on mount, then merge with reservationSummary
   useEffect(() => {
@@ -453,5 +457,16 @@ console.log(selectedHotel,"JUDE")
       </div>
       
     </div>
+  )
+}
+
+export default function ConfirmedPage() {
+  const [refNo, setRefNo] = useState<string | null>(null)
+
+  return (
+    <Suspense fallback={<div className="text-center py-8">Loading...</div>}>
+      <SearchParamsHandler onRefNoChange={setRefNo} />
+      <ConfirmedPageContent refNo={refNo} />
+    </Suspense>
   )
 }
