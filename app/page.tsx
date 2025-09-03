@@ -39,13 +39,12 @@ interface SearchParams {
   searchType: "destinations" | "hotel name" | "both" | "none" | "all" | "destination-type" | "hotel-type" | "hotel type";
 }
 
-const slugify = (name: string, city?: string) => {
-  const baseName = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  if (city) {
-    const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    return `${baseName}-${citySlug}`;
-  }
-  return baseName;
+const slugify = (name: string) => {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+};
+
+const generateHotelSlug = (hotelName: string, city: string) => {
+  return `${slugify(hotelName)}-${slugify(city)}`;
 };
 
 const titleCase = (s: string) =>
@@ -231,7 +230,7 @@ export default function Home() {
       return matches;
     });
   };
-const transform = (hotel: Hotel): PropertyListing => {
+  const transform = (hotel: Hotel): PropertyListing => {
   let imageUrl = "";
 
   if (hotel.hotelImage) {
@@ -245,6 +244,9 @@ const transform = (hotel: Hotel): PropertyListing => {
     }
   }
 
+  const finalSlug = hotel.slug || generateHotelSlug(hotel.hotelName, hotel.city);
+  console.log(`🏷️  Hotel: ${hotel.hotelName} | API Slug: ${hotel.slug} | Generated: ${generateHotelSlug(hotel.hotelName, hotel.city)} | Final: ${finalSlug}`);
+
   return {
     id: hotel.hotelID,
     type: hotel.hotelName,
@@ -253,7 +255,7 @@ const transform = (hotel: Hotel): PropertyListing => {
     image: imageUrl,
     hotelCode: hotel.hotelCode,
     lowestRate: hotel.lowestRate || 0,
-    slug: slugify(hotel.hotelName, hotel.city),
+    slug: finalSlug, // Use slug from API, fallback to generated slug
     hotelType: titleCase(hotel.hotelType || "Other"),
   };
 };
@@ -352,7 +354,7 @@ const transform = (hotel: Hotel): PropertyListing => {
             rating: hotel.rating,
             image: hotel.image,
             lowestRate: hotel.price,
-            slug: slugify(hotel.title, hotel.location), // Include location in slug for wishlist items
+            slug: hotel.slug || generateHotelSlug(hotel.title || "", hotel.location || ""), // Use stored slug or generate fallback
             hotelType: "Wishlisted"
           }))
         };

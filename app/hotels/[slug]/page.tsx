@@ -21,37 +21,11 @@ import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
 import PropertyPage from "@/components/property-component";
 
-
-const slugify = (name: string, city?: string) => {
-  const baseName = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  if (city) {
-    const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    return `${baseName}-${citySlug}`;
-  }
-  return baseName;
-};
-
-// Helper function to parse hotel name and city from slug
-const parseSlug = (slug: string): { hotelName: string; city: string } => {
-  const parts = slug.split("-");
-
-  // Assume the last part is the city and the rest is the hotel name
-  if (parts.length < 2) {
-    // Fallback: if no city separator, treat entire slug as hotel name
-    return {
-      hotelName: parts.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" "),
-      city: ""
-    };
-  }
-
-  // Last part is city, everything else is hotel name
-  const city = parts[parts.length - 1];
-  const hotelNameParts = parts.slice(0, -1);
-
-  return {
-    hotelName: hotelNameParts.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" "),
-    city: city.charAt(0).toUpperCase() + city.slice(1)
+const generateHotelSlug = (hotelName: string, city: string) => {
+  const slugify = (name: string) => {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   };
+  return `${slugify(hotelName)}-${slugify(city)}`;
 };
 
 export default function LandingPage() {
@@ -111,40 +85,35 @@ export default function LandingPage() {
         setIsLoading(true);
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
 
-        // Parse hotel name and city from slug
-        const { hotelName, city } = parseSlug(slug);
-        console.log("🔍 Searching for hotel:", { hotelName, city, originalSlug: slug });
+        console.log("🔍 Searching for hotel with slug:", slug);
 
-        // Fetch hotel data using the updated API with parameters
-        const hotelsData = await getAllHotels({
-          token,
-          hotelName,
-          city
-        });
+        // Fetch all hotels
+        const hotelsData = await getAllHotels({ token });
 
         console.log("📊 API returned hotels:", hotelsData.length);
+        console.log("🎯 Looking for slug:", slug);
 
-        // Find the exact match from the filtered results
-        let matchedHotel = hotelsData.find(
-          (h) => slugify(h.hotelName, h.city) === slug
-        );
+        // Find the hotel that matches the slug
+        let matchedHotel = hotelsData.find((h) => h.slug === slug);
+        console.log("🔎 Direct slug match:", matchedHotel ? matchedHotel.hotelName : "None");
 
-        // Fallback: try without city or with partial matching
-        if (!matchedHotel && hotelsData.length > 0) {
-          matchedHotel = hotelsData.find(
-            (h) => slugify(h.hotelName) === slug.split('-').slice(0, -1).join('-')
-          ) || hotelsData[0]; // Take first result if we have any
+        // If no exact slug match, try to match by generated slug format (hotelName-city)
+        if (!matchedHotel) {
+          matchedHotel = hotelsData.find((h) => {
+            const generatedSlug = generateHotelSlug(h.hotelName, h.city);
+            console.log(`🏗️  Generated slug for ${h.hotelName}: ${generatedSlug}`);
+            return generatedSlug === slug;
+          });
+          console.log("🔎 Generated slug match:", matchedHotel ? matchedHotel.hotelName : "None");
         }
 
+        // Final fallback: try to match by hotelID for backwards compatibility
         if (!matchedHotel) {
-          console.log("❌ No hotel found, trying fallback with getAllHotels...");
-          // Fallback to old method if new API doesn't return results
-          const allHotels = await getAllHotels({ token });
-          matchedHotel = allHotels.find(
-            (h) => slugify(h.hotelName, h.city) === slug
-          ) || allHotels.find(
-            (h) => slugify(h.hotelName) === slug
-          );
+          const hotelId = parseInt(slug);
+          if (!isNaN(hotelId)) {
+            matchedHotel = hotelsData.find((h) => h.hotelID === hotelId);
+            console.log("🔎 ID fallback match:", matchedHotel ? matchedHotel.hotelName : "None");
+          }
         }
 
         if (!matchedHotel) {

@@ -82,4 +82,10 @@ export interface Hotel {
   planId: number;
   hotelImage: HotelImage;
   lowestRate: number;
+  slug: string | null;
+  logoURL: string;
+  ibE_CancellationPolicy: string;
+  ibE_ChildPolicy: string;
+  ibE_TaxPolicy: string;
+  isIBEActive: boolean;
 }
