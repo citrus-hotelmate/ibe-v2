@@ -451,7 +451,7 @@ export default function LandingPage() {
 
               {/* Subtle top glass overlay with fade-out mask */}
               <div className="absolute inset-0 z-30 pointer-events-none">
-                <div className="w-full h-full bg-white/10 backdrop-blur-md mask-fade" />
+                <div className="w-full h-full bg-white/10" />
               </div>
 
             </div>
