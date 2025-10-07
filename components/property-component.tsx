@@ -297,6 +297,7 @@ export default function PropertyPage() {
           startDate,
           endDate,
           token,
+          rateCodeId: 2
         });
         allRooms = rooms;
 
