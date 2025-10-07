@@ -47,6 +47,33 @@ const generateHotelSlug = (hotelName: string, city: string) => {
   return `${slugify(hotelName)}-${slugify(city)}`;
 };
 
+const normalizeSlug = (raw?: string | null, hotelName?: string, city?: string) => {
+  if (!raw || !raw.trim()) {
+    return generateHotelSlug(hotelName || "", city || "");
+  }
+
+  let s = raw.trim();
+
+  // If it's a full URL, take the pathname
+  if (/^https?:\/\//i.test(s)) {
+    try {
+      s = new URL(s).pathname;
+    } catch {
+      // fall through if URL parsing fails
+    }
+  }
+
+  // Strip leading "hotels/" and any leading/trailing slashes
+  s = s.replace(/^\/?hotels\//i, "").replace(/^\/+|\/+$/g, "");
+
+  // If there are multiple segments, take the last one
+  const parts = s.split("/").filter(Boolean);
+  s = parts[parts.length - 1] || s;
+
+  // Normalize to clean, lowercase kebab-case
+  return s.toLowerCase().replace(/[^a-z0-9\-]+/g, "-").replace(/^-+|-+$/g, "");
+};
+
 const titleCase = (s: string) =>
   (s || "")
     .toLowerCase()
@@ -141,6 +168,42 @@ function PropertyListings({
   );
 }
 
+const transform = (hotel: Hotel): PropertyListing => {
+  let imageUrl = "";
+
+  if (hotel.hotelImage) {
+    // hotelImage can be single object or array (depending on API)
+    const images = Array.isArray(hotel.hotelImage) ? hotel.hotelImage : [hotel.hotelImage];
+    const mainImage = images.find((img) => img.isMain);
+
+    const chosenImage = mainImage || images[0]; // Prefer isMain, else first
+    if (chosenImage?.imageFileName) {
+      imageUrl = decodeURIComponent(chosenImage.imageFileName.split("?")[0]);
+    }
+  }
+
+  const apiOrGenerated = hotel.slug || generateHotelSlug(hotel.hotelName, hotel.city);
+  const finalSlug = normalizeSlug(apiOrGenerated, hotel.hotelName, hotel.city);
+  console.log(
+    `🏷️  Hotel: ${hotel.hotelName} | Raw API Slug: ${hotel.slug} | Generated: ${generateHotelSlug(
+      hotel.hotelName,
+      hotel.city
+    )} | Final Normalized: ${finalSlug}`
+  );
+
+  return {
+    id: hotel.hotelID,
+    type: hotel.hotelName,
+    location: (hotel.city || hotel.hotelAddress || "Unknown").trim(),
+    rating: hotel.starCatgeory,
+    image: imageUrl,
+    hotelCode: hotel.hotelCode,
+    lowestRate: hotel.lowestRate || 0,
+    slug: finalSlug, // Use normalized slug
+    hotelType: titleCase(hotel.hotelType || "Other"),
+  };
+};
+
 export default function Home() {
   const router = useRouter();
   const { convertPrice, formatPrice, currency } = useCurrency();
@@ -230,35 +293,7 @@ export default function Home() {
       return matches;
     });
   };
-  const transform = (hotel: Hotel): PropertyListing => {
-  let imageUrl = "";
-
-  if (hotel.hotelImage) {
-    // hotelImage can be single object or array (depending on API)
-    const images = Array.isArray(hotel.hotelImage) ? hotel.hotelImage : [hotel.hotelImage];
-    const mainImage = images.find((img) => img.isMain);
-
-    const chosenImage = mainImage || images[0]; // Prefer isMain, else first
-    if (chosenImage?.imageFileName) {
-      imageUrl = decodeURIComponent(chosenImage.imageFileName.split("?")[0]);
-    }
-  }
-
-  const finalSlug = hotel.slug || generateHotelSlug(hotel.hotelName, hotel.city);
-  console.log(`🏷️  Hotel: ${hotel.hotelName} | API Slug: ${hotel.slug} | Generated: ${generateHotelSlug(hotel.hotelName, hotel.city)} | Final: ${finalSlug}`);
-
-  return {
-    id: hotel.hotelID,
-    type: hotel.hotelName,
-    location: (hotel.city || hotel.hotelAddress || "Unknown").trim(),
-    rating: hotel.starCatgeory,
-    image: imageUrl,
-    hotelCode: hotel.hotelCode,
-    lowestRate: hotel.lowestRate || 0,
-    slug: finalSlug, // Use slug from API, fallback to generated slug
-    hotelType: titleCase(hotel.hotelType || "Other"),
-  };
-};
+  
 
   const groupAndSet = (hotels: Hotel[], city: string, hotelName: string, hotelType: string = '') => {
     const filtered = filterHotels(hotels, {
@@ -424,7 +459,7 @@ export default function Home() {
                 destination={sectionTitle}
                 properties={properties}
                 onHotelClick={(slug) => {
-                  window.open(`/hotels/${slug}`, "_blank")
+                  window.open(`/hotels/${slug}`, "_blank", "noopener,noreferrer")
                 }}
               />
             ))
