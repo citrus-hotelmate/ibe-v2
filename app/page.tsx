@@ -233,9 +233,11 @@ export default function Home() {
         const hotels = await getAllHotels({
           token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || "",
         });
-        setAllHotels(hotels);
+        // Only include hotels where finAct is false
+        const filteredByFinAct = hotels.filter((h) => h.finAct === false);
+        setAllHotels(filteredByFinAct);
         // initial: no destination => group by city (current behavior)
-        groupAndSet(hotels, "", "", "");
+        groupAndSet(filteredByFinAct, "", "", "");
       } catch (error) {
         console.error(error);
       } finally {
@@ -272,6 +274,8 @@ export default function Home() {
     const hotelType = params.hotelType.toLowerCase().trim();
 
     return hotels.filter((hotel) => {
+      // Guard: only consider hotels where finAct is false
+      if (hotel.finAct !== false) return false;
       const hotelCity = (hotel.city || "").toLowerCase().trim();
       const hotelNameLower = (hotel.hotelName || "").toLowerCase();
       const hotelTypeLower = (hotel.hotelType || "").toLowerCase();
