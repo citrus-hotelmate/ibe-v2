@@ -15,8 +15,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 208 20% 17%;
     
-    /* Orange Theme using #ff9100 */
-    --primary: 33 100% 50%;               /* #ff9100 converted to HSL */
+    /* Primary theme color */
+    --primary: 33 100% 50%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 50 10% 90%;
@@ -25,8 +25,8 @@
     --muted: 50 10% 90%;
     --muted-foreground: 208 20% 17%;
     
-    --accent: 33 100% 95%;                /* Light orange accent based on #ff9100 */
-    --accent-foreground: 33 100% 30%;     /* Darker orange for contrast */
+    --accent: 33 100% 95%;
+    --accent-foreground: 33 100% 30%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -34,7 +34,7 @@
     --border: 50 10% 85%;
     --input: 50 10% 85%;
     
-    --ring: 33 100% 50%;                  /* Match primary orange #ff9100 */
+    --ring: 33 100% 50%;
     --radius: 0.5rem;
   }
   
@@ -48,8 +48,8 @@
     --popover: 210 24% 12%;
     --popover-foreground: 210 16% 95%;
     
-    /* Orange for dark mode - slightly brighter for better contrast */
-    --primary: 33 100% 55%;              /* Slightly brighter #ff9100 for dark mode */
+    /* Primary theme color for dark mode */
+    --primary: 33 100% 55%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 210 10% 15%;
@@ -58,8 +58,8 @@
     --muted: 210 10% 15%;
     --muted-foreground: 210 16% 70%;
     
-    --accent: 33 80% 20%;                /* Dark orange accent for dark mode */
-    --accent-foreground: 33 100% 80%;    /* Light orange text */
+    --accent: 33 80% 20%;
+    --accent-foreground: 33 100% 80%;
     
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -67,7 +67,7 @@
     --border: 210 10% 15%;
     --input: 210 10% 15%;
     
-    --ring: 33 100% 55%;                 /* Match primary orange for dark mode */
+    --ring: 33 100% 55%;
     --radius: 0.5rem;
   }
 }
@@ -111,39 +111,39 @@
   display: none !important;
 }
 
-/* Orange theme for date range picker using #ff9100 */
+/* Theme for date range picker using primary color */
 .rdr-date-range-picker .rdrDayInRange {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdr-date-range-picker .rdrDayStartEdge {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdr-date-range-picker .rdrDayEndEdge {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdr-date-range-picker .rdrSelected {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdr-date-range-picker .rdrInRange {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdr-date-range-picker .rdrStartEdge {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdr-date-range-picker .rdrEndEdge {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
@@ -154,27 +154,27 @@
 
 /* More specific targeting for react-date-range */
 .rdrCalendarWrapper .rdrDayInRange {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdrCalendarWrapper .rdrSelected {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdrCalendarWrapper .rdrInRange {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdrCalendarWrapper .rdrStartEdge {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 
 .rdrCalendarWrapper .rdrEndEdge {
-  background: #ff9100;
+  background: hsl(var(--primary));
   color: white;
 }
 

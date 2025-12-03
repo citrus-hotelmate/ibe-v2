@@ -59,9 +59,18 @@ export default function PaymentPage() {
 
   // isMounted state for client-only rendering
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Header color state management
+  const [headerColor, setHeaderColor] = useState<string>("#70614c");
 
   useEffect(() => {
     setIsMounted(true);
+    
+    // Get header color from localStorage
+    const storedHeaderColor = localStorage.getItem("ibeHeaderColour");
+    if (storedHeaderColor) {
+      setHeaderColor(storedHeaderColor);
+    }
   }, []);
 
   useEffect(() => {
@@ -358,8 +367,11 @@ export default function PaymentPage() {
                     console.warn(`Invalid rate plan ID (0) for room ${room.roomId}, using default value 1`);
                   }
                   
+                  // Determine reservation status: 1 for card (cybersource), 2 for pay at property
+                  const reservationStatusId = bookingDetails.paymentMethod === "cybersource" ? 1 : 2;
+                  
                   return {
-                    reservation_status_id: 1,
+                    reservation_status_id: reservationStatusId,
                     is_foc: false,
                     taxes: [],
                     services: [],
@@ -719,6 +731,7 @@ export default function PaymentPage() {
                     <Button
                       type="submit"
                       className="w-full btn-dynamic"
+                      style={{ backgroundColor: headerColor, borderColor: headerColor }}
                       disabled={isProcessing || !bookingDetails.paymentMethod}
                     >
                       {isProcessing
@@ -758,6 +771,7 @@ export default function PaymentPage() {
                   {bookingDetails.paymentMethod === "arrival" ? (
                     <Button
                       className="btn-dynamic"
+                      style={{ backgroundColor: headerColor, borderColor: headerColor }}
                       onClick={handlePaymentSubmit}
                       disabled={isProcessing}
                     >
@@ -766,6 +780,7 @@ export default function PaymentPage() {
                   ) : (
                     <Button
                       className="btn-dynamic"
+                      style={{ backgroundColor: headerColor, borderColor: headerColor }}
                       onClick={handlePaymentSubmit}
                       disabled={isProcessing}
                     >

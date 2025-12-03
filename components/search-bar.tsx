@@ -67,9 +67,17 @@ function useDebounce(value: string, delay: number) {
 
 
 export function SearchBar({ onSearch }: SearchBarProps) {
+  const [headerColor, setHeaderColor] = useState("#792868");
   const [destinationInput, setDestinationInput] = useState('');
   // Recent searches for destinations
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour");
+    if (storedColor) {
+      setHeaderColor(storedColor);
+    }
+  }, []);
   const [hotelNameInput, setHotelNameInput] = useState('');
   // Recent hotel searches
   const [recentHotelSearches, setRecentHotelSearches] = useState<string[]>([]);
@@ -502,7 +510,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       {/* City or Destination */}
       <div className="w-full sm:flex-1 px-2 sm:px-3 py-2 relative" ref={destinationRef}>
         <div className="flex items-center gap-1 sm:gap-2">
-          <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+          <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-[#792868] flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist">City or Destination</div>
             <input
@@ -536,7 +544,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                         setDestinationInput(item);
                       }}
                     >
-                      <MapPin className="w-4 h-4 text-[#ff9100]" />
+                      <MapPin className="w-4 h-4 text-[#792868]" />
                       <span className="text-gray-400 font-urbanist">{item}</span>
                     </li>
                   ))}
@@ -550,8 +558,8 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 {destinationSuggestions.map((suggestion, index) => (
                   <li
                     key={suggestion.id}
-                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${index === selectedDestinationIndex ? 'bg-[#ff9100]/20' : ''
-                      }`}
+                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md`}
+                    style={index === selectedDestinationIndex ? { backgroundColor: headerColor + '20' } : {}}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       handleDestinationSuggestionSelect(suggestion);
@@ -579,7 +587,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       {/* Hotel Type Search */}
       <div className="w-full sm:flex-1 px-2 sm:px-3 py-2 sm:ml-2 relative" ref={hotelTypeRef}>
         <div className="flex items-center gap-1 sm:gap-2">
-          <HotelIcon className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+          <HotelIcon className="w-4 sm:w-5 h-4 sm:h-5 text-[#792868] flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist">Hotel Type</div>
             <input
@@ -605,7 +613,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 {hotelTypeSuggestions.map((suggestion, index) => (
                   <li
                     key={suggestion.id}
-                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${index === selectedHotelTypeIndex ? 'bg-[#ff9100]/20' : ''}`}
+                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${index === selectedHotelTypeIndex ? 'bg-[#792868]/20' : ''}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       handleHotelTypeSuggestionSelect(suggestion);
@@ -626,7 +634,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       {/* Hotel Name Input */}
       <div className="w-full sm:flex-1 px-2 sm:px-3 py-2 sm:ml-2 relative" ref={hotelRef}>
         <div className="flex items-center gap-1 sm:gap-2">
-          <Building2 className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+          <Building2 className="w-4 sm:w-5 h-4 sm:h-5 text-[#792868] flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist notranslate">Hotel Name</div>
             <input
@@ -655,13 +663,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                   {recentHotelSearches.map((item, index) => (
                     <li
                       key={`recent-hotel-${index}`}
-                      className="cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#ff9100]/10 rounded-md"
+                      className="cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#792868]/10 rounded-md"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setHotelNameInput(item);
                       }}
                     >
-                      <Building2 className="w-4 h-4 text-[#ff9100]" />
+                      <Building2 className="w-4 h-4 text-[#792868]" />
                       <span className="text-gray-700 font-medium">{item}</span>
                     </li>
                   ))}
@@ -675,8 +683,8 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 {hotelSuggestions.map((suggestion, index) => (
                   <li
                     key={suggestion.id}
-                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md ${index === selectedHotelIndex ? 'bg-[#ff9100]/20' : ''
-                      }`}
+                    className={`cursor-pointer flex items-center gap-2 px-2 py-2 hover:bg-[#e2e0df]/10 rounded-md`}
+                    style={index === selectedHotelIndex ? { backgroundColor: headerColor + '20' } : {}}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       handleHotelSuggestionSelect(suggestion);
@@ -694,8 +702,10 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       {/* Search Button */}
       <button
         onClick={handleSearch}
-        className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-2 sm:p-4 
-                 rounded-2xl w-full sm:w-auto mr-[5px] flex items-center justify-center gap-2"
+        className="text-white p-2 sm:p-4 rounded-2xl w-full sm:w-auto mr-[5px] flex items-center justify-center gap-2"
+        style={{ backgroundColor: headerColor }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = headerColor + '90'}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = headerColor}
       >
         <Search className="w-4 sm:w-5 h-4 sm:h-5" />
         <span className="block sm:hidden">Search</span>

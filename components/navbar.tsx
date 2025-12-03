@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CircleUserRound } from "lucide-react";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
 import { CurrencySelector } from "@/components/currency-selector";
+import { useState, useEffect } from "react";
 
 type NavbarProps = {
   showWishlist: boolean;
@@ -12,8 +13,17 @@ type NavbarProps = {
 };
 
 export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarProps) {
+  const [headerColor, setHeaderColor] = useState("#792868");
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour");
+    if (storedColor) {
+      setHeaderColor(storedColor);
+    }
+  }, []);
+
   return (
-    <nav className="w-full px-3 sm:px-6 py-2 sm:py-4 bg-[#ff9100]">
+    <nav className="w-full px-3 sm:px-6 py-2 sm:py-4" style={{ backgroundColor: headerColor }}>
       <div className="flex justify-between items-center w-full">
         <div className="flex-1" />
 
@@ -50,8 +60,8 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
-              fill={showWishlist ? "#ff9100" : "none"}
-              stroke={showWishlist ? "#ff9100" : "currentColor"}
+              fill={showWishlist ? headerColor : "none"}
+              stroke={showWishlist ? headerColor : "currentColor"}
               className="w-4 h-4 sm:w-5 sm:h-5"
               strokeWidth={1.5}
             >

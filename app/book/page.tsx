@@ -94,9 +94,17 @@ interface BookingDetails {
 
 export default function BookPage() {
   const router = useRouter()
+  const [headerColor, setHeaderColor] = useState("#792868")
   const [roomTypeNames, setRoomTypeNames] = useState<string[]>([])
 
-  const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour")
+    if (storedColor) {
+      setHeaderColor(storedColor)
+    }
+  }, [])
 
   // Restore reservation summary from localStorage if available
   const { bookingDetails, updateBookingDetails, updateRoom, incrementRoomQuantity, decrementRoomQuantity } =
@@ -416,7 +424,7 @@ export default function BookPage() {
                     <Label>Stay Dates (Selected from Property Page)</Label>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="border rounded-md p-3 bg-muted flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <Calendar className="h-4 w-4 mr-2" style={{ color: headerColor }} />
                         <div>
                           <div className="text-xs text-muted-foreground">Check-in Date</div>
                           <div>
@@ -426,7 +434,7 @@ export default function BookPage() {
                       </div>
 
                       <div className="border rounded-md p-3 bg-muted flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <Calendar className="h-4 w-4 mr-2" style={{ color: headerColor }} />
                         <div>
                           <div className="text-xs text-muted-foreground">Check-out Date</div>
                           <div>
@@ -437,7 +445,7 @@ export default function BookPage() {
                     </div>
                     <div className="text-xs text-muted-foreground">
                       To change dates, please return to the{" "}
-                      <a href="/" className="text-primary underline">
+                      <a href="/" className="underline" style={{ color: headerColor }}>
                         landing page
                       </a>
                     </div>
@@ -584,7 +592,8 @@ export default function BookPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full bg-black text-white hover:bg-black/90"
+                    className="w-full text-white"
+                    style={{ backgroundColor: headerColor }}
                     disabled={!checkedTerms}
                   >
                     Proceed to Payment

@@ -1,5 +1,3 @@
-
-
 export interface HotelImage {
   imageID: number;
   hotelID: number;
@@ -12,6 +10,7 @@ export interface HotelImage {
   updatedOn: string;
   updatedBy: string;
   base64Image: string;
+  bucketName: string;
 }
 
 export interface BookingDetails {
@@ -58,7 +57,7 @@ export interface Hotel {
   hotelType: string;
   hotelAddress: string;
   city: string;
-  zipCode: string;
+  zipCode: string | null;
   country: string;
   hotelPhone: string;
   hotelEmail: string;
@@ -70,8 +69,8 @@ export interface Hotel {
   languageCode: string;
   createdOn: string;
   createdTimeStamp: string;
-  lastUpdatedOn: string;
-  lastUpdatedTimeStamp: string;
+  lastUpdatedOn: string | null;
+  lastUpdatedTimeStamp: string | null;
   lastUpdatedBy_UserGUID: string;
   starCatgeory: number;
   cM_PropertyID: string;
@@ -79,7 +78,7 @@ export interface Hotel {
   isCMActive: boolean;
   hotelDate: string;
   isOnTrial: boolean;
-  planId: number;
+  planId: number | null;
   hotelImage: HotelImage;
   lowestRate: number;
   slug: string | null;
@@ -88,4 +87,28 @@ export interface Hotel {
   ibE_ChildPolicy: string;
   ibE_TaxPolicy: string;
   isIBEActive: boolean;
+  ibeHeaderColour: string | null;
+  grC_Para1: string | null;
+  proforma_Terms: string | null;
+  grC_Para3: string | null;
+
+  bankName: string | null;
+  bankBranch: string | null;
+  accountName: string | null;
+  accountNo: string | null;
+  swiftCode: string | null;
+
+  deactivatedBy: string | null;
+  deactivatedTimeStamp: string | null;
+
+  stripePaymentRef: string | null;
+  isPaymentTrue: boolean | null;
+  stripeAuthCode: string | null;
+  authTimeStamp: string | null;
+
+  cmActivationRequested: boolean | null;
+  cmActivationRequestedOn: string | null;
+  cmActivationRequestedBy: string | null;
+
+  groupName: string | null;
 }

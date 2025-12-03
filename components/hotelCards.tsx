@@ -93,7 +93,7 @@ const HotelDetails = ({
       <Star
         key={index}
         className={`w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ${index < rating
-          ? "fill-[#ff9100] text-[#ff9100]"
+          ? "fill-[#792868] text-[#792868]"
           : "fill-none text-muted-foreground"
           }`}
       />
@@ -116,7 +116,7 @@ const HotelDetails = ({
         )}
       </h3>
       <div className="flex items-center text-xs mb-1.5">
-        <MapPin className="w-4 h-4 mr-2 text-[#ff9100] flex-shrink-0" />
+        <MapPin className="w-4 h-4 mr-2 text-[#792868] flex-shrink-0" />
         <span className="text-[#8f8f73] notranslate truncate">{location}</span>
       </div>
       <div className="flex items-center justify-between mt-auto">

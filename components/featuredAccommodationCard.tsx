@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Mountain, Users } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface Feature {
   category: string;
@@ -38,7 +39,7 @@ const FeaturedAccommodationImage = ({ image, name }: { image?: string; name: str
   </div>
 );
 
-const FeaturedAccommodationDetails = ({ room }: { room: FeaturedRoom }) => (
+const FeaturedAccommodationDetails = ({ room, headerColor }: { room: FeaturedRoom; headerColor: string }) => (
   <div
     className="p-4 font-urbanist flex flex-col h-full"
     style={{
@@ -52,7 +53,7 @@ const FeaturedAccommodationDetails = ({ room }: { room: FeaturedRoom }) => (
     </h3>
 
     <div className="flex items-center text-xs mb-1.5">
-      <Users className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+      <Users className="h-4 w-4 mr-2 flex-shrink-0" style={{ color: headerColor }} />
       <span className="notranslate text-[#8f8f73]">{room.adultCapacity}</span>
       <span className="text-[#8f8f73]">&nbsp;Adults</span>
       {room.childCapacity > 0 && (
@@ -88,10 +89,19 @@ const FeaturedAccommodationDetails = ({ room }: { room: FeaturedRoom }) => (
 );
 
 const FeaturedAccommodationCard = ({ room }: Props) => {
+  const [headerColor, setHeaderColor] = useState("#792868");
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour");
+    if (storedColor) {
+      setHeaderColor(storedColor);
+    }
+  }, []);
+
   return (
     <div className="rounded-[3rem] bg-card text-card-foreground shadow-md overflow-hidden w-[252px] h-auto flex flex-col">
       <FeaturedAccommodationImage image={room.image} name={room.name} />
-      <FeaturedAccommodationDetails room={room} />
+      <FeaturedAccommodationDetails room={room} headerColor={headerColor} />
     </div>
   );
 };

@@ -38,7 +38,15 @@ export default function RoomCard({
   showQuantitySelector,
   imageUrl,
 }: RoomCardProps) {
+  const [headerColor, setHeaderColor] = useState("#792868");
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour");
+    if (storedColor) {
+      setHeaderColor(storedColor);
+    }
+  }, []);
   const [childAges, setChildAges] = useState<number[]>([]);
   const [price, setPrice] = useState<number>(100); // Default room price
   

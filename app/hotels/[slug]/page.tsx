@@ -3,9 +3,9 @@
 import Link from "next/link";
 import FeaturedAccommodationCard from "@/components/featuredAccommodationCard";
 import Navbar from "@/components/navbar";
-import { getHotelRoomFeaturesByHotelId } from "@/controllers/hotelRoomFeatureController";
+import { getHotelRatePlanAvailability } from "@/controllers/hotelRatePlansController";
 import { getHotelImagesByHotelId } from "@/controllers/hotelImageController";
-import { HotelRoomFeature } from "@/types/hotelRoomFeature";
+import { getHotelRoomTypeImagesByHotelId } from "@/controllers/hotelRoomTypeImageController";
 import { HotelImage } from "@/types/hotelImage";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -48,11 +48,19 @@ export default function LandingPage() {
   const slug = normalizeSlug(rawParam || "");
   const router = useRouter();
   const { bookingDetails, updateBookingDetails } = useBooking();
+  const [headerColor, setHeaderColor] = useState("#792868");
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour");
+    if (storedColor) {
+      setHeaderColor(storedColor);
+    }
+  }, []);
   const [currentHotel, setCurrentHotel] = useState<Hotel | null>(null);
-  const [roomFeatures, setRoomFeatures] = useState<HotelRoomFeature[]>([]);
   const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
   const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
+  const [roomTypeImages, setRoomTypeImages] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [showWishlist, setShowWishlist] = useState(false);
 
@@ -131,39 +139,50 @@ export default function LandingPage() {
 
       setCurrentHotel(matchedHotel);
 
-      // Parallel fetch for room features and images once we have the hotel
-      const [roomFeaturesData, imagesData] = await Promise.all([
-        getHotelRoomFeaturesByHotelId(matchedHotel.hotelID, token),
-        getHotelImagesByHotelId({ token, hotelId: matchedHotel.hotelID })
+      // Parallel fetch for rate plans, hotel images, and room type images
+      const [ratePlansData, imagesData, roomTypeImagesData] = await Promise.all([
+        getHotelRatePlanAvailability({
+          token,
+          hotelId: matchedHotel.hotelID,
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          rateCodeId: 2
+        }),
+        getHotelImagesByHotelId({ token, hotelId: matchedHotel.hotelID }),
+        getHotelRoomTypeImagesByHotelId({ hotelId: matchedHotel.hotelID, token })
       ]);
 
-      // Process room features
-      const roomMap = new Map<number, any>();
-      roomFeaturesData.forEach((feature) => {
-        const roomTypeId = feature.hotelRoomTypeID;
-        if (!roomMap.has(roomTypeId)) {
-          const mainImage = feature.hotelRoomTypeImage?.find((img) => img.isMain)
-            || feature.hotelRoomTypeImage?.[0];
+      // Process room type images
+      const roomTypeImagesMap = roomTypeImagesData.reduce((acc: Record<number, string>, img) => {
+        // Check if it's the main image and has a URL
+        if (img.hotelRoomTypeID && img.isMain && img.imageURL) {
+          // Trim the URL to remove query parameters
+          const trimmedUrl = img.imageURL.split('?')[0];
+          acc[img.hotelRoomTypeID] = trimmedUrl;
+        }
+        return acc;
+      }, {});
+      setRoomTypeImages(roomTypeImagesMap);
 
+      // Process rate plans data to create featured rooms
+      const roomMap = new Map<number, any>();
+      ratePlansData.forEach((ratePlan: any) => {
+        const roomTypeId = ratePlan.roomTypeId;
+        if (!roomMap.has(roomTypeId)) {
           roomMap.set(roomTypeId, {
             id: roomTypeId,
-            name: feature.hotelRoomType.roomType,
-            adultCapacity: feature.hotelRoomType.adultSpace,
-            childCapacity: feature.hotelRoomType.childSpace,
-            totalRooms: feature.hotelRoomType.noOfRooms,
-            image: mainImage?.imageURL || mainImage?.base64Image,
+            name: ratePlan.roomType,
+            adultCapacity: ratePlan.adultCount,
+            childCapacity: ratePlan.childCount,
+            totalRooms: 10, // Mock total rooms
+            image: roomTypeImagesMap[roomTypeId] || '/placeholder.svg?height=300&width=500',
             features: [],
-            price: generateMockPrice(
-              feature.hotelRoomType.roomType,
-              feature.hotelRoomType.adultSpace
-            ),
-            rating: generateMockRating(),
+            price: parseFloat((ratePlan.averageRate || 0).toFixed(2)),
           });
         }
       });
 
       // Update state with all fetched data
-      setRoomFeatures(roomFeaturesData);
       setFeaturedRooms(Array.from(roomMap.values()));
       setHotelImages(imagesData.filter(img => !img.isMain));
 
@@ -179,112 +198,55 @@ export default function LandingPage() {
     fetchAllHotelData();
   }, [slug]);
 
-// Fetch room features and images
-useEffect(() => {
-  const fetchRoomFeatures = async () => {
+  // Function to refetch featured rooms with new dates
+  const refetchFeaturedRooms = async (checkIn: string, checkOut: string) => {
+    if (!currentHotel?.hotelID) return;
+    
     try {
-      if (!currentHotel?.hotelID) {
-        console.log("No hotel ID available yet");
-        return;
-      }
-      const hotelId = currentHotel.hotelID;
-      console.log("Fetching room features for hotel ID:", hotelId);
-
-      if (!hotelId) return;
-
+      setIsLoading(true);
       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-      const data = await getHotelRoomFeaturesByHotelId(hotelId, token);
+      
+      const ratePlansData = await getHotelRatePlanAvailability({
+        token,
+        hotelId: currentHotel.hotelID,
+        startDate: checkIn,
+        endDate: checkOut,
+        rateCodeId: 2
+      });
 
-      console.log("hotel room features", data)
-
-      setRoomFeatures(data);
-
-      // Process the data to create featured rooms
+      // Process rate plans data to create featured rooms
       const roomMap = new Map<number, any>();
-
-      data.forEach((feature) => {
-        const roomTypeId = feature.hotelRoomTypeID;
-
+      ratePlansData.forEach((ratePlan: any) => {
+        const roomTypeId = ratePlan.roomTypeId;
         if (!roomMap.has(roomTypeId)) {
-          const mainImage =
-            feature.hotelRoomTypeImage?.find((img) => img.isMain) ||
-            feature.hotelRoomTypeImage?.[0];
-
           roomMap.set(roomTypeId, {
             id: roomTypeId,
-            name: feature.hotelRoomType.roomType,
-            adultCapacity: feature.hotelRoomType.adultSpace,
-            childCapacity: feature.hotelRoomType.childSpace,
-            totalRooms: feature.hotelRoomType.noOfRooms,
-            image: mainImage?.imageURL || mainImage?.base64Image,
+            name: ratePlan.roomType,
+            adultCapacity: ratePlan.adultCount,
+            childCapacity: ratePlan.childCount,
+            totalRooms: 10, 
+            image: roomTypeImages[roomTypeId] || '/placeholder.svg?height=300&width=500',
             features: [],
-            price: generateMockPrice(
-              feature.hotelRoomType.roomType,
-              feature.hotelRoomType.adultSpace
-            ),
-            rating: generateMockRating(),
+            price: parseFloat((ratePlan.averageRate || 0).toFixed(2)),
           });
         }
       });
 
-      // Remove allowedRoomTypeIds filter to display all rooms
-      const filteredRooms = Array.from(roomMap.values());
-
-      setFeaturedRooms(filteredRooms);
-    } catch (err) {
-      console.error("Error fetching room features:", err);
+      setFeaturedRooms(Array.from(roomMap.values()));
+    } catch (error) {
+      console.error("Error refetching featured rooms:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  fetchRoomFeatures();
-}, [currentHotel]);
+// Room data is now fetched in fetchAllHotelData using getHotelRatePlanAvailability
 
-// Helper function to generate mock prices based on room type
-const generateMockPrice = (roomType: string, adultSpace: number): number => {
-  const basePrice = 150;
-  const typeMultiplier = roomType.toLowerCase().includes("suite")
-    ? 1.8
-    : roomType.toLowerCase().includes("deluxe")
-      ? 1.5
-      : roomType.toLowerCase().includes("premium")
-        ? 1.3
-        : 1.0;
-  const capacityMultiplier = adultSpace > 2 ? 1.2 : 1.0;
-  return Math.round(basePrice * typeMultiplier * capacityMultiplier);
-};
 
-// Helper function to generate mock ratings
-const generateMockRating = (): number => {
-  return Math.floor(Math.random() * 2) + 4; // 4 or 5 stars
-};
 
-// Render star rating
-const renderStarRating = (rating: number) => {
-  const stars = [];
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 !== 0;
 
-  for (let i = 0; i < fullStars; i++) {
-    stars.push(
-      <Star key={i} className="h-4 w-4 fill-current text-primary" />
-    );
-  }
 
-  if (hasHalfStar) {
-    stars.push(
-      <StarHalf key="half" className="h-4 w-4 fill-current text-primary" />
-    );
-  }
 
-  const remainingStars = 5 - Math.ceil(rating);
-  for (let i = 0; i < remainingStars; i++) {
-    stars.push(
-      <Star key={`empty-${i}`} className="h-4 w-4 text-muted-foreground" />
-    );
-  }
-
-  return stars;
-};
 
 // Get hotel data from local state
 const getHotelData = () => {
@@ -457,8 +419,10 @@ return (
       {/* Floating Search Bar */}
       <div className="absolute -bottom-[4px] sm:-bottom-[7px] w-full max-w-5xl px-2 sm:px-4 z-40 drop-shadow-xl">
         <RoomSearchBar
-          onSearch={(destination, hotelName) => {
-            console.log("Search triggered with:", destination, hotelName);
+          onSearch={(checkIn, checkOut, adults, children, rooms) => {
+            console.log("Search triggered with:", checkIn, checkOut, adults, children, rooms);
+            // Refetch featured rooms with new dates to get updated rates
+            refetchFeaturedRooms(checkIn, checkOut);
           }}
         />
       </div>
@@ -476,14 +440,16 @@ return (
           <div className="hidden sm:flex gap-2">
             <button
               onClick={() => scrollByFeaturedCards("left")}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-white"
+              style={{ backgroundColor: headerColor }}
               aria-label="Scroll left"
             >
               ‹
             </button>
             <button
               onClick={() => scrollByFeaturedCards("right")}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-white"
+              style={{ backgroundColor: headerColor }}
               aria-label="Scroll right"
             >
               ›
@@ -506,10 +472,11 @@ return (
 
             {/* Orange Card */}
             <div
-              className={`rounded-[3rem] bg-[#ff9100] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
+              className={`rounded-[3rem] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
                 ? "flex-1 min-w-[300px] max-w-[800px]"
                 : "w-[252px] flex-shrink-0"
                 }`}
+              style={{ backgroundColor: headerColor }}
             >
               <div className="self-start">
                 <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
@@ -523,7 +490,7 @@ return (
                 </div>
               </div>
               <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
-                <ArrowUpRight className="text-[#ff9100] w-6 h-6 lg:w-7 lg:h-7" />
+                <ArrowUpRight className="w-6 h-6 lg:w-7 lg:h-7" style={{ color: headerColor }} />
               </div>
             </div>
 

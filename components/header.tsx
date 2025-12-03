@@ -16,6 +16,7 @@ export default function Header() {
   const pathname = usePathname()
   const [logoUrl, setLogoUrl] = useState("")
   const [scrolled, setScrolled] = useState(false)
+  const [headerColor, setHeaderColor] = useState("#70614c")
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,23 +29,21 @@ export default function Header() {
   useEffect(() => {
     const fetchLogo = async () => {
       try {
+        // Get header color from localStorage first
+        const storedColor = localStorage.getItem("ibeHeaderColour");
+        if (storedColor) {
+          setHeaderColor(storedColor);
+        }
+        
         const res = await fetch(`${API_BASE_URL}/API/GetHotelDetail.aspx`)
         const data = await res.json()
         if (data.IBE_LogoURL) {
           setLogoUrl(data.IBE_LogoURL)
         }
-        if (data.IBEHeaderColour && /^#([0-9A-Fa-f]{3}){1,2}$/.test(data.IBEHeaderColour)) {
-          document.documentElement.style.setProperty('--header-bg-color', data.IBEHeaderColour);
-          const hex = data.IBEHeaderColour.replace("#", "");
-          const bigint = parseInt(hex.length === 3 ? hex.split("").map(x => x + x).join("") : hex, 16);
-          const r = (bigint >> 16) & 255;
-          const g = (bigint >> 8) & 255;
-          const b = bigint & 255;
-          document.documentElement.style.setProperty('--header-bg-color-rgb', `${r}, ${g}, ${b}`);
-        } else {
-          console.warn("Invalid or missing IBEHeaderColour:", data.IBEHeaderColour);
-          document.documentElement.style.setProperty('--header-bg-color', '#4575f6'); // Default to custom blue
-          document.documentElement.style.setProperty('--header-bg-color-rgb', '69, 117, 246');
+        
+        // Use API color only if no localStorage color exists
+        if (!storedColor && data.IBEHeaderColour) {
+          setHeaderColor(data.IBEHeaderColour);
         }
       } catch (err) {
         console.error("Failed to fetch logo", err)
@@ -77,7 +76,11 @@ export default function Header() {
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b shadow-sm transition-colors duration-300 notranslate ${scrolled ? "backdrop-blur" : ""}`}
-      style={{ backgroundColor: scrolled ? "rgba(255, 145, 0, 0.8)" : "rgb(255, 145, 0)" }}
+      style={{ 
+        backgroundColor: scrolled 
+          ? `${headerColor}CC` // Adding CC for 80% opacity
+          : headerColor
+      }}
     >
       <div className="relative container flex h-16 items-center justify-between max-w-7xl mx-auto px-4 md:px-6 notranslate">
         {/* Left: Logo */}

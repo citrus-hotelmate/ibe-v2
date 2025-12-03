@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/header";
 import HeroSection from "@/components/hero-section";
@@ -11,11 +11,9 @@ import { CurrencySelector } from "@/components/currency-selector";
 import { getAllHotels } from "@/controllers/ibeController";
 import HotelCard from "@/components/hotelCards";
 import { Hotel as HotelIcon } from "lucide-react";
-import { useRef } from "react";
 import { Hotel } from "@/types/ibe";
 import { useBooking } from "@/components/booking-context";
 import { Spinner } from "@/components/ui/spinner";
-
 
 interface PropertyListing {
   id: number;
@@ -30,24 +28,41 @@ interface PropertyListing {
   slug: string;
   /** NEW: used for grouping when destination is searched */
   hotelType: string;
+  /** NEW: for theming on hotel detail */
+  ibeHeaderColour?: string | null;
 }
 
 interface SearchParams {
   destination: string;
   hotelName: string;
   hotelType: string;
-  searchType: "destinations" | "hotel name" | "both" | "none" | "all" | "destination-type" | "hotel-type" | "hotel type";
+  searchType:
+    | "destinations"
+    | "hotel name"
+    | "both"
+    | "none"
+    | "all"
+    | "destination-type"
+    | "hotel-type"
+    | "hotel type";
 }
 
 const slugify = (name: string) => {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 };
 
 const generateHotelSlug = (hotelName: string, city: string) => {
   return `${slugify(hotelName)}-${slugify(city)}`;
 };
 
-const normalizeSlug = (raw?: string | null, hotelName?: string, city?: string) => {
+const normalizeSlug = (
+  raw?: string | null,
+  hotelName?: string,
+  city?: string
+) => {
   if (!raw || !raw.trim()) {
     return generateHotelSlug(hotelName || "", city || "");
   }
@@ -71,13 +86,14 @@ const normalizeSlug = (raw?: string | null, hotelName?: string, city?: string) =
   s = parts[parts.length - 1] || s;
 
   // Normalize to clean, lowercase kebab-case
-  return s.toLowerCase().replace(/[^a-z0-9\-]+/g, "-").replace(/^-+|-+$/g, "");
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 };
 
 const titleCase = (s: string) =>
-  (s || "")
-    .toLowerCase()
-    .replace(/\b[a-z]/g, (m) => m.toUpperCase());
+  (s || "").toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase());
 
 /** The horizontally scrollable row with buttons (unchanged) */
 function PropertyListings({
@@ -89,7 +105,7 @@ function PropertyListings({
   title: string;
   destination: string;
   properties: PropertyListing[];
-  onHotelClick: (slug: string) => void;
+  onHotelClick: (slug: string, ibeHeaderColour?: string | null) => void;
 }) {
   const rowId = `scroll-${slugify(title)}`;
 
@@ -100,7 +116,6 @@ function PropertyListings({
     const step = first ? first.offsetWidth + 16 : 320; // 16 = gap
     row.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
-  
 
   return (
     <div className="px-2 sm:px-4 md:px-6 p-2">
@@ -158,7 +173,9 @@ function PropertyListings({
                 rating={property.rating}
                 price={property.lowestRate}
                 hotelType={property.hotelType}
-                onClick={() => onHotelClick(property.slug)}
+                onClick={() =>
+                  onHotelClick(property.slug, property.ibeHeaderColour)
+                }
               />
             </div>
           ))}
@@ -172,20 +189,24 @@ const transform = (hotel: Hotel): PropertyListing => {
   let imageUrl = "";
 
   if (hotel.hotelImage) {
-    // hotelImage can be single object or array (depending on API)
-    const images = Array.isArray(hotel.hotelImage) ? hotel.hotelImage : [hotel.hotelImage];
+    const images = Array.isArray(hotel.hotelImage)
+      ? hotel.hotelImage
+      : [hotel.hotelImage];
     const mainImage = images.find((img) => img.isMain);
-
-    const chosenImage = mainImage || images[0]; // Prefer isMain, else first
+    const chosenImage = mainImage || images[0];
     if (chosenImage?.imageFileName) {
       imageUrl = decodeURIComponent(chosenImage.imageFileName.split("?")[0]);
     }
   }
 
-  const apiOrGenerated = hotel.slug || generateHotelSlug(hotel.hotelName, hotel.city);
+  const apiOrGenerated =
+    hotel.slug || generateHotelSlug(hotel.hotelName, hotel.city);
   const finalSlug = normalizeSlug(apiOrGenerated, hotel.hotelName, hotel.city);
+
   console.log(
-    `🏷️  Hotel: ${hotel.hotelName} | Raw API Slug: ${hotel.slug} | Generated: ${generateHotelSlug(
+    `🏷️  Hotel: ${hotel.hotelName} | Raw API Slug: ${
+      hotel.slug
+    } | Generated: ${generateHotelSlug(
       hotel.hotelName,
       hotel.city
     )} | Final Normalized: ${finalSlug}`
@@ -199,8 +220,9 @@ const transform = (hotel: Hotel): PropertyListing => {
     image: imageUrl,
     hotelCode: hotel.hotelCode,
     lowestRate: hotel.lowestRate || 0,
-    slug: finalSlug, // Use normalized slug
+    slug: finalSlug,
     hotelType: titleCase(hotel.hotelType || "Other"),
+    ibeHeaderColour: hotel.ibeHeaderColour ?? null,
   };
 };
 
@@ -208,7 +230,6 @@ export default function Home() {
   const router = useRouter();
   const { convertPrice, formatPrice, currency } = useCurrency();
 
-  // Grouped sections. Key is a readable title ("Hotels in Colombo" OR "Colombo")
   const [groupedSections, setGroupedSections] = useState<{
     [sectionTitle: string]: PropertyListing[];
   }>({});
@@ -233,10 +254,8 @@ export default function Home() {
         const hotels = await getAllHotels({
           token: process.env.NEXT_PUBLIC_ACCESS_TOKEN || "",
         });
-        // Only include hotels where finAct is false
         const filteredByFinAct = hotels.filter((h) => h.finAct === false);
         setAllHotels(filteredByFinAct);
-        // initial: no destination => group by city (current behavior)
         groupAndSet(filteredByFinAct, "", "", "");
       } catch (error) {
         console.error(error);
@@ -254,7 +273,8 @@ export default function Home() {
       if (!ticking) {
         requestAnimationFrame(() => {
           if (searchBarRef.current) {
-            const searchBarBottom = searchBarRef.current.getBoundingClientRect().bottom;
+            const searchBarBottom =
+              searchBarRef.current.getBoundingClientRect().bottom;
             setShowStickySearch(searchBarBottom < -20);
           }
           ticking = false;
@@ -263,9 +283,9 @@ export default function Home() {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const filterHotels = (hotels: Hotel[], params: SearchParams): Hotel[] => {
@@ -274,7 +294,6 @@ export default function Home() {
     const hotelType = params.hotelType.toLowerCase().trim();
 
     return hotels.filter((hotel) => {
-      // Guard: only consider hotels where finAct is false
       if (hotel.finAct !== false) return false;
       const hotelCity = (hotel.city || "").toLowerCase().trim();
       const hotelNameLower = (hotel.hotelName || "").toLowerCase();
@@ -297,9 +316,13 @@ export default function Home() {
       return matches;
     });
   };
-  
 
-  const groupAndSet = (hotels: Hotel[], city: string, hotelName: string, hotelType: string = '') => {
+  const groupAndSet = (
+    hotels: Hotel[],
+    city: string,
+    hotelName: string,
+    hotelType: string = ""
+  ) => {
     const filtered = filterHotels(hotels, {
       destination: city,
       hotelName,
@@ -321,8 +344,7 @@ export default function Home() {
       } else {
         transformed.forEach((prop) => {
           const type = prop.hotelType || "Other";
-          const plural =
-            type.toLowerCase().endsWith("s") ? type : `${type}s`;
+          const plural = type.toLowerCase().endsWith("s") ? type : `${type}s`;
           const sectionTitle = `${plural} in ${prettyCity}`;
           if (!grouped[sectionTitle]) grouped[sectionTitle] = [];
           grouped[sectionTitle].push(prop);
@@ -346,7 +368,11 @@ export default function Home() {
     setGroupedSections(grouped);
   };
 
-  const handleSearch = (city: string, hotel: string, hotelType: string = '') => {
+  const handleSearch = (
+    city: string,
+    hotel: string,
+    hotelType: string = ""
+  ) => {
     groupAndSet(allHotels, city, hotel, hotelType);
     setSearchParams({
       destination: city,
@@ -356,22 +382,32 @@ export default function Home() {
         city && hotel && hotelType
           ? "all"
           : city && hotel
-            ? "both"
-            : city && hotelType
-              ? "destination-type"
-              : hotel && hotelType
-                ? "hotel-type"
-                : city
-                  ? "destinations"
-                  : hotel
-                    ? "hotel name"
-                    : hotelType
-                      ? "hotel type"
-                      : "none",
+          ? "both"
+          : city && hotelType
+          ? "destination-type"
+          : hotel && hotelType
+          ? "hotel-type"
+          : city
+          ? "destinations"
+          : hotel
+          ? "hotel name"
+          : hotelType
+          ? "hotel type"
+          : "none",
     });
   };
 
-  const handleHotelClick = (slug: string) => {
+  const handleHotelClick = (slug: string, ibeHeaderColour?: string | null) => {
+    try {
+      if (ibeHeaderColour) {
+        localStorage.setItem("ibeHeaderColour", ibeHeaderColour);
+      } else {
+        localStorage.removeItem("ibeHeaderColour");
+      }
+    } catch (err) {
+      console.error("Failed to persist ibeHeaderColour:", err);
+    }
+
     window.open(`/hotels/${slug}`, "_blank", "noopener,noreferrer");
   };
 
@@ -382,32 +418,38 @@ export default function Home() {
     setShowWishlist(newWishlistState);
 
     if (newWishlistState) {
-      // Show wishlist
       const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
       if (wishlist.length > 0) {
         const wishlistedSection = {
           "Your Wishlist": wishlist.map((hotel: any) => ({
-            id: Math.random(), // Since we don't have hotel ID in wishlist
+            id: Math.random(),
             type: hotel.title,
             location: hotel.location,
             rating: hotel.rating,
             image: hotel.image,
             lowestRate: hotel.price,
-            slug: hotel.slug || generateHotelSlug(hotel.title || "", hotel.location || ""), // Use stored slug or generate fallback
-            hotelType: "Wishlisted"
-          }))
+            slug:
+              hotel.slug ||
+              generateHotelSlug(hotel.title || "", hotel.location || ""),
+            hotelType: "Wishlisted",
+          })),
         };
         setGroupedSections(wishlistedSection);
       }
     } else {
-      // Show all hotels - reuse the existing grouping logic
-      groupAndSet(allHotels, searchParams.destination, searchParams.hotelName, searchParams.hotelType);
+      groupAndSet(
+        allHotels,
+        searchParams.destination,
+        searchParams.hotelName,
+        searchParams.hotelType
+      );
     }
   };
 
   return (
     <div className="min-h-screen bg-[#e2e0df] relative">
-      <div className="absolute top-0 left-0 right-0 h-[460px] bg-[#ff9100] z-0" />
+      {/* ⬇️ changed bg-[#792868] to bg-primary */}
+      <div className="absolute top-0 left-0 right-0 h-[460px] bg-primary z-0" />
       <div className="relative z-10 w-full">
         <Navbar
           showWishlist={showWishlist}
@@ -415,24 +457,33 @@ export default function Home() {
         />
         {/* Sticky Search Bar */}
         <div
-          className={`fixed top-0 left-0 right-0 z-[100] bg-[#ff9100]/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-500 ease-out transform ${showStickySearch
-              ? 'translate-y-0 opacity-100 scale-100'
-              : '-translate-y-full opacity-0 scale-95 pointer-events-none'
-            }`}
+          className={`fixed top-0 left-0 right-0 z-[100] bg-primary/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-500 ease-out transform ${
+            showStickySearch
+              ? "translate-y-0 opacity-100 scale-100"
+              : "-translate-y-full opacity-0 scale-95 pointer-events-none"
+          }`}
           style={{
             transitionTimingFunction: showStickySearch
-              ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-              : 'cubic-bezier(0.55, 0.06, 0.68, 0.19)'
+              ? "cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+              : "cubic-bezier(0.55, 0.06, 0.68, 0.19)",
           }}
         >
-          <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 transition-all duration-300 ease-out ${showStickySearch ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-            }`}>
+          <div
+            className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 transition-all duration-300 ease-out ${
+              showStickySearch
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }`}
+          >
             <SearchBar onSearch={handleSearch} />
           </div>
         </div>
 
-        <div className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${showStickySearch ? 'pt-20 sm:pt-24' : ''
-          }`}>
+        <div
+          className={`w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 transition-all duration-500 ease-out ${
+            showStickySearch ? "pt-20 sm:pt-24" : ""
+          }`}
+        >
           <div ref={searchBarRef} className="py-2">
             <SearchBar onSearch={handleSearch} />
           </div>
@@ -451,22 +502,22 @@ export default function Home() {
                 {searchParams.hotelName && !searchParams.destination
                   ? "No hotels found matching your search."
                   : searchParams.destination && !searchParams.hotelName
-                    ? "No destination found matching your search."
-                    : "No hotels or destinations found matching your search."}
+                  ? "No destination found matching your search."
+                  : "No hotels or destinations found matching your search."}
               </div>
             </div>
           ) : (
-            Object.entries(groupedSections).map(([sectionTitle, properties]) => (
-              <PropertyListings
-                key={sectionTitle}
-                title={sectionTitle}
-                destination={sectionTitle}
-                properties={properties}
-                onHotelClick={(slug) => {
-                  window.open(`/hotels/${slug}`, "_blank", "noopener,noreferrer")
-                }}
-              />
-            ))
+            Object.entries(groupedSections).map(
+              ([sectionTitle, properties]) => (
+                <PropertyListings
+                  key={sectionTitle}
+                  title={sectionTitle}
+                  destination={sectionTitle}
+                  properties={properties}
+                  onHotelClick={handleHotelClick}
+                />
+              )
+            )
           )}
         </div>
       </div>

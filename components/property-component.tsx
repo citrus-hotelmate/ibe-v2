@@ -24,6 +24,14 @@ import { useBooking } from "@/components/booking-context";
 export default function PropertyPage() {
   // Get booking context
   const { bookingDetails, updateBookingDetails, addRoom } = useBooking();
+  const [headerColor, setHeaderColor] = useState("#792868");
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour");
+    if (storedColor) {
+      setHeaderColor(storedColor);
+    }
+  }, []);
 
   // Helper function to calculate minimum available rooms across dates
   const calculateMinimumAvailability = (availability: Array<{date: string, count: number}>) => {
@@ -94,6 +102,7 @@ export default function PropertyPage() {
         // Only update if hotel actually changed
         if (newHotelId !== currentHotelId) {
           console.log("🏨 Hotel changed from", currentHotelId, "to", newHotelId);
+          console.log("🏨 Full hotel data from localStorage:", hotelData);
           setCurrentHotelId(newHotelId);
           
           // Clear previous hotel data
@@ -209,14 +218,24 @@ export default function PropertyPage() {
       const startDate = dateRange.from.toISOString().split("T")[0];
       const endDate = dateRange.to.toISOString().split("T")[0];
 
-      const rooms = await getHotelRatePlanAvailability({
-        hotelId: currentHotelId,
-        startDate,
-        endDate,
-        token,
-      });
-
-      const totalGuestCount = guests.adults + guests.children;
+        const rooms = await getHotelRatePlanAvailability({
+          hotelId: currentHotelId,
+          startDate,
+          endDate,
+          token,
+          rateCodeId: 2
+        });
+        
+        console.log("🔍 API Response:", rooms);
+        
+        // Handle empty response
+        if (!rooms || rooms.length === 0) {
+          console.log("⚠️ No rooms available for selected dates");
+          setAvailableRooms([]);
+          return;
+        }
+        
+        const totalGuestCount = guests.adults + guests.children;
 
       const filteredRooms = rooms
         .filter((item: any) => {
@@ -255,7 +274,7 @@ export default function PropertyPage() {
       console.log("✅ Manual refresh completed");
     } catch (error) {
       console.error("❌ Manual refresh failed:", error);
-      alert("Failed to fetch available rooms. Please try again.");
+      // alert("Failed to fetch available rooms. Please try again.");
     } finally {
       setIsLoadingRooms(false);
     }
@@ -291,6 +310,10 @@ export default function PropertyPage() {
         const endDate = dateRange.to.toISOString().split("T")[0];
 
         console.log("🔄 Live filtering rooms for hotel ID:", currentHotelId, "dates:", startDate, "to", endDate);
+        console.log("📋 Current availableRooms state before API call:", availableRooms?.length || 0, "rooms");
+        
+        // Clear previous room data before making API call
+        setAvailableRooms([]);
 
         const rooms = await getHotelRatePlanAvailability({
           hotelId: currentHotelId,
@@ -299,6 +322,16 @@ export default function PropertyPage() {
           token,
           rateCodeId: 2
         });
+        
+        console.log("🔍 Live API Response:", rooms);
+        
+        // Handle empty response
+        if (!rooms || rooms.length === 0) {
+          console.log("⚠️ No rooms available for selected dates");
+          setAvailableRooms([]);
+          return;
+        }
+        
         allRooms = rooms;
 
         // Calculate total number of guests
@@ -437,7 +470,7 @@ export default function PropertyPage() {
               />
             </div>
             <div className="flex items-end">
-              <Button className="w-full" onClick={handleViewAvailableRooms}>
+              <Button className="w-full" onClick={handleViewAvailableRooms} style={{ backgroundColor: headerColor }}>
                 View Available Rooms
               </Button>
             </div>
@@ -698,6 +731,7 @@ export default function PropertyPage() {
                       );
                     }
                   }}
+                  style={{ backgroundColor: headerColor }}
                 >
                   Proceed to Booking
                 </Button>

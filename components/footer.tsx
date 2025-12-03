@@ -18,6 +18,14 @@ import { Hotel } from "@/types/ibe";
 export function Footer({ hotelName }: { hotelName?: string }) {
   const currentYear = new Date().getFullYear();
   const pathname = usePathname();
+  const [headerColor, setHeaderColor] = useState("#792868");
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour");
+    if (storedColor) {
+      setHeaderColor(storedColor);
+    }
+  }, []);
 
   const [contact, setContact] = useState({
     email: "",
@@ -98,20 +106,20 @@ export function Footer({ hotelName }: { hotelName?: string }) {
     <footer className="bg-white border-t notranslate">
       <div className="container mx-auto  notranslate">
         {/* Extra Footer Links (Support, Discover, etc.) */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 mt-12 text-sm text-muted-foreground text-left notranslate">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 mt-12 text-sm text-muted-foreground text-left notranslate" style={{ '--hover-color': headerColor } as React.CSSProperties}>
           <div>
-            <h4 className="font-medium mb-4">
+            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
               <strong>Support</strong>
             </h4>
             <ul className="space-y-2">
-              <li><Link href="#">Coronavirus (COVID-19) FAQs</Link></li>
+              <li><Link href="#" className="hover:text-[--hover-color]" style={{ textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>Coronavirus (COVID-19) FAQs</Link></li>
               <li><Link href="#">Manage your trips</Link></li>
               <li><Link href="#">Contact Customer Service</Link></li>
               <li><Link href="#">Safety Resource Center</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-medium mb-4">
+            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
               <strong>Discover</strong>
             </h4>
             <ul className="space-y-2">
@@ -128,7 +136,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
           </div>
 
           <div>
-            <h4 className="font-medium mb-4">
+            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
               <strong>Terms and settings</strong>
             </h4>
             <ul className="space-y-2">
@@ -142,7 +150,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
           </div>
 
           <div>
-            <h4 className="font-medium mb-4">
+            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
               <strong>Partners</strong>
             </h4>
             <ul className="space-y-2">
@@ -154,7 +162,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
           </div>
 
           <div>
-            <h4 className="font-medium mb-4">
+            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
               <strong>About</strong>
             </h4>
             <ul className="space-y-2">
@@ -195,19 +203,19 @@ export function Footer({ hotelName }: { hotelName?: string }) {
             </div>
 
             <div className="flex space-x-4 notranslate">
-              <Link href="#" className="text-muted-foreground hover:text-primary">
+              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
                 <Facebook size={18} />
                 <span className="sr-only notranslate">Facebook</span>
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary">
+              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
                 <Instagram size={18} />
                 <span className="sr-only notranslate">Instagram</span>
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary">
+              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
                 <Twitter size={18} />
                 <span className="sr-only notranslate">Twitter</span>
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary">
+              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
                 <Linkedin size={18} />
                 <span className="sr-only notranslate">LinkedIn</span>
               </Link>

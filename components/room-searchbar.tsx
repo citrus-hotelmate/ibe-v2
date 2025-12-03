@@ -14,6 +14,14 @@ interface RoomSearchBarProps {
 
 export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     const { bookingDetails, updateBookingDetails } = useBooking();
+    const [headerColor, setHeaderColor] = useState("#792868");
+    
+    useEffect(() => {
+        const storedColor = localStorage.getItem("ibeHeaderColour");
+        if (storedColor) {
+            setHeaderColor(storedColor);
+        }
+    }, []);
     
     // Initialize state from booking context
     const [checkInDate, setCheckInDate] = useState(bookingDetails.checkIn || new Date());
@@ -160,7 +168,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                         setShowGuestDropdown(false);
                     }}
                 >
-                    <Calendar className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+                    <Calendar className="w-4 sm:w-5 h-4 sm:h-5 text-[#792868] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                         <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist">Check in</div>
                         <div className="text-gray-500 font-semibold font-urbanist text-sm sm:text-base">
@@ -196,7 +204,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                         setShowGuestDropdown(false);
                     }}
                 >
-                    <Calendar className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+                    <Calendar className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" style={{ color: headerColor }} />
                     <div className="flex-1 min-w-0">
                         <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist notranslate">Check out</div>
                         <div className="text-gray-500 font-semibold font-urbanist text-sm sm:text-base">
@@ -232,7 +240,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                         setShowCheckOutCalendar(false);
                     }}
                 >
-                    <Users className="w-4 sm:w-5 h-4 sm:h-5 text-[#ff9100] flex-shrink-0" />
+                    <Users className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" style={{ color: headerColor }} />
                     <div className="flex-1 min-w-0">
                         <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist notranslate">Guest & Rooms</div>
                         <div className="text-gray-400 font-medium font-urbanist notranslate text-xs sm:text-base truncate">{adults} Adults, {rooms} Room{rooms > 1 ? 's' : ''}</div>
@@ -275,7 +283,10 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
             {/* Search Button */}
             <button
                 onClick={handleSearch}
-                className="bg-[#ff9100] hover:bg-[#ff9100]/90 text-white p-3 sm:p-4 rounded-2xl mt-2 sm:mb-0 sm:mt-0 sm:ml-2 w-full sm:w-auto mr-[5px]"
+                className="text-white p-3 sm:p-4 rounded-2xl mt-2 sm:mb-0 sm:mt-0 sm:ml-2 w-full sm:w-auto mr-[5px]"
+                style={{ backgroundColor: headerColor }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = headerColor + '90'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = headerColor}
             >
                 <Search className="w-4 sm:w-5 h-4 sm:h-5 mx-auto" />
             </button>

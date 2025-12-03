@@ -22,6 +22,14 @@ export function GuestSelector({
 }) {
   const { bookingDetails, updateBookingDetails } = useBooking()
   const [open, setOpen] = useState(false)
+  const [headerColor, setHeaderColor] = useState("#792868")
+
+  useEffect(() => {
+    const storedColor = localStorage.getItem("ibeHeaderColour")
+    if (storedColor) {
+      setHeaderColor(storedColor)
+    }
+  }, [])
   
   // Local state for when not using context values
   const [localAdults, setLocalAdults] = useState(initialAdults ?? 2)
@@ -100,7 +108,7 @@ export function GuestSelector({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full justify-start">
-          <Users className="mr-2 h-4 w-4" />
+          <Users className="mr-2 h-4 w-4" style={{ color: headerColor }} />
           <span>
             {totalGuests} {totalGuests === 1 ? "Guest" : "Guests"} ({adults}{" "}
             {adults === 1 ? "Adult" : "Adults"}
@@ -219,7 +227,7 @@ export function GuestSelector({
             </div>
           </div>
 
-          <Button className="w-full mt-2" onClick={() => setOpen(false)}>
+          <Button className="w-full mt-2" onClick={() => setOpen(false)} style={{ backgroundColor: headerColor }}>
             Apply
           </Button>
         </div>
