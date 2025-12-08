@@ -24,7 +24,7 @@ import { useBooking } from "@/components/booking-context";
 export default function PropertyPage() {
   // Get booking context
   const { bookingDetails, updateBookingDetails, addRoom } = useBooking();
-  const [headerColor, setHeaderColor] = useState("#792868");
+  const [headerColor, setHeaderColor] = useState("");
 
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
@@ -97,6 +97,7 @@ export default function PropertyPage() {
     children: bookingDetails.children || 0,
     rooms: bookingDetails.rooms || 1,
   });
+  const [activeTab, setActiveTab] = useState<string>("rooms");
 
   // Detect hotel changes and update currentHotelId
   useEffect(() => {
@@ -408,7 +409,7 @@ export default function PropertyPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Check-in / Check-out
+                Check in - Check out
               </label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -419,7 +420,7 @@ export default function PropertyPage() {
                     <CalendarIcon className="h-4 w-4" />
                     <span>
                       {dateRange.from && dateRange.to
-                        ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`
+                        ? `${dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
                         : "Select dates"}
                     </span>
                   </button>
@@ -488,7 +489,7 @@ export default function PropertyPage() {
       <div className="grid md:grid-cols-3 gap-8 mx-2">
         <div className="md:col-span-2">
           {/* Tabs */}
-          <Tabs value="rooms" className="mb-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="rooms">Rooms</TabsTrigger>
               <TabsTrigger value="packages">Packages</TabsTrigger>

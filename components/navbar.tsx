@@ -58,7 +58,7 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
   }, []);
 
   return (
-<nav className="w-full px-3 sm:px-6 py-2 sm:py-4" style={{ backgroundColor: headerColor }}>
+<nav className="w-full p-2" style={{ backgroundColor: headerColor }}>
   <div className="flex justify-between items-center w-full">
     
     {/* LEFT — Logo */}
@@ -117,9 +117,9 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
       </div>
 
       {/* User Login */}
-      <Link href="/login" className="shrink-0" aria-label="Login">
+      {/* <Link href="/login" className="shrink-0" aria-label="Login">
         <CircleUserRound className="w-6 h-6 sm:w-8 sm:h-8 text-black hover:text-gray-700" />
-      </Link>
+      </Link> */}
 
     </div>
   </div>

@@ -116,100 +116,100 @@ export function Footer({ hotelName }: { hotelName?: string }) {
     <footer className="notranslate">
       {/* ====== HOTEL DETAIL SECTION (dynamic color) ====== */}
       {pathname !== "/" && selectedHotel && (
-  <div
-    className="border-t text-white"
-    style={{
-      backgroundColor: headerColor,
-      transition: "background-color 0.3s ease",
-    }}
-  >
-    <div className="container mx-auto">
-      <div className="p-6 border-b border-white/20">
-        <div className="flex flex-col items-center space-y-1">
-          {/* Hotel Logo */}
-          {selectedHotel.logoURL && (
-            <div className="flex justify-center">
-              <Image
-                src={selectedHotel.logoURL.split("?")[0]}
-                alt={`${selectedHotel.name} logo`}
-                width={80}
-                height={80}
-                className="object-contain max-h-12 sm:max-h-16"
-              />
+        <div
+          className="border-t text-white"
+          style={{
+            backgroundColor: headerColor,
+            transition: "background-color 0.3s ease",
+          }}
+        >
+          <div className="container mx-auto">
+            <div className="p-6 border-b border-white/20">
+              <div className="flex flex-col items-center space-y-1">
+                {/* Hotel Logo */}
+                {selectedHotel.logoURL && (
+                  <div className="flex justify-center">
+                    <Image
+                      src={selectedHotel.logoURL.split("?")[0]}
+                      alt={`${selectedHotel.name} logo`}
+                      width={80}
+                      height={80}
+                      className="object-contain max-h-12 sm:max-h-16"
+                    />
+                  </div>
+                )}
+
+                {/* Hotel Name */}
+                <h3 className="text-xl font-semibold text-white notranslate">
+                  {selectedHotel.name}
+                </h3>
+
+                {/* Hotel Contact Details — stacked vertically, tighter gap */}
+                <div className="flex flex-col items-center">
+                  {selectedHotel.address && (
+                    <div className="flex items-center space-x-2 notranslate">
+                      <MapPin size={16} className="text-white" />
+                      <span className="text-sm text-white">
+                        {selectedHotel.address}
+                      </span>
+                    </div>
+                  )}
+
+                  {selectedHotel.phone && (
+                    <div className="flex items-center space-x-2 notranslate">
+                      <Phone size={16} className="text-white" />
+                      <a
+                        href={`tel:${selectedHotel.phone}`}
+                        className="text-sm text-white hover:underline"
+                      >
+                        {selectedHotel.phone}
+                      </a>
+                    </div>
+                  )}
+
+                  {selectedHotel.email && (
+                    <div className="flex items-center space-x-2 notranslate">
+                      <Mail size={16} className="text-white" />
+                      <a
+                        href={`mailto:${selectedHotel.email}`}
+                        className="text-sm text-white hover:underline"
+                      >
+                        {selectedHotel.email}
+                      </a>
+                    </div>
+                  )}
+
+                  {selectedHotel.website && (
+                    <div className="flex items-center space-x-2 notranslate">
+                      <Link
+                        href={selectedHotel.website}
+                        target="_blank"
+                        className="text-sm text-white hover:underline"
+                      >
+                        Website
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-
-          {/* Hotel Name */}
-          <h3 className="text-xl font-semibold text-white notranslate">
-            {selectedHotel.name}
-          </h3>
-
-          {/* Hotel Contact Details — stacked vertically, tighter gap */}
-          <div className="flex flex-col items-center">
-            {selectedHotel.address && (
-              <div className="flex items-center space-x-2 notranslate">
-                <MapPin size={16} className="text-white" />
-                <span className="text-sm text-white">
-                  {selectedHotel.address}
-                </span>
-              </div>
-            )}
-
-            {selectedHotel.phone && (
-              <div className="flex items-center space-x-2 notranslate">
-                <Phone size={16} className="text-white" />
-                <a
-                  href={`tel:${selectedHotel.phone}`}
-                  className="text-sm text-white hover:underline"
-                >
-                  {selectedHotel.phone}
-                </a>
-              </div>
-            )}
-
-            {selectedHotel.email && (
-              <div className="flex items-center space-x-2 notranslate">
-                <Mail size={16} className="text-white" />
-                <a
-                  href={`mailto:${selectedHotel.email}`}
-                  className="text-sm text-white hover:underline"
-                >
-                  {selectedHotel.email}
-                </a>
-              </div>
-            )}
-
-            {selectedHotel.website && (
-              <div className="flex items-center space-x-2 notranslate">
-                <Link
-                  href={selectedHotel.website}
-                  target="_blank"
-                  className="text-sm text-white hover:underline"
-                >
-                  Website
-                </Link>
-              </div>
-            )}
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
       {/* ====== CONTACT + SOCIAL + COPYRIGHT SECTION (constant #D3D3D3) ====== */}
       <div className="border-t" style={{ backgroundColor: "#D3D3D3" }}>
-        <div className="container mx-auto notranslate">
+        <div className="w-full notranslate">
           <div className=" py-6 text-sm text-gray-800">
             {/* BOTTOM ROW: Logo Left + Copyright Right */}
             <div
               className="
         flex flex-col sm:flex-row 
         justify-between items-center
-        px-4
+        w-full
       "
             >
               {/* LEFT — Logo */}
-              <div className="flex items-center">
+              <div className="flex items-center pl-4 sm:pl-8">
                 <Image
                   src="/WhiteLogo.png"
                   alt="IBE Logo"
@@ -220,7 +220,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
               </div>
 
               {/* RIGHT — Copyright */}
-              <div className="mt-4 sm:mt-0 text-center sm:text-right">
+              <div className="mt-4 sm:mt-0 text-center sm:text-right pr-4 sm:pr-8">
                 <p className="notranslate text-gray-800">
                   &copy; {currentYear}{" "}
                   {pathname === "/" ? "HotelMateIBE" : "CitrusIBE"}. All rights
