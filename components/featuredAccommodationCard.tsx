@@ -92,9 +92,16 @@ const FeaturedAccommodationCard = ({ room }: Props) => {
   const [headerColor, setHeaderColor] = useState("#792868");
 
   useEffect(() => {
-    const storedColor = localStorage.getItem("ibeHeaderColour");
-    if (storedColor) {
-      setHeaderColor(storedColor);
+    const selectedHotelStr = localStorage.getItem("selectedHotel");
+    if (selectedHotelStr) {
+      try {
+        const selectedHotel = JSON.parse(selectedHotelStr);
+        if (selectedHotel.ibeHeaderColour) {
+          setHeaderColor(selectedHotel.ibeHeaderColour);
+        }
+      } catch (error) {
+        console.error("Failed to parse selectedHotel from localStorage", error);
+      }
     }
   }, []);
 

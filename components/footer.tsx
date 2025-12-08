@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   Facebook,
   Instagram,
@@ -18,12 +19,21 @@ import { Hotel } from "@/types/ibe";
 export function Footer({ hotelName }: { hotelName?: string }) {
   const currentYear = new Date().getFullYear();
   const pathname = usePathname();
-  const [headerColor, setHeaderColor] = useState("#792868");
+  const [headerColor, setHeaderColor] = useState("");
+  const [selectedHotel, setSelectedHotel] = useState<any>(null);
 
   useEffect(() => {
-    const storedColor = localStorage.getItem("ibeHeaderColour");
-    if (storedColor) {
-      setHeaderColor(storedColor);
+    const selectedHotelStr = localStorage.getItem("selectedHotel");
+    if (selectedHotelStr) {
+      try {
+        const hotelData = JSON.parse(selectedHotelStr);
+        setSelectedHotel(hotelData);
+        if (hotelData.ibeHeaderColour) {
+          setHeaderColor(hotelData.ibeHeaderColour);
+        }
+      } catch (error) {
+        console.error("Failed to parse selectedHotel from localStorage", error);
+      }
     }
   }, []);
 
@@ -103,132 +113,122 @@ export function Footer({ hotelName }: { hotelName?: string }) {
   }, []);
 
   return (
-    <footer className="bg-white border-t notranslate">
-      <div className="container mx-auto  notranslate">
-        {/* Extra Footer Links (Support, Discover, etc.) */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 mt-12 text-sm text-muted-foreground text-left notranslate" style={{ '--hover-color': headerColor } as React.CSSProperties}>
-          <div>
-            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
-              <strong>Support</strong>
-            </h4>
-            <ul className="space-y-2">
-              <li><Link href="#" className="hover:text-[--hover-color]" style={{ textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>Coronavirus (COVID-19) FAQs</Link></li>
-              <li><Link href="#">Manage your trips</Link></li>
-              <li><Link href="#">Contact Customer Service</Link></li>
-              <li><Link href="#">Safety Resource Center</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
-              <strong>Discover</strong>
-            </h4>
-            <ul className="space-y-2">
-              <li><Link href="#">Genius loyalty program</Link></li>
-              <li><Link href="#">Seasonal and holiday deals</Link></li>
-              <li><Link href="#">Travel articles</Link></li>
-              <li><Link href="#">Booking.com for Business</Link></li>
-              <li><Link href="#">Traveller Review Awards</Link></li>
-              <li><Link href="#">Car rental</Link></li>
-              <li><Link href="#">Flight finder</Link></li>
-              <li><Link href="#">Restaurant reservations</Link></li>
-              <li><Link href="#">Booking.com for Travel Agents</Link></li>
-            </ul>
-          </div>
+    <footer className="notranslate">
+      {/* ====== HOTEL DETAIL SECTION (dynamic color) ====== */}
+      {pathname !== "/" && selectedHotel && (
+  <div
+    className="border-t text-white"
+    style={{
+      backgroundColor: headerColor,
+      transition: "background-color 0.3s ease",
+    }}
+  >
+    <div className="container mx-auto">
+      <div className="p-6 border-b border-white/20">
+        <div className="flex flex-col items-center space-y-1">
+          {/* Hotel Logo */}
+          {selectedHotel.logoURL && (
+            <div className="flex justify-center">
+              <Image
+                src={selectedHotel.logoURL.split("?")[0]}
+                alt={`${selectedHotel.name} logo`}
+                width={80}
+                height={80}
+                className="object-contain max-h-12 sm:max-h-16"
+              />
+            </div>
+          )}
 
-          <div>
-            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
-              <strong>Terms and settings</strong>
-            </h4>
-            <ul className="space-y-2">
-              <li><Link href="#">Privacy & cookies</Link></li>
-              <li><Link href="#">Terms & conditions</Link></li>
-              <li><Link href="#">Accessibility Statement</Link></li>
-              <li><Link href="#">Partner dispute</Link></li>
-              <li><Link href="#">Modern Slavery Statement</Link></li>
-              <li><Link href="#">Human Rights Statement</Link></li>
-            </ul>
-          </div>
+          {/* Hotel Name */}
+          <h3 className="text-xl font-semibold text-white notranslate">
+            {selectedHotel.name}
+          </h3>
 
-          <div>
-            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
-              <strong>Partners</strong>
-            </h4>
-            <ul className="space-y-2">
-              <li><Link href="#">Extranet login</Link></li>
-              <li><Link href="#">Partner help</Link></li>
-              <li><Link href="#">List your property</Link></li>
-              <li><Link href="#">Become an affiliate</Link></li>
-            </ul>
-          </div>
+          {/* Hotel Contact Details — stacked vertically, tighter gap */}
+          <div className="flex flex-col items-center">
+            {selectedHotel.address && (
+              <div className="flex items-center space-x-2 notranslate">
+                <MapPin size={16} className="text-white" />
+                <span className="text-sm text-white">
+                  {selectedHotel.address}
+                </span>
+              </div>
+            )}
 
-          <div>
-            <h4 className="font-medium mb-4" style={{ color: headerColor }}>
-              <strong>About</strong>
-            </h4>
-            <ul className="space-y-2">
-              <li><Link href="#">About Booking.com</Link></li>
-              <li><Link href="#">How We Work</Link></li>
-              <li><Link href="#">Sustainability</Link></li>
-              <li><Link href="#">Press center</Link></li>
-              <li><Link href="#">Careers</Link></li>
-              <li><Link href="#">Investor relations</Link></li>
-              <li><Link href="#">Corporate contact</Link></li>
-            </ul>
+            {selectedHotel.phone && (
+              <div className="flex items-center space-x-2 notranslate">
+                <Phone size={16} className="text-white" />
+                <a
+                  href={`tel:${selectedHotel.phone}`}
+                  className="text-sm text-white hover:underline"
+                >
+                  {selectedHotel.phone}
+                </a>
+              </div>
+            )}
+
+            {selectedHotel.email && (
+              <div className="flex items-center space-x-2 notranslate">
+                <Mail size={16} className="text-white" />
+                <a
+                  href={`mailto:${selectedHotel.email}`}
+                  className="text-sm text-white hover:underline"
+                >
+                  {selectedHotel.email}
+                </a>
+              </div>
+            )}
+
+            {selectedHotel.website && (
+              <div className="flex items-center space-x-2 notranslate">
+                <Link
+                  href={selectedHotel.website}
+                  target="_blank"
+                  className="text-sm text-white hover:underline"
+                >
+                  Website
+                </Link>
+              </div>
+            )}
           </div>
         </div>
-        {/* Copyright */}
-        <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground notranslate">
-          {/* Contact + Social */}
-          {pathname !== "/" && (
-          <div className="flex flex-col items-center space-y-6 text-center">
-            <div className="flex flex-col sm:flex-row sm:space-x-8 space-y-2 sm:space-y-0 items-center">
-              <div className="flex items-center space-x-2 notranslate">
-                <MapPin size={14} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground notranslate">
-                  {contact.address || "N/A"}
-                </span>
+      </div>
+    </div>
+  </div>
+)}
+      {/* ====== CONTACT + SOCIAL + COPYRIGHT SECTION (constant #D3D3D3) ====== */}
+      <div className="border-t" style={{ backgroundColor: "#D3D3D3" }}>
+        <div className="container mx-auto notranslate">
+          <div className=" py-6 text-sm text-gray-800">
+            {/* BOTTOM ROW: Logo Left + Copyright Right */}
+            <div
+              className="
+        flex flex-col sm:flex-row 
+        justify-between items-center
+        px-4
+      "
+            >
+              {/* LEFT — Logo */}
+              <div className="flex items-center">
+                <Image
+                  src="/WhiteLogo.png"
+                  alt="IBE Logo"
+                  width={120}
+                  height={50}
+                  className="object-contain"
+                />
               </div>
-              <div className="flex items-center space-x-2 notranslate">
-                <Mail size={14} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground notranslate">
-                  {contact.email || "N/A"}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 notranslate">
-                <Phone size={14} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground notranslate">
-                  {contact.phone || "N/A"}
-                </span>
-              </div>
-            </div>
 
-            <div className="flex space-x-4 notranslate">
-              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
-                <Facebook size={18} />
-                <span className="sr-only notranslate">Facebook</span>
-              </Link>
-              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
-                <Instagram size={18} />
-                <span className="sr-only notranslate">Instagram</span>
-              </Link>
-              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
-                <Twitter size={18} />
-                <span className="sr-only notranslate">Twitter</span>
-              </Link>
-              <Link href="#" className="text-muted-foreground" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = headerColor} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
-                <Linkedin size={18} />
-                <span className="sr-only notranslate">LinkedIn</span>
-              </Link>
+              {/* RIGHT — Copyright */}
+              <div className="mt-4 sm:mt-0 text-center sm:text-right">
+                <p className="notranslate text-gray-800">
+                  &copy; {currentYear}{" "}
+                  {pathname === "/" ? "HotelMateIBE" : "CitrusIBE"}. All rights
+                  reserved.
+                </p>
+              </div>
             </div>
           </div>
-        )}
-          <p className="notranslate p-4">
-            &copy; {currentYear}{" "}
-            {pathname === "/"
-              ? "HotelMateIBE"
-              : hotelDisplayName || "CitrusIBE"}
-            . All rights reserved.
-          </p>
         </div>
       </div>
     </footer>

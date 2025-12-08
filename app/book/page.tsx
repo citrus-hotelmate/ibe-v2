@@ -21,7 +21,7 @@ function SearchParamLoader({ onLoaded }: { onLoaded: (params: URLSearchParams) =
   const searchParams = useSearchParams();
   useEffect(() => {
     onLoaded(searchParams);
-  }, [searchParams]);
+  }, [searchParams, onLoaded]);
   return null;
 }
 
@@ -33,13 +33,28 @@ function RoomTypeLoader({ onLoaded }: { onLoaded: (roomTypeNames: string[]) => v
       const roomTypeNames = params.get("roomTypes")?.split(",") || [];
       onLoaded(roomTypeNames);
     }
-  }, [params]);
+  }, [params, onLoaded]);
 
   return (
     <Suspense fallback={null}>
       <SearchParamLoader onLoaded={setParams} />
     </Suspense>
   );
+}
+
+function UrlParamChecker({ onHasParams }: { onHasParams: (hasParams: boolean) => void }) {
+  const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    const hasUrlParams = Boolean(
+      searchParams.get("email") || 
+      searchParams.get("name") || 
+      searchParams.get("contact")
+    );
+    onHasParams(hasUrlParams);
+  }, [searchParams, onHasParams]);
+  
+  return null;
 }
 
 
@@ -92,45 +107,59 @@ interface BookingDetails {
   selectedPackages?: any[]
 }
 
-export default function BookPage() {
+function BookPageContent() {
   const router = useRouter()
   const [headerColor, setHeaderColor] = useState("#792868")
   const [roomTypeNames, setRoomTypeNames] = useState<string[]>([])
+  const [hasUrlParams, setHasUrlParams] = useState(false)
 
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
 
   useEffect(() => {
-    const storedColor = localStorage.getItem("ibeHeaderColour")
-    if (storedColor) {
-      setHeaderColor(storedColor)
+    const selectedHotelStr = localStorage.getItem("selectedHotel");
+    if (selectedHotelStr) {
+      try {
+        const selectedHotel = JSON.parse(selectedHotelStr);
+        if (selectedHotel.ibeHeaderColour) {
+          setHeaderColor(selectedHotel.ibeHeaderColour);
+        }
+      } catch (error) {
+        console.error("Failed to parse selectedHotel from localStorage", error);
+      }
     }
   }, [])
 
   // Restore reservation summary from localStorage if available
   const { bookingDetails, updateBookingDetails, updateRoom, incrementRoomQuantity, decrementRoomQuantity } =
     useBooking()
+  
   useEffect(() => {
-    const saved = localStorage.getItem("reservationSummary");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.checkIn) parsed.checkIn = new Date(parsed.checkIn);
-      if (parsed.checkOut) parsed.checkOut = new Date(parsed.checkOut);
-      updateBookingDetails(parsed);
-      // Restore promo details if available
-      const storedPromoDetails = localStorage.getItem("parsedPromoDetails");
-      if (storedPromoDetails) {
-        try {
-          const parsedPromo = JSON.parse(storedPromoDetails);
-          parsed.promoCode = parsedPromo.PromoCode;
-          parsed.promoDetails = parsedPromo;
-          updateBookingDetails(parsed);
-        } catch (e) {
-          console.error("Failed to parse stored promo details", e);
+    // Only restore from localStorage if there are no URL params (to avoid overriding them)
+    if (!hasUrlParams) {
+      const saved = localStorage.getItem("reservationSummary");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.checkIn) parsed.checkIn = new Date(parsed.checkIn);
+        if (parsed.checkOut) parsed.checkOut = new Date(parsed.checkOut);
+        updateBookingDetails(parsed);
+        // Restore promo details if available
+        const storedPromoDetails = localStorage.getItem("parsedPromoDetails");
+        if (storedPromoDetails) {
+          try {
+            const parsedPromo = JSON.parse(storedPromoDetails);
+            parsed.promoCode = parsedPromo.PromoCode;
+            parsed.promoDetails = parsedPromo;
+            updateBookingDetails(parsed);
+          } catch (e) {
+            console.error("Failed to parse stored promo details", e);
+          }
         }
       }
+    } else {
+      console.log("📧 URL params detected, preserving them instead of localStorage");
     }
     // eslint-disable-next-line
-  }, []);
+  }, [hasUrlParams]);
 
   useEffect(() => {
     const fetchRoomDetails = async () => {
@@ -167,7 +196,7 @@ export default function BookPage() {
     fetchCountries();
   }, [])
 
-  // Hotel policies state and fetch
+  // Hotel policies state - load from selectedHotel localStorage
   const [hotelPolicies, setHotelPolicies] = useState<{
     CancellationPolicy?: string
     ChildPolicy?: string
@@ -177,28 +206,22 @@ export default function BookPage() {
   }>({})
 
   useEffect(() => {
-    const fetchPolicies = async () => {
+    // Load hotel policies from selectedHotel localStorage
+    const selectedHotelStr = localStorage.getItem("selectedHotel");
+    if (selectedHotelStr) {
       try {
-        const response = await fetch(`${API_BASE_URL}/API/GetHotelDetail.aspx?`)
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch hotel policies")
-        }
-
-        const data = await response.json()
+        const selectedHotel = JSON.parse(selectedHotelStr);
         setHotelPolicies({
-          CancellationPolicy: data.CancellationPolicy,
-          ChildPolicy: data.ChildPolicy,
-          Taxation: data.Taxation,
-          Phone: data.Phone,
-          WhatsAppNo: data.WhatsAppNo,
-        })
+          CancellationPolicy: selectedHotel.cancellationPolicy || "Cancellation policy information will be available soon.",
+          ChildPolicy: selectedHotel.childPolicy || "Child policy details will be available soon.",
+          Taxation: selectedHotel.taxPolicy || "Taxation details will be available soon.",
+          Phone: selectedHotel.phone || "",
+          WhatsAppNo: selectedHotel.phone || "", // Using phone as WhatsApp if available
+        });
       } catch (error) {
-        console.error("Error fetching hotel policies:", error)
+        console.error("Failed to parse selectedHotel from localStorage", error);
       }
     }
-
-    fetchPolicies()
   }, [])
 
   useEffect(() => {
@@ -317,6 +340,9 @@ export default function BookPage() {
   return (
     <>
       <Header />
+      <Suspense fallback={null}>
+        <UrlParamChecker onHasParams={setHasUrlParams} />
+      </Suspense>
       <div className="container max-w-7xl mx-auto px-4 py-8">
         {/* Heading and Currency Selector */}
         <div className="flex justify-between items-center mb-4">
@@ -750,5 +776,13 @@ export default function BookPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function BookPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <BookPageContent />
+    </Suspense>
   )
 }

@@ -267,9 +267,9 @@ const selectedHotel = JSON.parse(localStorage.getItem('selectedHotel'));
 console.log(selectedHotel,"JUDE")
   return (
     <div className="container max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-end mb-4">
+      {/* <div className="flex justify-end mb-4">
         <CurrencySelector />
-      </div>
+      </div> */}
       {showConfetti && <Confetti width={width} height={height} numberOfPieces={300} recycle={false} />}
 
       <div className="text-center mb-8">
@@ -448,14 +448,7 @@ console.log(selectedHotel,"JUDE")
           <Download className="h-4 w-4" />
           Download PDF
         </Button>
-      </div>
-
-      <div className="mt-8 text-center">
-        <Button asChild size="lg">
-          <Link href="/">Return to Property</Link>
-        </Button>
-      </div>
-      
+      </div>      
     </div>
   )
 }

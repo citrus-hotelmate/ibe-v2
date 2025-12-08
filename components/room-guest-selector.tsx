@@ -157,17 +157,17 @@ export function RoomGuestSelector({
                 <Minus className="h-4 w-4" />
               </Button>
 
-              <span className="w-8 text-center">{currentAdults || 0}</span>
-                <Button
+              <div className="w-8 text-center">{currentAdults || 0}</div>
+              <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => handleAdultChange(1)}
                 disabled={currentAdults >= Math.min(maxGuests - currentChildren, maxAdult)} // Disable when max adults reached
-                >
+              >
                 <Plus className="h-4 w-4" />
-                </Button>
+              </Button>
             </div>
           </div>
 
@@ -189,7 +189,7 @@ export function RoomGuestSelector({
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <span className="w-8 text-center">{currentChildren}</span>
+              <div className="w-8 text-center">{currentChildren}</div>
               <Button
                 type="button"
                 variant="outline"

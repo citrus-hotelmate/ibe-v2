@@ -38,13 +38,20 @@ export default function RoomCard({
   showQuantitySelector,
   imageUrl,
 }: RoomCardProps) {
-  const [headerColor, setHeaderColor] = useState("#792868");
+  const [headerColor, setHeaderColor] = useState("");
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
 
   useEffect(() => {
-    const storedColor = localStorage.getItem("ibeHeaderColour");
-    if (storedColor) {
-      setHeaderColor(storedColor);
+    const selectedHotelStr = localStorage.getItem("selectedHotel");
+    if (selectedHotelStr) {
+      try {
+        const selectedHotel = JSON.parse(selectedHotelStr);
+        if (selectedHotel.ibeHeaderColour) {
+          setHeaderColor(selectedHotel.ibeHeaderColour);
+        }
+      } catch (error) {
+        console.error("Failed to parse selectedHotel from localStorage", error);
+      }
     }
   }, []);
   const [childAges, setChildAges] = useState<number[]>([]);
@@ -214,8 +221,8 @@ export default function RoomCard({
             {/* <Badge className="absolute top-2 left-2" variant="secondary">
               Popular Choice
             </Badge> */}
-            <Badge className="absolute top-2 right-2 bg-green-500 hover:bg-green-600">
-              Available Today
+            <Badge className="absolute top-2 right-2 bg-[#fa3cb1]">
+              {mealPlans.length > 0 ? mealPlans[0].mealPlan : "Loading..."}
             </Badge>
           </div>
           <div className="p-4 md:col-span-3 flex flex-col">
@@ -368,6 +375,7 @@ export default function RoomCard({
                         onAddToBooking(roomData);
                       }}
                       disabled={roomsLeft <= 0}
+                      style={{ backgroundColor: headerColor }}
                     >
                       Add to Booking
                     </Button>

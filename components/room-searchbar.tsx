@@ -17,21 +17,33 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     const [headerColor, setHeaderColor] = useState("#792868");
     
     useEffect(() => {
-        const storedColor = localStorage.getItem("ibeHeaderColour");
-        if (storedColor) {
-            setHeaderColor(storedColor);
+        const selectedHotelStr = localStorage.getItem("selectedHotel");
+        if (selectedHotelStr) {
+            try {
+                const selectedHotel = JSON.parse(selectedHotelStr);
+                if (selectedHotel.ibeHeaderColour) {
+                    setHeaderColor(selectedHotel.ibeHeaderColour);
+                }
+            } catch (error) {
+                console.error("Failed to parse selectedHotel from localStorage", error);
+            }
         }
     }, []);
     
     // Initialize state from booking context
     const [checkInDate, setCheckInDate] = useState(bookingDetails.checkIn || new Date());
-    const [checkOutDate, setCheckOutDate] = useState(bookingDetails.checkOut || new Date(new Date().getTime() + 24 * 60 * 60 * 1000)); // Tomorrow
+    const [checkOutDate, setCheckOutDate] = useState(
+      bookingDetails.checkOut || new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
+    ); // Tomorrow
     const [showCheckInCalendar, setShowCheckInCalendar] = useState(false);
     const [showCheckOutCalendar, setShowCheckOutCalendar] = useState(false);
     const [showGuestDropdown, setShowGuestDropdown] = useState(false);
     const [adults, setAdults] = useState(bookingDetails.adults || 2);
     const [children, setChildren] = useState(bookingDetails.children || 0);
     const [rooms, setRooms] = useState(bookingDetails.rooms || 1);
+
+    // 🔁 track if we've already auto-ran the search
+    const [hasAutoSearched, setHasAutoSearched] = useState(false);
 
     // Refs for the dropdown components
     const checkInCalendarRef = useRef<HTMLDivElement>(null);
@@ -43,22 +55,73 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
 
     // Sync with booking context changes
     useEffect(() => {
-        if (bookingDetails.checkIn) {
-            setCheckInDate(bookingDetails.checkIn);
-        }
-        if (bookingDetails.checkOut) {
-            setCheckOutDate(bookingDetails.checkOut);
-        }
-        if (bookingDetails.adults !== undefined) {
-            setAdults(bookingDetails.adults);
-        }
-        if (bookingDetails.children !== undefined) {
-            setChildren(bookingDetails.children);
-        }
-        if (bookingDetails.rooms !== undefined) {
-            setRooms(bookingDetails.rooms);
-        }
-    }, [bookingDetails.checkIn, bookingDetails.checkOut, bookingDetails.adults, bookingDetails.children, bookingDetails.rooms]);
+      console.log("🧾 RoomSearchBar saw bookingDetails:", {
+        checkIn: bookingDetails.checkIn,
+        checkOut: bookingDetails.checkOut,
+        adults: bookingDetails.adults,
+        children: bookingDetails.children,
+        rooms: bookingDetails.rooms,
+      });
+
+      if (bookingDetails.checkIn) {
+        setCheckInDate(bookingDetails.checkIn);
+      }
+      if (bookingDetails.checkOut) {
+        setCheckOutDate(bookingDetails.checkOut);
+      }
+      if (bookingDetails.adults !== undefined) {
+        setAdults(bookingDetails.adults);
+      }
+      if (bookingDetails.children !== undefined) {
+        setChildren(bookingDetails.children);
+      }
+      if (bookingDetails.rooms !== undefined) {
+        setRooms(bookingDetails.rooms);
+      }
+    }, [
+      bookingDetails.checkIn,
+      bookingDetails.checkOut,
+      bookingDetails.adults,
+      bookingDetails.children,
+      bookingDetails.rooms,
+    ]);
+
+    // ✅ Auto-run search once when bookingDetails (from URL/localStorage) are ready
+    useEffect(() => {
+      if (!onSearch) return;
+      if (hasAutoSearched) return;
+
+      if (!bookingDetails.checkIn || !bookingDetails.checkOut) return;
+
+      const checkIn = bookingDetails.checkIn.toISOString().split("T")[0];
+      const checkOut = bookingDetails.checkOut.toISOString().split("T")[0];
+
+      const autoAdults = bookingDetails.adults ?? adults;
+      const autoChildren = bookingDetails.children ?? children;
+      const autoRooms = bookingDetails.rooms ?? rooms;
+
+      console.log("🚀 Auto-search from bookingDetails:", {
+        checkIn,
+        checkOut,
+        adults: autoAdults,
+        children: autoChildren,
+        rooms: autoRooms,
+      });
+
+      onSearch(checkIn, checkOut, autoAdults, autoChildren, autoRooms);
+      setHasAutoSearched(true);
+    }, [
+      onSearch,
+      bookingDetails.checkIn,
+      bookingDetails.checkOut,
+      bookingDetails.adults,
+      bookingDetails.children,
+      bookingDetails.rooms,
+      adults,
+      children,
+      rooms,
+      hasAutoSearched,
+    ]);
 
     // Enhanced setters that sync with booking context
     const updateAdults = (value: number) => {
@@ -84,17 +147,14 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
 
     const handleCheckInDateChange = (date: Date) => {
         setCheckInDate(date);
-        // If check-out is before check-in, adjust it
         if (checkOutDate <= date) {
             const newCheckOut = new Date(date.getTime() + 24 * 60 * 60 * 1000);
             setCheckOutDate(newCheckOut);
-            // Update booking context with both dates
             updateBookingDetails({
                 checkIn: date,
                 checkOut: newCheckOut,
             });
         } else {
-            // Update booking context with just check-in
             updateBookingDetails({
                 checkIn: date,
             });
@@ -103,7 +163,6 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
 
     const handleCheckOutDateChange = (date: Date) => {
         setCheckOutDate(date);
-        // Update booking context
         updateBookingDetails({
             checkOut: date,
         });
@@ -112,7 +171,6 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     // Handle clicks outside the dropdown components
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            // Close check-in calendar if click is outside
             if (
                 showCheckInCalendar &&
                 checkInCalendarRef.current &&
@@ -123,7 +181,6 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                 setShowCheckInCalendar(false);
             }
 
-            // Close check-out calendar if click is outside
             if (
                 showCheckOutCalendar &&
                 checkOutCalendarRef.current &&
@@ -134,7 +191,6 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                 setShowCheckOutCalendar(false);
             }
 
-            // Close guest dropdown if click is outside
             if (
                 showGuestDropdown &&
                 guestDropdownRef.current &&
@@ -146,10 +202,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
             }
         }
 
-        // Add event listener
         document.addEventListener('mousedown', handleClickOutside);
-
-        // Clean up
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
@@ -177,7 +230,6 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                     </div>
                 </div>
 
-                {/* Check In Calendar Popup */}
                 {showCheckInCalendar && (
                     <div
                         ref={checkInCalendarRef}
@@ -213,7 +265,6 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                     </div>
                 </div>
 
-                {/* Check Out Calendar Popup */}
                 {showCheckOutCalendar && (
                     <div
                         ref={checkOutCalendarRef}
@@ -243,7 +294,9 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                     <Users className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" style={{ color: headerColor }} />
                     <div className="flex-1 min-w-0">
                         <div className="text-xs sm:text-sm text-gray-500 font-medium font-urbanist notranslate">Guest & Rooms</div>
-                        <div className="text-gray-400 font-medium font-urbanist notranslate text-xs sm:text-base truncate">{adults} Adults, {rooms} Room{rooms > 1 ? 's' : ''}</div>
+                        <div className="text-gray-400 font-medium font-urbanist notranslate text-xs sm:text-base truncate">
+                          {adults} Adults, {rooms} Room{rooms > 1 ? 's' : ''}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -280,7 +333,7 @@ export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
                 </div>
             )}
 
-            {/* Search Button */}
+            {/* Search Button (manual override still works) */}
             <button
                 onClick={handleSearch}
                 className="text-white p-3 sm:p-4 rounded-2xl mt-2 sm:mb-0 sm:mt-0 sm:ml-2 w-full sm:w-auto mr-[5px]"
