@@ -155,6 +155,9 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [showWishlist, setShowWishlist] = useState(false);
 
+  // Check if URL has query parameters
+  const hasUrlParams = searchParams && Array.from(searchParams.entries()).length > 0;
+
   // Track window width for responsive grid calculations
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 0
@@ -543,17 +546,19 @@ export default function LandingPage() {
         showWishlist={showWishlist}
         onToggleWishlistAction={() => setShowWishlist(!showWishlist)}
       />
-      {/* Hotel Name Section */}
-      <div className="relative z-20 text-center sm:mt-8 md:mt-10 px-4">
-        <h1 className="font-urbanist text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[80px] 2xl:text-[100px] tracking-tight leading-tight relative inline-block notranslate">
-          {/* Unblurred main text */}
-          <span className="relative z-10 block">{getHotelName()}</span>
-          {/* Blurred overlay showing only bottom 25% */}
-          <span className="absolute inset-0 z-20 blur-overlay pointer-events-none">
-            {getHotelName()}
-          </span>
-        </h1>
-      </div>
+      {/* Hotel Name Section - Hidden when URL has params */}
+      {!hasUrlParams && (
+        <div className="relative z-20 text-center sm:mt-8 md:mt-10 px-4">
+          <h1 className="font-urbanist text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[80px] 2xl:text-[100px] tracking-tight leading-tight relative inline-block notranslate">
+            {/* Unblurred main text */}
+            <span className="relative z-10 block">{getHotelName()}</span>
+            {/* Blurred overlay showing only bottom 25% */}
+            <span className="absolute inset-0 z-20 blur-overlay pointer-events-none">
+              {getHotelName()}
+            </span>
+          </h1>
+        </div>
+      )}
 
       {/* Hero + SearchBar Wrapper */}
       <div className="relative w-full flex flex-col items-center mt-2">
@@ -682,26 +687,29 @@ export default function LandingPage() {
           );
         })()}
 
-        {/* Floating Search Bar */}
-        <div className="absolute -bottom-[4px] sm:-bottom-[7px] w-full max-w-5xl px-2 sm:px-4 z-40 drop-shadow-xl">
-          <RoomSearchBar
-            onSearch={(checkIn, checkOut, adults, children, rooms) => {
-              console.log(
-                "Search triggered with:",
-                checkIn,
-                checkOut,
-                adults,
-                children,
-                rooms
-              );
-              // Refetch featured rooms with new dates to get updated rates
-              refetchFeaturedRooms(checkIn, checkOut);
-            }}
-          />
-        </div>
+        {/* Floating Search Bar - Hidden when URL has params */}
+        {!hasUrlParams && (
+          <div className="absolute -bottom-[4px] sm:-bottom-[7px] w-full max-w-5xl px-2 sm:px-4 z-40 drop-shadow-xl">
+            <RoomSearchBar
+              onSearch={(checkIn, checkOut, adults, children, rooms) => {
+                console.log(
+                  "Search triggered with:",
+                  checkIn,
+                  checkOut,
+                  adults,
+                  children,
+                  rooms
+                );
+                // Refetch featured rooms with new dates to get updated rates
+                refetchFeaturedRooms(checkIn, checkOut);
+              }}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Featured Accommodations */}
+      {/* Featured Accommodations - Hidden when URL has params */}
+      {!hasUrlParams && (
       <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
         <div className="w-full max-w-[98rem]">
           {/* Header + scroll buttons */}
@@ -807,7 +815,9 @@ export default function LandingPage() {
           )}
         </div>
       </div>
-      {/* Property Page Integration */}
+      )}
+
+      {/* Property Details Section */}
       <div className="mt-2 flex justify-center">
         <div className="w-full max-w-[98rem]">
           <PropertyPage />
