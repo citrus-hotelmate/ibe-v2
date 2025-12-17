@@ -144,6 +144,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                       height={logoHeight}
                       className="object-contain"
                       style={{ width: 'auto', height: `${logoHeight}px`, maxHeight: '64px' }}
+                      unoptimized
                     />
                   </div>
                 )}

@@ -90,6 +90,7 @@ export interface Hotel {
   ibeHeaderColour: string | null;
   ibE_Logo_Width: number | null;
   ibE_Logo_Height: number | null;
+  ibE_LogoURL: string | null;
   grC_Para1: string | null;
   proforma_Terms: string | null;
   grC_Para3: string | null;

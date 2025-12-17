@@ -13,10 +13,10 @@ type NavbarProps = {
 };
 
 export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarProps) {
-  const [headerColor, setHeaderColor] = useState(""); // Default color
-  const [logoURL, setLogoURL] = useState("/WhiteLogo.png"); // Default logo
-  const [logoWidth, setLogoWidth] = useState<number>(60); // Default width
-  const [logoHeight, setLogoHeight] = useState<number>(60); // Default height
+  const [headerColor, setHeaderColor] = useState("");
+  const [logoURL, setLogoURL] = useState<string>("");
+  const [logoWidth, setLogoWidth] = useState<number>(60);
+  const [logoHeight, setLogoHeight] = useState<number>(60);
 
   useEffect(() => {
     // Get hotel details from localStorage
@@ -33,14 +33,11 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
           setHeaderColor(selectedHotel.headerColor);
         }
 
-        // Set logo URL if available, otherwise use default
+        // Set logo URL from selectedHotel
         if (selectedHotel.logoURL) {
           // Trim query parameters from logo URL
           const trimmedLogoURL = selectedHotel.logoURL.split('?')[0];
           setLogoURL(trimmedLogoURL);
-        } else if (selectedHotel.image) {
-          // Fallback to base64 image if logoURL not available
-          setLogoURL(selectedHotel.image);
         }
 
         // Set logo dimensions if available
@@ -52,7 +49,7 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
 
         console.log("🎨 Navbar using hotel branding:", {
           color: selectedHotel.ibeHeaderColour || selectedHotel.headerColor,
-          logo: selectedHotel.logoURL ? "logoURL" : selectedHotel.image ? "image" : "default",
+          logo: selectedHotel.logoURL || 'none',
           dimensions: `${selectedHotel.logoWidth || 'default'}rem × ${selectedHotel.logoHeight || 'default'}rem`
         });
       } catch (error) {
@@ -71,23 +68,22 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
     <nav className="w-full p-2" style={{ backgroundColor: headerColor }}>
       <div className="flex justify-between items-center w-full">
 
-        {/* LEFT — Logo */}
-        <div className="flex items-center">
-          <Image
-            src={logoURL}
-            alt="Hotel Logo"
-            width={logoWidth}
-            height={logoHeight}
-            className="rounded-md object-contain"
-            style={{ width: 'auto', height: `${logoHeight}px`, maxHeight: '56px' }}
-            unoptimized={logoURL.startsWith("http") || logoURL.startsWith("data:")}
-            onError={(e) => {
-              // Fallback to default logo if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.src = "/WhiteLogo.png";
-            }}
-          />
-        </div>
+        {/* LEFT — Logo or Placeholder */}
+        {logoURL ? (
+          <div className="flex items-center">
+            <Image
+              src={logoURL}
+              alt="Hotel Logo"
+              width={logoWidth}
+              height={logoHeight}
+              className="rounded-md object-contain"
+              style={{ width: 'auto', height: `${logoHeight}px`, maxHeight: '56px' }}
+              unoptimized={logoURL.startsWith("http") || logoURL.startsWith("data:")}
+            />
+          </div>
+        ) : (
+          <div className="flex items-center" style={{ width: '60px' }}></div>
+        )}
 
         {/* RIGHT — Wishlist + Language + Currency + User */}
         <div className="flex items-center justify-end gap-1 sm:gap-3">

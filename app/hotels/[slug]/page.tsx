@@ -264,7 +264,7 @@ export default function LandingPage() {
         longitude: matchedHotel.longitude,
         currencyCode: matchedHotel.currencyCode,
         image: matchedHotel.hotelImage?.base64Image || null,
-        logoURL: matchedHotel.logoURL,
+        logoURL: matchedHotel.ibE_LogoURL,
         logoWidth: matchedHotel.ibE_Logo_Width,
         logoHeight: matchedHotel.ibE_Logo_Height,
         ibeHeaderColour: matchedHotel.ibeHeaderColour,
@@ -760,8 +760,8 @@ export default function LandingPage() {
                 {/* Orange Card */}
                 <div
                   className={`rounded-[3rem] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
-                      ? "flex-1 min-w-[300px] max-w-[800px]"
-                      : "w-[252px] flex-shrink-0"
+                    ? "flex-1 min-w-[300px] max-w-[800px]"
+                    : "w-[252px] flex-shrink-0"
                     }`}
                   style={{
                     backgroundColor: currentHotel?.ibeHeaderColour || headerColor,
@@ -789,8 +789,8 @@ export default function LandingPage() {
                 {/* Map Card */}
                 <div
                   className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
-                      ? "flex-1 min-w-[300px] max-w-[800px]"
-                      : "w-[252px] flex-shrink-0"
+                    ? "flex-1 min-w-[300px] max-w-[800px]"
+                    : "w-[252px] flex-shrink-0"
                     }`}
                 >
                   <div className="h-full relative">
