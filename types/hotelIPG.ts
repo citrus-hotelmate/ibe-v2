@@ -14,4 +14,7 @@ export interface HotelIPG {
   createdBy: string;
   updatedOn: string;
   updatedBy: string;
+  OnTestMode?: boolean | string | number;
+  TestAmount?: number | string;
+  EndPoint?: string;
 }

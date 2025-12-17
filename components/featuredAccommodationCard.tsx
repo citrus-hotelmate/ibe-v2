@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Mountain, Users } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useCurrency } from "@/components/currency-context";
 
 interface Feature {
   category: string;
@@ -39,57 +40,72 @@ const FeaturedAccommodationImage = ({ image, name }: { image?: string; name: str
   </div>
 );
 
-const FeaturedAccommodationDetails = ({ room, headerColor }: { room: FeaturedRoom; headerColor: string }) => (
-  <div
-    className="p-4 font-urbanist flex flex-col h-full"
-    style={{
-      background:
-        "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
-    }}
-  >
-    {/* Reserve smaller space for up to 2 lines of title */}
-    <h3 className="font-semibold text-base leading-snug line-clamp-2 min-h-[2rem]">
-      {room.name}
-    </h3>
+const FeaturedAccommodationDetails = ({ 
+  room, 
+  headerColor, 
+  convertPrice, 
+  formatPrice 
+}: { 
+  room: FeaturedRoom; 
+  headerColor: string;
+  convertPrice: (price: number) => number;
+  formatPrice: (price: number) => string;
+}) => {
+  const convertedPrice = convertPrice(room.price);
+  const formattedPrice = formatPrice(convertedPrice);
+  
+  return (
+    <div
+      className="p-4 font-urbanist flex flex-col h-full"
+      style={{
+        background:
+          "linear-gradient(to bottom, #e1d9d3 40%, #eeeeec 100%, #efedea 0%)",
+      }}
+    >
+      {/* Reserve smaller space for up to 2 lines of title */}
+      <h3 className="font-semibold text-base leading-snug line-clamp-2 min-h-[2rem]">
+        {room.name}
+      </h3>
 
-    <div className="flex items-center text-xs mb-1.5">
-      <Users className="h-4 w-4 mr-2 flex-shrink-0" style={{ color: headerColor }} />
-      <span className="notranslate text-[#8f8f73]">{room.adultCapacity}</span>
-      <span className="text-[#8f8f73]">&nbsp;Adults</span>
-      {room.childCapacity > 0 && (
-        <>
-          <span className="text-[#8f8f73]">,&nbsp;</span>
-          <span className="notranslate text-[#8f8f73]">{room.childCapacity}</span>
-          <span className="text-[#8f8f73]">&nbsp;Children</span>
-        </>
-      )}
-    </div>
+      <div className="flex items-center text-xs mb-1.5">
+        <Users className="h-4 w-4 mr-2 flex-shrink-0" style={{ color: headerColor }} />
+        <span className="notranslate text-[#8f8f73]">{room.adultCapacity}</span>
+        <span className="text-[#8f8f73]">&nbsp;Adults</span>
+        {room.childCapacity > 0 && (
+          <>
+            <span className="text-[#8f8f73]">,&nbsp;</span>
+            <span className="notranslate text-[#8f8f73]">{room.childCapacity}</span>
+            <span className="text-[#8f8f73]">&nbsp;Children</span>
+          </>
+        )}
+      </div>
 
-    {/* Always render; smaller reserved block for features */}
-    <div className="text-[11px] text-muted-foreground line-clamp-2 min-h-[1rem]">
-      {room.features?.length
-        ? room.features.slice(0, 3).map((feature, idx) => (
-            <span key={idx}>
-              {feature.name}
-              {idx < Math.min(room.features.length, 3) - 1 && ", "}
-            </span>
-          ))
-        : null}
-      {room.features && room.features.length > 3 && "..."}
-    </div>
+      {/* Always render; smaller reserved block for features */}
+      <div className="text-[11px] text-muted-foreground line-clamp-2 min-h-[1rem]">
+        {room.features?.length
+          ? room.features.slice(0, 3).map((feature, idx) => (
+              <span key={idx}>
+                {feature.name}
+                {idx < Math.min(room.features.length, 3) - 1 && ", "}
+              </span>
+            ))
+          : null}
+        {room.features && room.features.length > 3 && "..."}
+      </div>
 
-    {/* Price pinned to bottom */}
-    <div className="mt-auto flex items-center justify-end text-3xl relative">
-      <div className="relative inline-block font-urbanist">
-        <span className="absolute -left-4 -top-0.5 text-xl font-semibold">$</span>
-        <span className="notranslate font-medium">{room.price}</span>
+      {/* Price pinned to bottom */}
+      <div className="mt-auto flex items-center justify-end text-2xl relative">
+        <div className="relative inline-block font-urbanist notranslate">
+          {formattedPrice}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const FeaturedAccommodationCard = ({ room }: Props) => {
-  const [headerColor, setHeaderColor] = useState("#792868");
+  const [headerColor, setHeaderColor] = useState("");
+  const { convertPrice, formatPrice } = useCurrency();
 
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
@@ -108,7 +124,12 @@ const FeaturedAccommodationCard = ({ room }: Props) => {
   return (
     <div className="rounded-[3rem] bg-card text-card-foreground shadow-md overflow-hidden w-[252px] h-auto flex flex-col">
       <FeaturedAccommodationImage image={room.image} name={room.name} />
-      <FeaturedAccommodationDetails room={room} headerColor={headerColor} />
+      <FeaturedAccommodationDetails 
+        room={room} 
+        headerColor={headerColor} 
+        convertPrice={convertPrice}
+        formatPrice={formatPrice}
+      />
     </div>
   );
 };

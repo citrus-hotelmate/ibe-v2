@@ -44,16 +44,16 @@ function RoomTypeLoader({ onLoaded }: { onLoaded: (roomTypeNames: string[]) => v
 
 function UrlParamChecker({ onHasParams }: { onHasParams: (hasParams: boolean) => void }) {
   const searchParams = useSearchParams();
-  
+
   useEffect(() => {
     const hasUrlParams = Boolean(
-      searchParams.get("email") || 
-      searchParams.get("name") || 
+      searchParams.get("email") ||
+      searchParams.get("name") ||
       searchParams.get("contact")
     );
     onHasParams(hasUrlParams);
   }, [searchParams, onHasParams]);
-  
+
   return null;
 }
 
@@ -76,7 +76,7 @@ import { PhoneInput } from "@/components/phone-input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import Header from "@/components/header"
+import Navbar from "@/components/navbar"
 import { useCurrency } from "@/components/currency-context"
 import { CurrencySelector } from "@/components/currency-selector"
 
@@ -112,6 +112,7 @@ function BookPageContent() {
   const [headerColor, setHeaderColor] = useState("#792868")
   const [roomTypeNames, setRoomTypeNames] = useState<string[]>([])
   const [hasUrlParams, setHasUrlParams] = useState(false)
+  const [showWishlist, setShowWishlist] = useState(false)
 
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
 
@@ -132,7 +133,7 @@ function BookPageContent() {
   // Restore reservation summary from localStorage if available
   const { bookingDetails, updateBookingDetails, updateRoom, incrementRoomQuantity, decrementRoomQuantity } =
     useBooking()
-  
+
   useEffect(() => {
     // Only restore from localStorage if there are no URL params (to avoid overriding them)
     if (!hasUrlParams) {
@@ -333,16 +334,19 @@ function BookPageContent() {
   }, [isMounted, finalTotal]);
 
 
- 
+
   // Check if same-day booking is available
   const isSameDay = new Date().toDateString() === (bookingDetails.checkIn?.toDateString() || "")
 
   return (
     <>
-      <Header />
       <Suspense fallback={null}>
         <UrlParamChecker onHasParams={setHasUrlParams} />
       </Suspense>
+      <Navbar
+        showWishlist={showWishlist}
+        onToggleWishlistAction={() => setShowWishlist(!showWishlist)}
+      />
       <div className="container max-w-7xl mx-auto px-4 py-8">
         {/* Heading and Currency Selector */}
         <div className="flex justify-between items-center mb-4">
@@ -469,12 +473,6 @@ function BookPageContent() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      To change dates, please return to the{" "}
-                      <a href="/" className="underline" style={{ color: headerColor }}>
-                        landing page
-                      </a>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -515,7 +513,7 @@ function BookPageContent() {
                       value={bookingDetails.nationality}
                       onValueChange={(value) => {
                         const selectedCountry = countries.find(c => c.countryId.toString() === value);
-                        updateBookingDetails({ 
+                        updateBookingDetails({
                           nationality: value,
                           dialCode: selectedCountry?.dialCode || ''
                         });
@@ -528,7 +526,7 @@ function BookPageContent() {
                         {countries.map((country) => (
                           <SelectItem key={country.countryId} value={country.countryId.toString()}>
                             <span className="mr-2">{country.country}</span>
-                         
+
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -599,9 +597,8 @@ function BookPageContent() {
                       <div className="grid gap-1.5 leading-none">
                         <label
                           htmlFor="terms"
-                          className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                            formErrors.terms ? "text-red-500" : ""
-                          }`}
+                          className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${formErrors.terms ? "text-red-500" : ""
+                            }`}
                         >
                           I agree to the terms and conditions
                         </label>

@@ -93,7 +93,7 @@ type Room = {
   exadultrate: number;
 }
 
-import  RoomCard  from "@/components/room-card"
+import RoomCard from "@/components/room-card"
 import { AvailabilityCalendar } from "@/components/availability-calendar"
 import { ReviewsSection } from "@/components/reviews-section"
 import { GuestSelector } from "@/components/guest-selector"
@@ -101,13 +101,14 @@ import { cn } from "@/lib/utils"
 import Header from "@/components/header"
 import { useCurrency } from "@/components/currency-context"
 import { CurrencySelector } from "@/components/currency-selector"
+import { getAllHotels } from "@/controllers/ibeController"
 
 export default function PropertyPage() {
   // REMOVED: localStorage.clear() - this was causing the date loss
   // useEffect(() => {
   //   localStorage.clear();
   // }, []);
-  
+
   // Ref for the "View Available Rooms" button
   const viewRoomsButtonRef = useRef<HTMLButtonElement>(null);
   // PromoDetails type includes all fields present in promo JSON
@@ -174,25 +175,25 @@ export default function PropertyPage() {
     }
   }, []);
 
-    useEffect(() => {
-      const fetchPromoCodes = async () => {
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/GetPromoCodes.aspx`);
-          const data = await res.json();
-        
-          setAllPromos(data);
+  useEffect(() => {
+    const fetchPromoCodes = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/GetPromoCodes.aspx`);
+        const data = await res.json();
 
-          // Centralized promotion matching logic via matchPromoCode helper
-          const matched = matchPromoCode(data, promoCode, bookingDetails);
+        setAllPromos(data);
 
-          setPromoDetails(matched || null);
-        } catch (err) {
-          console.error("Promo fetch failed", err);
-        }
-      };
+        // Centralized promotion matching logic via matchPromoCode helper
+        const matched = matchPromoCode(data, promoCode, bookingDetails);
 
-      fetchPromoCodes();
-    }, [promoCode, bookingDetails.checkIn, bookingDetails.nights]);
+        setPromoDetails(matched || null);
+      } catch (err) {
+        console.error("Promo fetch failed", err);
+      }
+    };
+
+    fetchPromoCodes();
+  }, [promoCode, bookingDetails.checkIn, bookingDetails.nights]);
 
   // Provide a default value for rooms, adults, and children if not present
   const bookingDetailsWithRooms: BookingDetailsWithChildAges = {
@@ -224,15 +225,18 @@ export default function PropertyPage() {
 
     fetchPackages();
   }, [currency]);
-  
+
   useEffect(() => {
     const fetchHotelDetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/API/GetHotelDetail.aspx`)
-        const data = await res.json()
-        setHotelData(data)
-        if (data.WhatsAppNo) {
-          setWhatsappNumber(data.WhatsAppNo)
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+        const hotels = await getAllHotels({ token });
+        if (hotels && hotels.length > 0) {
+          const data = hotels[0];
+          setHotelData(data);
+          if (data.WhatsAppNo) {
+            setWhatsappNumber(data.WhatsAppNo);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch hotel details", error)
@@ -253,12 +257,12 @@ export default function PropertyPage() {
         to: bookingDetails.checkOut,
       };
     }
-    
+
     // Only use defaults if no dates are available
     const today = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(today.getDate() + 1);
-    
+
     return {
       from: today,
       to: tomorrow,
@@ -275,7 +279,7 @@ export default function PropertyPage() {
     }
   }, [bookingDetails.checkIn, bookingDetails.checkOut]);
 
-  interface AvailableRoom extends Room {}
+  interface AvailableRoom extends Room { }
 
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[]>([])
 
@@ -301,157 +305,157 @@ export default function PropertyPage() {
     // Do not update bookingDetails here; update on button click instead
   }
 
-    useEffect(() => {
-      const fetchRoomRates = async () => {
-        if (!bookingDetailsWithRooms.checkIn || !bookingDetailsWithRooms.checkOut) return;
+  useEffect(() => {
+    const fetchRoomRates = async () => {
+      if (!bookingDetailsWithRooms.checkIn || !bookingDetailsWithRooms.checkOut) return;
 
-        const dateFrom = format(bookingDetailsWithRooms.checkIn, "MM/dd/yyyy");
-        const dateTo = format(bookingDetailsWithRooms.checkOut, "MM/dd/yyyy");
+      const dateFrom = format(bookingDetailsWithRooms.checkIn, "MM/dd/yyyy");
+      const dateTo = format(bookingDetailsWithRooms.checkOut, "MM/dd/yyyy");
 
-        // Utility to safely parse rates as numbers, fallback to 0 if invalid
-        const parseRate = (val: any) => Number(val) || 0;
+      // Utility to safely parse rates as numbers, fallback to 0 if invalid
+      const parseRate = (val: any) => Number(val) || 0;
 
-        try {
-          const res = await fetch(
-            `${API_BASE_URL}/API/GetRoomRates.aspx?datefrom=${dateFrom}&dateto=${dateTo}&currency=US$`
-          );
-          const data: RoomRateApiResponse[] = await res.json();
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/API/GetRoomRates.aspx?datefrom=${dateFrom}&dateto=${dateTo}&currency=US$`
+        );
+        const data: RoomRateApiResponse[] = await res.json();
 
-          // Sort data array by seq before mapping
-          interface RoomRateApiResponse {
-            seq?: number;
-            roomtypeid: number;
-            roomtype: string;
-            roomtypedesc: string;
-            mainimageurl: string;
-            standardoccupancy: number;
-            maxavailable: number;
-            maxadult: number;
-            maxchild: number;
-            mealplan: string;
-            singlerate: number | string;
-            doublerate: number | string;
-            triplerate: number | string;
-            qdplrate?: number | string;
-            familyerate?: number | string;
-            childrate?: number | string;
-            childagelower?: number | string;
-            childagehigher?: number | string;
-            discount?: number;
-            bedType?: string;
-            size?: string;
-            features?: string[];
-            image?: string;
-            amenities?: string[];
-            policies?: string[];
-            photos?: string[];
-            availability?: number;
-            popular?: boolean;
-            defaultMealPlan?: string;
-            availableMealPlans?: string[];
-          }
-
-          data.sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
-
-          const totalGuests = (bookingDetailsWithRooms.adults || 0) + (bookingDetailsWithRooms.children || 0);
-          const requiredRooms = bookingDetailsWithRooms.rooms || 1;
-
-          const roomsWithRates = data
-            .filter((room) => {
-              const maxGuestsPerRoom = room.maxadult + room.maxchild;
-              return room.maxavailable >= requiredRooms && maxGuestsPerRoom >= totalGuests / requiredRooms;
-            })
-            .map((room) => {
-              const adults = bookingDetailsWithRooms.adults || 0;
-              const children = bookingDetailsWithRooms.children || 0;
-
-              let baseRate = 0;
-
-              if (adults === 1) {
-                baseRate = parseRate(room.singlerate);
-              } else if (adults === 2) {
-                baseRate = parseRate(room.doublerate);
-              } else if (adults === 3) {
-                baseRate = parseRate(room.triplerate);
-              } else if (adults === 4) {
-                baseRate = parseRate(room.qdplrate);
-              } else if (adults > 4) {
-                baseRate = parseRate(room.familyerate);
-              }
-              // Add extra adult charge if adults > 4
-              if (adults > 4) {
-                baseRate += parseRate(room.exadultrate) * (adults - 4);
-              }
-
-              const childRate = parseRate(room.childrate);
-              const childAgeLower = parseRate(room.childagelower);
-              const childAgeHigher = parseRate(room.childagehigher);
-
-              let applicableChildren = 0;
-              if (Array.isArray(bookingDetailsWithRooms.childAges)) {
-                applicableChildren = bookingDetailsWithRooms.childAges.filter(
-                  (age) => age >= childAgeLower && age <= childAgeHigher
-                ).length;
-              } else {
-                applicableChildren = children; // fallback if no specific ages
-              }
-
-              const rate = baseRate + (childRate > 0 ? childRate * applicableChildren : 0);
-
-        
-
-              return {
-                id: room.roomtypeid,
-                name: room.roomtype,
-                description: room.roomtypedesc,
-                mainimageurl: room.mainimageurl,
-                capacity: room.standardoccupancy,
-                available: room.maxavailable,
-                maxAdult: room.maxadult,
-                maxChild: room.maxchild,
-                mealPlan: room.mealplan,
-                price: rate,
-                // Include all required rate types for dynamic pricing
-                singlerate: parseRate(room.singlerate),
-                doublerate: parseRate(room.doublerate),
-                triplerate: parseRate(room.triplerate),
-                qdplrate: parseRate(room.qdplrate),
-                familyerate: parseRate(room.familyerate),
-                childrate: parseRate(room.childrate),
-                exadultrate: parseRate(room.exadultrate),
-                discount: parseRate(room.discount),
-                // Add missing properties with default or placeholder values
-                roomsize: room.roomsize || "Unknown",
-                bedType: room.bedtype || "Unknown",
-                size: room.size || "Unknown",
-                // Updated: set defaults for features, amenities, policies, photos
-                features: room.features || [],
-                amenities: room.amenities || [],
-                policies: room.policies || [],
-                photos: room.photos || [],
-                // Add missing properties for RoomCard compatibility with defaults
-                availability: room.availability ?? room.maxavailable ?? 0,
-                popular: room.popular ?? false,
-                defaultMealPlan: room.defaultMealPlan ?? room.mealplan ?? "",
-                availableMealPlans: room.availableMealPlans ?? [room.mealplan ?? ""],
-                // Additional properties as requested
-                mealplandesc: room.mealplandesc,
-                maxavailable: room.maxavailable,
-                childagelower: parseRate(room.childagelower),
-                childagehigher: parseRate(room.childagehigher),
-                seq: room.seq ?? 0,
-                minstay: parseRate(room.minstay),
-              };
-            });
-
-          setAvailableRooms(roomsWithRates);
-        } catch (error) {
-          console.error("Failed to fetch room rates", error);
+        // Sort data array by seq before mapping
+        interface RoomRateApiResponse {
+          seq?: number;
+          roomtypeid: number;
+          roomtype: string;
+          roomtypedesc: string;
+          mainimageurl: string;
+          standardoccupancy: number;
+          maxavailable: number;
+          maxadult: number;
+          maxchild: number;
+          mealplan: string;
+          singlerate: number | string;
+          doublerate: number | string;
+          triplerate: number | string;
+          qdplrate?: number | string;
+          familyerate?: number | string;
+          childrate?: number | string;
+          childagelower?: number | string;
+          childagehigher?: number | string;
+          discount?: number;
+          bedType?: string;
+          size?: string;
+          features?: string[];
+          image?: string;
+          amenities?: string[];
+          policies?: string[];
+          photos?: string[];
+          availability?: number;
+          popular?: boolean;
+          defaultMealPlan?: string;
+          availableMealPlans?: string[];
         }
-      };
 
-      fetchRoomRates();
-    }, [bookingDetailsWithRooms.checkIn, bookingDetailsWithRooms.checkOut, bookingDetailsWithRooms.adults, bookingDetailsWithRooms.children]);
+        data.sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
+
+        const totalGuests = (bookingDetailsWithRooms.adults || 0) + (bookingDetailsWithRooms.children || 0);
+        const requiredRooms = bookingDetailsWithRooms.rooms || 1;
+
+        const roomsWithRates = data
+          .filter((room) => {
+            const maxGuestsPerRoom = room.maxadult + room.maxchild;
+            return room.maxavailable >= requiredRooms && maxGuestsPerRoom >= totalGuests / requiredRooms;
+          })
+          .map((room) => {
+            const adults = bookingDetailsWithRooms.adults || 0;
+            const children = bookingDetailsWithRooms.children || 0;
+
+            let baseRate = 0;
+
+            if (adults === 1) {
+              baseRate = parseRate(room.singlerate);
+            } else if (adults === 2) {
+              baseRate = parseRate(room.doublerate);
+            } else if (adults === 3) {
+              baseRate = parseRate(room.triplerate);
+            } else if (adults === 4) {
+              baseRate = parseRate(room.qdplrate);
+            } else if (adults > 4) {
+              baseRate = parseRate(room.familyerate);
+            }
+            // Add extra adult charge if adults > 4
+            if (adults > 4) {
+              baseRate += parseRate(room.exadultrate) * (adults - 4);
+            }
+
+            const childRate = parseRate(room.childrate);
+            const childAgeLower = parseRate(room.childagelower);
+            const childAgeHigher = parseRate(room.childagehigher);
+
+            let applicableChildren = 0;
+            if (Array.isArray(bookingDetailsWithRooms.childAges)) {
+              applicableChildren = bookingDetailsWithRooms.childAges.filter(
+                (age) => age >= childAgeLower && age <= childAgeHigher
+              ).length;
+            } else {
+              applicableChildren = children; // fallback if no specific ages
+            }
+
+            const rate = baseRate + (childRate > 0 ? childRate * applicableChildren : 0);
+
+
+
+            return {
+              id: room.roomtypeid,
+              name: room.roomtype,
+              description: room.roomtypedesc,
+              mainimageurl: room.mainimageurl,
+              capacity: room.standardoccupancy,
+              available: room.maxavailable,
+              maxAdult: room.maxadult,
+              maxChild: room.maxchild,
+              mealPlan: room.mealplan,
+              price: rate,
+              // Include all required rate types for dynamic pricing
+              singlerate: parseRate(room.singlerate),
+              doublerate: parseRate(room.doublerate),
+              triplerate: parseRate(room.triplerate),
+              qdplrate: parseRate(room.qdplrate),
+              familyerate: parseRate(room.familyerate),
+              childrate: parseRate(room.childrate),
+              exadultrate: parseRate(room.exadultrate),
+              discount: parseRate(room.discount),
+              // Add missing properties with default or placeholder values
+              roomsize: room.roomsize || "Unknown",
+              bedType: room.bedtype || "Unknown",
+              size: room.size || "Unknown",
+              // Updated: set defaults for features, amenities, policies, photos
+              features: room.features || [],
+              amenities: room.amenities || [],
+              policies: room.policies || [],
+              photos: room.photos || [],
+              // Add missing properties for RoomCard compatibility with defaults
+              availability: room.availability ?? room.maxavailable ?? 0,
+              popular: room.popular ?? false,
+              defaultMealPlan: room.defaultMealPlan ?? room.mealplan ?? "",
+              availableMealPlans: room.availableMealPlans ?? [room.mealplan ?? ""],
+              // Additional properties as requested
+              mealplandesc: room.mealplandesc,
+              maxavailable: room.maxavailable,
+              childagelower: parseRate(room.childagelower),
+              childagehigher: parseRate(room.childagehigher),
+              seq: room.seq ?? 0,
+              minstay: parseRate(room.minstay),
+            };
+          });
+
+        setAvailableRooms(roomsWithRates);
+      } catch (error) {
+        console.error("Failed to fetch room rates", error);
+      }
+    };
+
+    fetchRoomRates();
+  }, [bookingDetailsWithRooms.checkIn, bookingDetailsWithRooms.checkOut, bookingDetailsWithRooms.adults, bookingDetailsWithRooms.children]);
 
   const nextImage = () => {
     const images = hotelData?.images || propertyData.images || [];
@@ -459,15 +463,15 @@ export default function PropertyPage() {
       images.length === 0
         ? 0
         : prev === images.length - 1
-        ? 0
-        : prev + 1
+          ? 0
+          : prev + 1
     );
   };
 
   const prevImage = () => {
-      const images = hotelData?.images || propertyData.images || [];
-      setCurrentImageIndex((prev) => (images.length === 0 ? 0 : prev === 0 ? images.length - 1 : prev - 1));
-    }
+    const images = hotelData?.images || propertyData.images || [];
+    setCurrentImageIndex((prev) => (images.length === 0 ? 0 : prev === 0 ? images.length - 1 : prev - 1));
+  }
 
   const handleProceedToBooking = () => {
     if (bookingDetails.selectedRooms.length === 0) {
@@ -475,7 +479,7 @@ export default function PropertyPage() {
       return
     }
 
-    
+
     // Store reservation details in localStorage before routing
     const reservationSummary = {
       selectedRooms: bookingDetails.selectedRooms,
@@ -910,10 +914,10 @@ export default function PropertyPage() {
                       selectedRooms: bookingDetails.selectedRooms.map(room =>
                         Number(room.roomId) === roomId
                           ? {
-                              ...room,
-                              price: newRate,
-                              selectedMealPlanPrice: newRate, // optional, for clarity
-                            }
+                            ...room,
+                            price: newRate,
+                            selectedMealPlanPrice: newRate, // optional, for clarity
+                          }
                           : room
                       )
                     });
@@ -1055,8 +1059,8 @@ export default function PropertyPage() {
                               {promo.PromoType === "PERCENTAGE"
                                 ? `${promo.Value}% off`
                                 : promo.PromoType === "FREE NIGHTS"
-                                ? `Stay ${promo.Value} nights, get ${promo.FreeNights} free`
-                                : ""}
+                                  ? `Stay ${promo.Value} nights, get ${promo.FreeNights} free`
+                                  : ""}
                             </div>
                           </div>
                         ))}
@@ -1202,7 +1206,7 @@ export default function PropertyPage() {
                             {formatPrice(
                               convertPrice(
                                 adjustedTotal +
-                                  selectedPackages.reduce((sum, pkg) => sum + pkg.Price, 0)
+                                selectedPackages.reduce((sum, pkg) => sum + pkg.Price, 0)
                               )
                             )}
                           </span>
@@ -1229,28 +1233,28 @@ export default function PropertyPage() {
           </div>
         </div>
       </div>
-    {/* WhatsApp Floating Chat Button */}
-    <div
-      className="fixed bottom-6 right-6 z-50"
-      style={{ zIndex: 9999 }}
-    >
-      <a
-        href={whatsappNumber ? `https://wa.me/${whatsappNumber}` : "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg flex items-center justify-center"
+      {/* WhatsApp Floating Chat Button */}
+      <div
+        className="fixed bottom-6 right-6 z-50"
+        style={{ zIndex: 9999 }}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          fill="currentColor"
-          viewBox="0 0 24 24"
+        <a
+          href={whatsappNumber ? `https://wa.me/${whatsappNumber}` : "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg flex items-center justify-center"
         >
-          <path d="M20.52 3.48A11.87 11.87 0 0012 0C5.37 0 0 5.37 0 12a11.94 11.94 0 001.67 6.13L0 24l5.87-1.54A11.94 11.94 0 0012 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.48-8.52zM12 22a9.94 9.94 0 01-5.09-1.39l-.36-.21-3.49.92.93-3.4-.23-.36A9.94 9.94 0 012 12c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10zm5.25-7.85c-.29-.15-1.7-.84-1.97-.93-.26-.1-.45-.15-.64.15-.18.29-.74.93-.91 1.12-.17.18-.34.2-.63.07-.29-.14-1.23-.45-2.34-1.43-.86-.76-1.44-1.7-1.61-1.98-.17-.29-.02-.45.13-.6.14-.14.29-.34.44-.5.15-.17.2-.29.3-.48.1-.2.05-.36-.03-.51-.07-.14-.64-1.55-.88-2.13-.23-.56-.47-.49-.64-.5l-.54-.01c-.18 0-.47.07-.71.34-.24.27-.94.91-.94 2.21s.97 2.56 1.1 2.74c.13.18 1.91 2.91 4.63 4.08.65.28 1.15.44 1.54.57.65.21 1.24.18 1.7.11.52-.08 1.7-.69 1.94-1.36.24-.66.24-1.22.17-1.34-.07-.12-.26-.18-.54-.32z" />
-        </svg>
-      </a>
-    </div>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M20.52 3.48A11.87 11.87 0 0012 0C5.37 0 0 5.37 0 12a11.94 11.94 0 001.67 6.13L0 24l5.87-1.54A11.94 11.94 0 0012 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.48-8.52zM12 22a9.94 9.94 0 01-5.09-1.39l-.36-.21-3.49.92.93-3.4-.23-.36A9.94 9.94 0 012 12c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10zm5.25-7.85c-.29-.15-1.7-.84-1.97-.93-.26-.1-.45-.15-.64.15-.18.29-.74.93-.91 1.12-.17.18-.34.2-.63.07-.29-.14-1.23-.45-2.34-1.43-.86-.76-1.44-1.7-1.61-1.98-.17-.29-.02-.45.13-.6.14-.14.29-.34.44-.5.15-.17.2-.29.3-.48.1-.2.05-.36-.03-.51-.07-.14-.64-1.55-.88-2.13-.23-.56-.47-.49-.64-.5l-.54-.01c-.18 0-.47.07-.71.34-.24.27-.94.91-.94 2.21s.97 2.56 1.1 2.74c.13.18 1.91 2.91 4.63 4.08.65.28 1.15.44 1.54.57.65.21 1.24.18 1.7.11.52-.08 1.7-.69 1.94-1.36.24-.66.24-1.22.17-1.34-.07-.12-.26-.18-.54-.32z" />
+          </svg>
+        </a>
+      </div>
     </>
   )
 }

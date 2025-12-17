@@ -9,7 +9,7 @@ export function CurrencySelector() {
   const { currency, setCurrency, currencies } = useCurrency()
   const pathname = usePathname()
 
-  const isPaymentPage = pathname === "/payment" || pathname === "/confirmed";
+  const isPaymentPage = pathname === "/payment" || pathname.startsWith("/tentative");
   const allowedCodes = isPaymentPage ? ["USD", "LKR"] : currencies.map((c) => c.code)
 
   const filteredCurrencies = currencies.filter((c) => allowedCodes.includes(c.code))

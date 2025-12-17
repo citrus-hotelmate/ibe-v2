@@ -111,4 +111,18 @@ export interface Hotel {
   cmActivationRequestedBy: string | null;
 
   groupName: string | null;
+
+  // IBE-specific properties
+  IBE_AllowPayAtProperty?: boolean;
+  IBE_isIPGActive?: boolean;
+  IBE_Pay50?: boolean;
+  IBE_LogoURL?: string;
+  IBEHeaderColour?: string;
+  HotelName?: string;
+  Address?: string;
+  HotelScore?: number;
+  StarCat?: number;
+  WhatsAppNo?: string;
+  HotelNetworkID?: string;
+  images?: any[];
 }

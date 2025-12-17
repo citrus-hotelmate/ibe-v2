@@ -20,10 +20,12 @@ import { AvailableRoom } from "@/types/roomType";
 import RoomCard from "@/components/room-card";
 import { HotelRatePlan } from "@/types/hotelRatePlans";
 import { useBooking } from "@/components/booking-context";
+import { useCurrency } from "@/components/currency-context";
 
 export default function PropertyPage() {
   // Get booking context
   const { bookingDetails, updateBookingDetails, addRoom } = useBooking();
+  const { convertPrice, formatPrice } = useCurrency();
   const [headerColor, setHeaderColor] = useState("");
 
   useEffect(() => {
@@ -619,19 +621,20 @@ export default function PropertyPage() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="font-semibold">
-                                  $
+                                <div className="font-semibold notranslate">
                                   {(() => {
-                                    if (!dateRange.from || !dateRange.to) return '0.00';
+                                    if (!dateRange.from || !dateRange.to) return formatPrice(0);
                                     const nights = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-                                    return ((room.averageRate || 0) * nights * room.quantity).toFixed(2);
+                                    const totalPrice = (room.averageRate || 0) * nights * room.quantity;
+                                    return formatPrice(convertPrice(totalPrice));
                                   })()}
                                 </div>
-                                <div className="text-sm text-gray-600">
-                                  ${(() => {
-                                    if (!dateRange.from || !dateRange.to) return '0.00';
+                                <div className="text-sm text-gray-600 notranslate">
+                                  {(() => {
+                                    if (!dateRange.from || !dateRange.to) return formatPrice(0);
                                     const nights = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-                                    return ((room.averageRate || 0) * nights * room.quantity).toFixed(2);
+                                    const totalPrice = (room.averageRate || 0) * nights * room.quantity;
+                                    return formatPrice(convertPrice(totalPrice));
                                   })()}/night
                                 </div>
                               </div>
@@ -698,8 +701,7 @@ export default function PropertyPage() {
                 <div className="pt-4 mt-4 border-t">
                   <div className="flex justify-between font-medium text-sm">
                     <span>Total</span>
-                    <span>
-                      $
+                    <span className="notranslate">
                       {(() => {
                         if (
                           !dateRange.from ||
@@ -707,7 +709,7 @@ export default function PropertyPage() {
                           !bookingDetails.selectedRooms ||
                           bookingDetails.selectedRooms.length === 0
                         )
-                          return "0.00";
+                          return formatPrice(0);
                         const nights = Math.ceil(
                           (dateRange.to.getTime() - dateRange.from.getTime()) /
                           (1000 * 60 * 60 * 24)
@@ -717,7 +719,7 @@ export default function PropertyPage() {
                             acc + (room.averageRate || 0) * room.quantity,
                           0
                         );
-                        return (total * nights).toFixed(2);
+                        return formatPrice(convertPrice(total * nights));
                       })()}
                     </span>
                   </div>

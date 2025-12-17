@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Home, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
+import { getAllHotels } from "@/controllers/ibeController"
 import Image from "next/image"
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector"
 import { CurrencySelector } from "@/components/currency-selector"
@@ -14,9 +15,9 @@ import { CurrencySelector } from "@/components/currency-selector"
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
-  const [logoUrl, setLogoUrl] = useState("")
+  const [logoUrl, setLogoUrl] = useState("/WhiteLogo.png")
   const [scrolled, setScrolled] = useState(false)
-  const [headerColor, setHeaderColor] = useState("#70614c")
+  const [headerColor, setHeaderColor] = useState("")
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,16 +35,19 @@ export default function Header() {
         if (storedColor) {
           setHeaderColor(storedColor);
         }
-        
-        const res = await fetch(`${API_BASE_URL}/API/GetHotelDetail.aspx`)
-        const data = await res.json()
-        if (data.IBE_LogoURL) {
-          setLogoUrl(data.IBE_LogoURL)
-        }
-        
-        // Use API color only if no localStorage color exists
-        if (!storedColor && data.IBEHeaderColour) {
-          setHeaderColor(data.IBEHeaderColour);
+
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+        const hotels = await getAllHotels({ token });
+        if (hotels && hotels.length > 0) {
+          const data = hotels[0];
+          if (data.IBE_LogoURL) {
+            setLogoUrl(data.IBE_LogoURL);
+          }
+
+          // Use API color only if no localStorage color exists
+          if (!storedColor && data.IBEHeaderColour) {
+            setHeaderColor(data.IBEHeaderColour);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch logo", err)
@@ -76,8 +80,8 @@ export default function Header() {
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b shadow-sm transition-colors duration-300 notranslate ${scrolled ? "backdrop-blur" : ""}`}
-      style={{ 
-        backgroundColor: scrolled 
+      style={{
+        backgroundColor: scrolled
           ? `${headerColor}CC` // Adding CC for 80% opacity
           : headerColor
       }}

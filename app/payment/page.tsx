@@ -31,9 +31,9 @@ import { format } from "date-fns";
 import { useBooking } from "@/components/booking-context";
 import { generateBookingId } from "@/lib/utils";
 import { generateRefNo } from "@/lib/randomNumberGenerator";
-import Header from "@/components/header";
 import { useCurrency } from "@/components/currency-context";
 import { CurrencySelector } from "@/components/currency-selector";
+import Navbar from "@/components/navbar";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -59,13 +59,17 @@ export default function PaymentPage() {
 
   // isMounted state for client-only rendering
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Header color state management
   const [headerColor, setHeaderColor] = useState<string>("#70614c");
 
+  // Wishlist state for Navbar
+  const [showWishlist, setShowWishlist] = useState(false);
+  const handleToggleWishlist = () => setShowWishlist(!showWishlist);
+
   useEffect(() => {
     setIsMounted(true);
-    
+
     // Get header color from localStorage
     const storedHeaderColor = localStorage.getItem("ibeHeaderColour");
     if (storedHeaderColor) {
@@ -94,48 +98,83 @@ export default function PaymentPage() {
         }
       }
     }
-    
+
     // Get selected hotel details
     const savedHotel = localStorage.getItem("selectedHotel");
     console.log("Saved hotel from localStorage:", savedHotel);
-    
+
     if (savedHotel) {
       try {
         const hotelData = JSON.parse(savedHotel);
         console.log("Parsed hotel data:", hotelData);
-        
+
         updateBookingDetails({
           hotelId: hotelData.id.toString(),
           hotelName: hotelData.name,
           hotelImageUrl: hotelData.image
         });
-        
+
         console.log("Updated booking details with hotel ID:", hotelData.id.toString());
       } catch (e) {
         console.error("Failed to parse stored hotel details", e);
       }
     }
+
+    // Fetch IPG credentials - TESTING: Use hotel 0 for CyberSource credentials
+    const fetchIPGCredentials = async () => {
+      try {
+        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
+        // TESTING: Hardcode to hotel 0 which has CyberSource credentials
+        const testHotelId = 0;
+        console.log("🔄 Fetching IPG credentials for hotel:", testHotelId, "(CyberSource test)");
+
+        const ipgData = await getHotelIPGByHotelId({
+          token,
+          hotelId: testHotelId
+        });
+
+        if (ipgData && ipgData.length > 0) {
+          console.log("✅ IPG Credentials loaded:", {
+            ipgId: ipgData[0].ipgId,
+            ipgName: ipgData[0].ipgName,
+            hasAccessKey: !!ipgData[0].accessKeyUSD,
+            hasProfileId: !!ipgData[0].profileIdUSD,
+            hasSecretKey: !!ipgData[0].secretKey
+          });
+          setIpgCredentials(ipgData[0]);
+          setCurrentHotelId(testHotelId);
+          setAllowPayAtProperty(true); // Enable pay later for testing
+          setIsIPGActive(ipgData[0].isIPGActive);
+        } else {
+          console.error("❌ No IPG credentials found for hotel", testHotelId);
+        }
+      } catch (error) {
+        console.error("Failed to fetch IPG credentials", error);
+      }
+    };
+
+    fetchIPGCredentials();
   }, []);
 
   useEffect(() => {
     const fetchPaymentOptions = async () => {
       try {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-        
+
         // Get hotel ID from localStorage
         const savedHotel = localStorage.getItem("selectedHotel");
         if (savedHotel) {
           const hotelData = JSON.parse(savedHotel);
           const hotelId = hotelData.id;
           setCurrentHotelId(hotelId);
-          
+
           // Fetch IPG credentials for this hotel
           try {
-            const ipgData = await getHotelIPGByHotelId({ 
-              token: token || "", 
-              hotelId 
+            const ipgData = await getHotelIPGByHotelId({
+              token: token || "",
+              hotelId
             });
-            
+
             if (ipgData && ipgData.length > 0) {
               setIpgCredentials(ipgData[0]);
               setIsIPGActive(ipgData[0].isIPGActive);
@@ -149,10 +188,10 @@ export default function PaymentPage() {
             setIsIPGActive(false);
           }
         }
-        
+
         // For now, always allow pay at property
         setAllowPayAtProperty(true);
-        
+
       } catch (error) {
         console.error("Error fetching payment options:", error);
         // Set default values in case of error
@@ -237,7 +276,7 @@ export default function PaymentPage() {
     updateBookingDetails({ bookingId });
 
     console.log("Current booking details before payment:", bookingDetails);
-    
+
     if (bookingDetails.paymentMethod === "arrival") {
       try {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
@@ -269,8 +308,8 @@ export default function PaymentPage() {
 
         console.log("Hotel ID being used:", hotelId);
         console.log("Selected rooms data:", selectedRooms);
-        console.log("Room meal plan IDs:", selectedRooms.map(room => ({ 
-          roomId: room.roomId, 
+        console.log("Room meal plan IDs:", selectedRooms.map(room => ({
+          roomId: room.roomId,
           mealPlanId: room.mealPlanId,
           parsedMealPlanId: parseInt(room.mealPlanId || "1") || 1
         })));
@@ -301,7 +340,7 @@ export default function PaymentPage() {
                 },
                 status: "new",
                 services: [],
-                currency: currency || "USD",
+                currency: "USD", // Always use USD for payment processing
                 amount: finalTotal.toFixed(2),
                 rate_code_id: expandedRooms.length > 0 ? parseInt(expandedRooms[0].roomId) : null,
                 created_by: name || "",
@@ -349,7 +388,7 @@ export default function PaymentPage() {
                     const checkInDate = new Date(checkIn);
                     const checkOutDate = new Date(checkOut);
                     const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
-                    
+
                     for (let i = 0; i < totalNights; i++) {
                       const currentDate = new Date(checkInDate);
                       currentDate.setDate(currentDate.getDate() + i);
@@ -358,18 +397,18 @@ export default function PaymentPage() {
                       daysObj[dateStr] = dailyRate.toFixed(2);
                     }
                   }
-                  
+
                   const roomAmount = Object.values(daysObj).reduce((sum, v) => sum + parseFloat(v), 0);
-                  
+
                   // Ensure we have a valid rate plan ID (don't use 0 as it causes errors)
                   const validRatePlanId = parseInt(room.mealPlanId || "1") || 1;
                   if (validRatePlanId === 0) {
                     console.warn(`Invalid rate plan ID (0) for room ${room.roomId}, using default value 1`);
                   }
-                  
+
                   // Determine reservation status: 1 for card (cybersource), 2 for pay at property
                   const reservationStatusId = bookingDetails.paymentMethod === "cybersource" ? 1 : 2;
-                  
+
                   return {
                     reservation_status_id: reservationStatusId,
                     is_foc: false,
@@ -446,14 +485,29 @@ export default function PaymentPage() {
           dateTime: new Date().toISOString(),
         };
 
+        console.log("💰 Payment Currency Enforcement:", {
+          displayCurrency: currency,
+          paymentCurrency: "USD",
+          amount: finalTotal.toFixed(2),
+          note: "Payment always processes in USD regardless of display currency"
+        });
         console.log("Full payload being sent:", JSON.stringify(payload, null, 2));
         console.log("Total rooms in payload:", payload.data[0].attributes.rooms.length);
         console.log("Room booking IDs:", payload.data[0].attributes.rooms.map(r => r.booking_room_id));
+
+        // Generate booking ID BEFORE API call
+        const refNo = generateRefNo();
+        console.log("Generated Booking ID:", refNo);
+
+        // Store booking ID in localStorage with booking details
+        localStorage.setItem("currentBookingId", refNo);
+        const updatedBookingDetails = { ...bookingDetails, bookingId: refNo };
+        localStorage.setItem("bookingDetails", JSON.stringify(updatedBookingDetails));
+
         const response = await createBookingFeed({ token, payload });
         if (response) {
-          const refNo = generateRefNo();
           localStorage.setItem("payment_collect", "later");
-          router.push(`/confirmed?refno=${refNo}`);
+          router.push(`/tentative/${refNo}`);
         } else {
           throw new Error("Failed to create booking");
         }
@@ -469,20 +523,45 @@ export default function PaymentPage() {
           return;
         }
 
-        if (!currentHotelId) {
-          alert("Hotel information not available.");
-          setIsProcessing(false);
-          return;
-        }
+        // TESTING: Use hardcoded hotel ID 0
+        const testHotelId = 0;
+        console.log("💳 Processing CyberSource payment for hotel:", testHotelId);
 
         const finalBookingId = bookingDetails.bookingId || generateBookingId();
-        
-        // Calculate final total
-        const roomsTotal = bookingDetails.selectedRooms.reduce(
-          (total, room) => total + room.price * room.quantity,
+
+        // Calculate final total - USE CORRECT RATE WITH MEAL PLANS
+        const nights = bookingDetails.nights || 0;
+        const roomSubtotal = bookingDetails.selectedRooms.reduce((total, room) => {
+          // Use averageRate which includes meal plans, or fall back to price
+          const perNight = room.averageRate || room.price || 0;
+          return total + (perNight * nights * room.quantity);
+        }, 0);
+
+        // Add packages if any
+        const packagesTotal = (bookingDetails.selectedPackages ?? []).reduce(
+          (total: number, pkg: any) => {
+            const q = Number(pkg.quantity) || 1;
+            const p = Number(pkg.Price) || 0;
+            return total + p * q;
+          },
           0
-        );
-        const finalTotal = roomsTotal - voucherAmount;
+        ) || 0;
+
+        const finalTotal = roomSubtotal + packagesTotal - voucherAmount;
+
+        console.log("💰 Payment Calculation:", {
+          roomSubtotal,
+          packagesTotal,
+          voucherAmount,
+          finalTotal,
+          nights,
+          rooms: bookingDetails.selectedRooms.map(r => ({
+            name: r.roomName,
+            averageRate: r.averageRate,
+            price: r.price,
+            quantity: r.quantity
+          }))
+        });
 
         // Prepare fields for CyberSource
         const fields: Record<string, string> = {
@@ -496,19 +575,25 @@ export default function PaymentPage() {
           transaction_type: "sale",
           reference_number: finalBookingId,
           amount: finalTotal.toFixed(2),
-          currency: bookingDetails.currency || "USD",
+          currency: "USD", // Always use USD for payment processing
           bill_address1: "Address",
           bill_city: "City",
           bill_country: bookingDetails.nationality || "US",
         };
 
+        console.log("💰 CyberSource Payment Currency Enforcement:", {
+          displayCurrency: bookingDetails.currency,
+          paymentCurrency: "USD",
+          amount: finalTotal.toFixed(2),
+          note: "Payment gateway always processes in USD"
+        });
         console.log("🔄 Generating CyberSource signature...");
-        
-        // Generate signature via API
+
+        // Generate signature via API - use testHotelId
         const response = await fetch("/api/sign-cybersource", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hotelId: currentHotelId, ...fields }),
+          body: JSON.stringify({ hotelId: testHotelId, ...fields }),
         });
 
         if (!response.ok) {
@@ -546,24 +631,36 @@ export default function PaymentPage() {
           amount: fields.amount,
           currency: fields.currency,
           bookingId: finalBookingId,
-          hotelId: currentHotelId
+          endpoint: endpoint,
+          formAction: form.action,
+          formMethod: form.method
         });
 
         document.body.appendChild(form);
+        console.log("📋 Form appended to body, submitting now...");
         form.submit();
-        
+        console.log("✅ Form submitted to CyberSource");
+
       } catch (error) {
         console.error("❌ CyberSource payment error:", error);
-        alert("Failed to process payment. Please try again.");
+        alert(`Payment processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setIsProcessing(false);
       }
     }
 
+    // Generate booking ID BEFORE navigation
+    const refNo = generateRefNo();
+    console.log("Generated Booking ID (CyberSource):", refNo);
+
+    // Store booking ID in localStorage with booking details
+    localStorage.setItem("currentBookingId", refNo);
+    const updatedBookingDetails = { ...bookingDetails, bookingId: refNo };
+    localStorage.setItem("bookingDetails", JSON.stringify(updatedBookingDetails));
+
     setTimeout(() => {
       setIsProcessing(false);
-      const refNo = generateRefNo();
       localStorage.setItem("payment_collect", "paid");
-      router.push(`/confirmed?refno=${refNo}`);
+      router.push(`/tentative/${refNo}`);
     }, 2000);
   };
 
@@ -596,7 +693,7 @@ export default function PaymentPage() {
 
   return (
     <>
-      <Header />
+      <Navbar showWishlist={showWishlist} onToggleWishlistAction={handleToggleWishlist} />
       <div className="container max-w-7xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-4 mt-2">
           <h2 className="text-3xl font-bold">Payment</h2>
@@ -724,10 +821,10 @@ export default function PaymentPage() {
                 </CardContent>
                 <CardFooter>
                   <div className="w-full space-y-3">
-                    <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 text-sm px-4 py-2 rounded text-center">
+                    {/* <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 text-sm px-4 py-2 rounded text-center">
                       Payment can only be made in <strong>USD</strong> or{" "}
                       <strong>LKR</strong>.
-                    </div>
+                    </div> */}
                     <Button
                       type="submit"
                       className="w-full btn-dynamic"
@@ -737,14 +834,13 @@ export default function PaymentPage() {
                       {isProcessing
                         ? "Processing..."
                         : bookingDetails.paymentMethod === "arrival"
-                        ? "Get Booking Confirmation"
-                        : isMounted
-                        ? `Pay ${
-                            bookingDetails.currency === "LKR"
+                          ? "Get Booking Confirmation"
+                          : isMounted
+                            ? `Pay ${bookingDetails.currency === "LKR"
                               ? formatPrice(finalTotal)
                               : formatPrice(convertPrice(finalTotal))
-                          }`
-                        : `Pay $${finalTotal.toFixed(2)}`}
+                            }`
+                            : `Pay $${finalTotal.toFixed(2)}`}
                     </Button>
                   </div>
                 </CardFooter>
@@ -812,8 +908,7 @@ export default function PaymentPage() {
                       {roomBooking.adults}{" "}
                       {roomBooking.adults === 1 ? "adult" : "adults"}
                       {roomBooking.children > 0 &&
-                        `, ${roomBooking.children} ${
-                          roomBooking.children === 1 ? "child" : "children"
+                        `, ${roomBooking.children} ${roomBooking.children === 1 ? "child" : "children"
                         }`}
                     </p>
                     <div className="text-sm mt-1 text-muted-foreground">

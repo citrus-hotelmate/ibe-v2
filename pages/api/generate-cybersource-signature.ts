@@ -47,7 +47,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .update(dataToSign, 'utf8')
       .digest('base64');
 
-    return res.status(200).json({ signature });
+    // Determine endpoint based on sandbox mode
+    const endpoint = ipgCredentials[0].isSandBoxMode || ipgCredentials[0].OnTestMode
+      ? 'https://testsecureacceptance.cybersource.com/pay'
+      : 'https://secureacceptance.cybersource.com/pay';
+
+    return res.status(200).json({ signature, endpoint });
   } catch (error) {
     console.error('Error generating CyberSource signature:', error);
     return res.status(500).json({ error: 'Failed to generate signature' });

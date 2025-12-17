@@ -64,7 +64,7 @@ function PaymentResponseContent() {
   const handleContinue = () => {
     if (paymentStatus === 'success') {
       // Redirect to confirmation page with booking details
-      router.push(`/confirmed?bookingId=${transactionDetails.referenceNumber}`);
+      router.push(`/tentative/${transactionDetails.referenceNumber}`);
     } else {
       // Redirect back to payment page to retry
       router.push('/payment');
