@@ -40,6 +40,7 @@ export default function RoomCard({
 }: RoomCardProps) {
   const [headerColor, setHeaderColor] = useState("");
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [childPolicy, setChildPolicy] = useState<string>("");
 
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
@@ -49,6 +50,9 @@ export default function RoomCard({
         if (selectedHotel.ibeHeaderColour) {
           setHeaderColor(selectedHotel.ibeHeaderColour);
         }
+        if (selectedHotel.childPolicy) {
+          setChildPolicy(selectedHotel.childPolicy);
+        }
       } catch (error) {
         console.error("Failed to parse selectedHotel from localStorage", error);
       }
@@ -56,7 +60,7 @@ export default function RoomCard({
   }, []);
   const [childAges, setChildAges] = useState<number[]>([]);
   const [price, setPrice] = useState<number>(100); // Default room price
-  
+
   // Track the actual selected guest count (not room capacity)
   const [selectedAdults, setSelectedAdults] = useState<number>(2); // Default to 2 adults
   const [selectedChildren, setSelectedChildren] = useState<number>(0); // Default to 0 children
@@ -102,7 +106,7 @@ export default function RoomCard({
     // Update the selected guest count state
     setSelectedAdults(adults);
     setSelectedChildren(children);
-    
+
     // Update the booking context if this room is already added
     if (selectedRoom) {
       updateRoom(roomTypeId?.toString() || "", {
@@ -110,7 +114,7 @@ export default function RoomCard({
         children: children
       });
     }
-    
+
     // Enforce maximum limits for adults and children
     const maxAdult = 3;
     const maxChild = 2;
@@ -239,7 +243,7 @@ export default function RoomCard({
                 </div>
                 <div className="text-right">
                   <div className="text-md font-bold">
-                   {averageRate && bookingDetails.nights
+                    {averageRate && bookingDetails.nights
                       ? `$${(averageRate * bookingDetails.nights).toFixed(2)}`
                       : `$${averageRate?.toFixed(2)}`}
                     <span className="text-sm font-normal text-muted-foreground">
@@ -248,16 +252,15 @@ export default function RoomCard({
                   </div>
                   {bookingDetails.nights > 0 && (
                     <div className="text-sm text-muted-foreground">
-                      {`($${averageRate?.toFixed(2)} = per night × ${
-                        bookingDetails.nights
-                      })`}
+                      {`($${averageRate?.toFixed(2)} = per night × ${bookingDetails.nights
+                        })`}
                     </div>
                   )}
-                  {averageRate && averageRate > 100 && (
+                  {/* {averageRate && averageRate > 100 && (
                     <div className="text-sm text-green-600 font-medium">
                       20% off
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
 
@@ -272,15 +275,15 @@ export default function RoomCard({
                   <Bed className="h-4 w-4 text-muted-foreground" />
                   <span>King Bed</span>
                 </div>
-                <div className="flex items-center gap-1 text-sm">
+                {/* <div className="flex items-center gap-1 text-sm">
                   <Maximize className="h-4 w-4 text-muted-foreground" />
                   <span>300 sqft</span>
-                </div>
+                </div> */}
               </div>
 
               <div className="mb-4 flex items-start gap-2 text-sm bg-blue-50 p-2 rounded">
                 <Baby className="h-4 w-4 text-blue-500 mt-0.5" />
-                <span>Child policy details go here.</span>
+                <span>{childPolicy || "No child policy available."}</span>
               </div>
 
               <>
@@ -341,7 +344,7 @@ export default function RoomCard({
                         onClick={() =>
                           decrementRoomQuantity(roomTypeId?.toString() || "")
                         }
-                        // disabled={quantity <= 1}
+                      // disabled={quantity <= 1}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>

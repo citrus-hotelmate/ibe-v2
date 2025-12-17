@@ -21,6 +21,8 @@ export function Footer({ hotelName }: { hotelName?: string }) {
   const pathname = usePathname();
   const [headerColor, setHeaderColor] = useState("");
   const [selectedHotel, setSelectedHotel] = useState<any>(null);
+  const [logoWidth, setLogoWidth] = useState<number>(80);
+  const [logoHeight, setLogoHeight] = useState<number>(80);
 
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
@@ -30,6 +32,12 @@ export function Footer({ hotelName }: { hotelName?: string }) {
         setSelectedHotel(hotelData);
         if (hotelData.ibeHeaderColour) {
           setHeaderColor(hotelData.ibeHeaderColour);
+        }
+        // Set logo dimensions if available
+        if (hotelData.logoWidth && hotelData.logoHeight) {
+          // Convert rem to pixels (assuming 1rem = 16px)
+          setLogoWidth(hotelData.logoWidth * 16);
+          setLogoHeight(hotelData.logoHeight * 16);
         }
       } catch (error) {
         console.error("Failed to parse selectedHotel from localStorage", error);
@@ -132,9 +140,10 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                     <Image
                       src={selectedHotel.logoURL.split("?")[0]}
                       alt={`${selectedHotel.name} logo`}
-                      width={80}
-                      height={80}
-                      className="object-contain max-h-12 sm:max-h-16"
+                      width={logoWidth}
+                      height={logoHeight}
+                      className="object-contain"
+                      style={{ width: 'auto', height: `${logoHeight}px`, maxHeight: '64px' }}
                     />
                   </div>
                 )}

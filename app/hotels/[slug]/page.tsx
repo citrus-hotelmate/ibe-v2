@@ -49,7 +49,7 @@ const normalizeSlug = (
   if (/^https?:\/\//i.test(s)) {
     try {
       s = new URL(s).pathname;
-    } catch {}
+    } catch { }
   }
   s = s.replace(/^\/?hotels\//i, "").replace(/^\/+|\/+$/g, "");
   const parts = s.split("/").filter(Boolean);
@@ -265,6 +265,8 @@ export default function LandingPage() {
         currencyCode: matchedHotel.currencyCode,
         image: matchedHotel.hotelImage?.base64Image || null,
         logoURL: matchedHotel.logoURL,
+        logoWidth: matchedHotel.ibE_Logo_Width,
+        logoHeight: matchedHotel.ibE_Logo_Height,
         ibeHeaderColour: matchedHotel.ibeHeaderColour,
         cancellationPolicy: matchedHotel.ibE_CancellationPolicy,
         childPolicy: matchedHotel.ibE_ChildPolicy,
@@ -285,8 +287,8 @@ export default function LandingPage() {
       const endDate = bookingDetails.checkOut
         ? bookingDetails.checkOut.toISOString().split("T")[0]
         : new Date(Date.now() + 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0];
+          .toISOString()
+          .split("T")[0];
 
       console.log("📅 fetchAllHotelData using dates:", {
         startDate,
@@ -710,111 +712,109 @@ export default function LandingPage() {
 
       {/* Featured Accommodations - Hidden when URL has params */}
       {!hasUrlParams && (
-      <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
-        <div className="w-full max-w-[98rem]">
-          {/* Header + scroll buttons */}
-          <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
-            <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground text-center w-full">
-              Featured Accommodation
-            </h2>
+        <div className="w-full flex justify-center py-6 sm:py-8 md:py-10 px-2 sm:px-4">
+          <div className="w-full max-w-[98rem]">
+            {/* Header + scroll buttons */}
+            <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
+              <h2 className="font-urbanist text-lg sm:text-xl md:text-2xl lg:text-3xl font-semi-bold tracking-tight text-foreground text-center w-full">
+                Featured Accommodation
+              </h2>
 
-            <div className="hidden sm:flex gap-2">
-              <button
-                onClick={() => scrollByFeaturedCards("left")}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: headerColor }}
-                aria-label="Scroll left"
-              >
-                ‹
-              </button>
-              <button
-                onClick={() => scrollByFeaturedCards("right")}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: headerColor }}
-                aria-label="Scroll right"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-
-          {featuredRooms.length > 0 && (
-            <div
-              id={featuredRowId}
-              className="flex gap-4 px-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
-              style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-            >
-              {/* Room cards */}
-              {featuredRooms.map((room) => (
-                <div
-                  key={room.id}
-                  data-card
-                  className="w-[252px] flex-shrink-0"
+              <div className="hidden sm:flex gap-2">
+                <button
+                  onClick={() => scrollByFeaturedCards("left")}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-white"
+                  style={{ backgroundColor: headerColor }}
+                  aria-label="Scroll left"
                 >
-                  <FeaturedAccommodationCard room={room} />
-                </div>
-              ))}
-
-              {/* Orange Card */}
-              <div
-                className={`rounded-[3rem] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${
-                  featuredRooms.length <= 2
-                    ? "flex-1 min-w-[300px] max-w-[800px]"
-                    : "w-[252px] flex-shrink-0"
-                }`}
-                style={{
-                  backgroundColor: currentHotel?.ibeHeaderColour || headerColor,
-                }}
-              >
-                <div className="self-start">
-                  <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
-                    {getHotelName()}
-                  </h3>
-                  <div
-                    className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-60 lg:max-h-62 pr-1 scrollbar-hide"
-                    style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-                  >
-                    {getHotelData()?.hotelDesc || "Your perfect stay awaits"}
-                  </div>
-                </div>
-                <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
-                  <ArrowUpRight
-                    className="w-6 h-6 lg:w-7 lg:h-7"
-                    style={{ color: headerColor }}
-                  />
-                </div>
+                  ‹
+                </button>
+                <button
+                  onClick={() => scrollByFeaturedCards("right")}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-white"
+                  style={{ backgroundColor: headerColor }}
+                  aria-label="Scroll right"
+                >
+                  ›
+                </button>
               </div>
+            </div>
 
-              {/* Map Card */}
+            {featuredRooms.length > 0 && (
               <div
-                className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${
-                  featuredRooms.length <= 2
-                    ? "flex-1 min-w-[300px] max-w-[800px]"
-                    : "w-[252px] flex-shrink-0"
-                }`}
+                id={featuredRowId}
+                className="flex gap-4 px-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
+                style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
               >
-                <div className="h-full relative">
-                  <div className="absolute top-0 left-0 w-full p-4 z-10 ">
-                    <div className="flex items-center mb-1">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      <h3 className="text-lg font-bold font-urbanist">
-                        {getHotelData()?.city || "Location"}
-                      </h3>
+                {/* Room cards */}
+                {featuredRooms.map((room) => (
+                  <div
+                    key={room.id}
+                    data-card
+                    className="w-[252px] flex-shrink-0"
+                  >
+                    <FeaturedAccommodationCard room={room} />
+                  </div>
+                ))}
+
+                {/* Orange Card */}
+                <div
+                  className={`rounded-[3rem] text-white shadow-md overflow-hidden flex flex-col justify-between p-6 font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
+                      ? "flex-1 min-w-[300px] max-w-[800px]"
+                      : "w-[252px] flex-shrink-0"
+                    }`}
+                  style={{
+                    backgroundColor: currentHotel?.ibeHeaderColour || headerColor,
+                  }}
+                >
+                  <div className="self-start">
+                    <h3 className="text-xl lg:text-2xl font-bold font-urbanist">
+                      {getHotelName()}
+                    </h3>
+                    <div
+                      className="text-sm lg:text-base font-urbanist mt-1 overflow-y-auto max-h-60 lg:max-h-62 pr-1 scrollbar-hide"
+                      style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+                    >
+                      {getHotelData()?.hotelDesc || "Your perfect stay awaits"}
                     </div>
                   </div>
-                  <div className="w-full h-full min-h-[220px]">
-                    <HotelMap
-                      latitude={getHotelData()?.latitude || ""}
-                      longitude={getHotelData()?.longitude || ""}
-                      hotelName={getHotelData()?.hotelName || ""}
+                  <div className="absolute bottom-4 right-4 rounded-full bg-white w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center">
+                    <ArrowUpRight
+                      className="w-6 h-6 lg:w-7 lg:h-7"
+                      style={{ color: headerColor }}
                     />
                   </div>
                 </div>
+
+                {/* Map Card */}
+                <div
+                  className={`rounded-[3rem] bg-[#4285F4] text-white shadow-md overflow-hidden flex flex-col justify-between font-urbanist relative transition-all duration-300 ${featuredRooms.length <= 2
+                      ? "flex-1 min-w-[300px] max-w-[800px]"
+                      : "w-[252px] flex-shrink-0"
+                    }`}
+                >
+                  <div className="h-full relative">
+                    <div className="absolute top-0 left-0 w-full p-4 z-10 ">
+                      <div className="flex items-center mb-1">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        <h3 className="text-lg font-bold font-urbanist">
+                          {getHotelData()?.city || "Location"}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="w-full h-full min-h-[220px]">
+                      <HotelMap
+                        latitude={getHotelData()?.latitude || ""}
+                        longitude={getHotelData()?.longitude || ""}
+                        hotelName={getHotelData()?.hotelName || ""}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Property Details Section */}
