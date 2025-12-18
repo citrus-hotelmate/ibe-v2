@@ -121,14 +121,16 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                     </div>
                   )}
 
-                  {selectedHotel.hotelWebsite && (
+                  {(selectedHotel.hotelWebsite || selectedHotel.website) && (
                     <div className="flex items-center space-x-2 notranslate">
                       <Link
-                        href={selectedHotel.hotelWebsite}
+                        href={
+                          selectedHotel.hotelWebsite || selectedHotel.website
+                        }
                         target="_blank"
                         className="text-sm text-white hover:underline"
                       >
-                        Website
+                        {selectedHotel.hotelWebsite || selectedHotel.website}
                       </Link>
                     </div>
                   )}
