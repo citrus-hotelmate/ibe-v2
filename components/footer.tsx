@@ -63,7 +63,10 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                 {/* Hotel Logo */}
                 {selectedHotel.logoURL && (
                   <div className="flex items-center gap-2">
-                    <Link href="/" className="flex items-center gap-2 font-semibold">
+                    <Link
+                      href="/"
+                      className="flex items-center gap-2 font-semibold"
+                    >
                       {selectedHotel.logoURL && (
                         <Image
                           src={selectedHotel.logoURL}
@@ -118,10 +121,10 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                     </div>
                   )}
 
-                  {selectedHotel.hotelWeb && (
+                  {selectedHotel.hotelWebsite && (
                     <div className="flex items-center space-x-2 notranslate">
                       <Link
-                        href={selectedHotel.hotelWeb}
+                        href={selectedHotel.hotelWebsite}
                         target="_blank"
                         className="text-sm text-white hover:underline"
                       >
