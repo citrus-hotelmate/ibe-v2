@@ -118,10 +118,10 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                     </div>
                   )}
 
-                  {selectedHotel.website && (
+                  {selectedHotel.hotelWeb && (
                     <div className="flex items-center space-x-2 notranslate">
                       <Link
-                        href={selectedHotel.website}
+                        href={selectedHotel.hotelWeb}
                         target="_blank"
                         className="text-sm text-white hover:underline"
                       >
