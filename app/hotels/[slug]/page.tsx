@@ -543,7 +543,7 @@ export default function LandingPage() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: "#e2e0df" }}
     >
-      {/* ✅ Navbar goes here */}
+      {/*  Navbar goes here */}
       <Navbar
         showWishlist={showWishlist}
         onToggleWishlistAction={() => setShowWishlist(!showWishlist)}
@@ -823,10 +823,6 @@ export default function LandingPage() {
           <PropertyPage />
         </div>
       </div>
-      {/* DEBUG: show booking details from context */}
-      {/* <pre className="text-xs bg-black text-green-300 p-2 m-4 rounded-md overflow-auto max-h-60">
-      {JSON.stringify(bookingDetails, null, 2)}
-    </pre> */}
     </div>
   );
 }

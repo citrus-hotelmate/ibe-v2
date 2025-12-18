@@ -35,6 +35,9 @@ export default function TentativeBookingPage({
   const [showConfetti, setShowConfetti] = useState(true);
   const [width, height] = useWindowSize();
   const [bookingId, setBookingId] = useState<string>("");
+  const [logoURL, setLogoURL] = useState<string>("");
+  const [logoWidth, setLogoWidth] = useState<number>();
+  const [logoHeight, setLogoHeight] = useState<number>();
 
   const router = useRouter();
   const { currency, convertPrice } = useCurrency();
@@ -117,7 +120,22 @@ export default function TentativeBookingPage({
         // Load selected hotel
         const hotelStr = localStorage.getItem("selectedHotel");
         if (hotelStr) {
-          setSelectedHotel(JSON.parse(hotelStr));
+          const hotel = JSON.parse(hotelStr);
+          setSelectedHotel(hotel);
+
+          // Set logo URL (trim query parameters)
+          if (hotel.logoURL) {
+            const trimmedLogoURL = hotel.logoURL.split("?")[0];
+            setLogoURL(trimmedLogoURL);
+          }
+
+          // Set logo dimensions
+          if (hotel.logoWidth) {
+            setLogoWidth(hotel.logoWidth);
+          }
+          if (hotel.logoHeight) {
+            setLogoHeight(hotel.logoHeight);
+          }
         }
 
         // Load payment collection method
@@ -218,12 +236,12 @@ export default function TentativeBookingPage({
       {showConfetti && <Confetti width={width} height={height} numberOfPieces={300} recycle={false} />}
 
       <Card className="border border-green-500 shadow-lg">
-        {selectedHotel?.image && (
+        {logoURL && (
           <div className="flex justify-center mt-4">
             <Image
-              src={selectedHotel.image}
-              width={100}
-              height={100}
+              src={logoURL}
+              width={logoWidth}
+              height={logoHeight}
               alt="Hotel Logo"
               className="rounded-md shadow object-contain"
             />

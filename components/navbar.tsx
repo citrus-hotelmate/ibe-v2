@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { CircleUserRound } from "lucide-react";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
 import { CurrencySelector } from "@/components/currency-selector";
 import { useState, useEffect } from "react";
@@ -15,89 +14,59 @@ type NavbarProps = {
 export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarProps) {
   const [headerColor, setHeaderColor] = useState("");
   const [logoURL, setLogoURL] = useState<string>("");
-  const [logoWidth, setLogoWidth] = useState<number>(60);
-  const [logoHeight, setLogoHeight] = useState<number>(60);
+  const [logoWidth, setLogoWidth] = useState<number>();
+  const [logoHeight, setLogoHeight] = useState<number>();
 
   useEffect(() => {
-    // Get hotel details from localStorage
     const selectedHotelStr = localStorage.getItem("selectedHotel");
-
     if (selectedHotelStr) {
       try {
         const selectedHotel = JSON.parse(selectedHotelStr);
 
-        // Set header color from ibeHeaderColour or headerColor
-        if (selectedHotel.ibeHeaderColour) {
-          setHeaderColor(selectedHotel.ibeHeaderColour);
-        } else if (selectedHotel.headerColor) {
-          setHeaderColor(selectedHotel.headerColor);
-        }
+        setHeaderColor(selectedHotel.ibeHeaderColour || selectedHotel.headerColor || "");
 
-        // Set logo URL from selectedHotel
         if (selectedHotel.logoURL) {
-          // Trim query parameters from logo URL
-          const trimmedLogoURL = selectedHotel.logoURL.split('?')[0];
+          const trimmedLogoURL = selectedHotel.logoURL.split("?")[0];
           setLogoURL(trimmedLogoURL);
         }
 
-        // Set logo dimensions if available
-        if (selectedHotel.logoWidth && selectedHotel.logoHeight) {
-          // Convert rem to pixels (assuming 1rem = 16px)
-          setLogoWidth(selectedHotel.logoWidth * 16);
-          setLogoHeight(selectedHotel.logoHeight * 16);
+        // Set logo dimensions from selectedHotel
+        if (selectedHotel.logoWidth) {
+          setLogoWidth(selectedHotel.logoWidth);
         }
-
-        console.log("🎨 Navbar using hotel branding:", {
-          color: selectedHotel.ibeHeaderColour || selectedHotel.headerColor,
-          logo: selectedHotel.logoURL || 'none',
-          dimensions: `${selectedHotel.logoWidth || 'default'}rem × ${selectedHotel.logoHeight || 'default'}rem`
-        });
-      } catch (error) {
-        console.error("Failed to parse selectedHotel from localStorage", error);
-      }
-    } else {
-      // Fallback to old localStorage keys if selectedHotel not found
-      const storedColor = localStorage.getItem("ibeHeaderColour");
-      if (storedColor) {
-        setHeaderColor(storedColor);
+        if (selectedHotel.logoHeight) {
+          setLogoHeight(selectedHotel.logoHeight);
+        }
+      } catch (e) {
+        console.error("Failed to parse selectedHotel from localStorage", e);
       }
     }
   }, []);
 
   return (
     <nav className="w-full p-2" style={{ backgroundColor: headerColor }}>
-      <div className="flex justify-between items-center w-full">
+      <div className="flex h-full items-center justify-between w-full">
+        {/* LEFT — Logo */}
+        <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 font-semibold">
+            {logoURL && (
+              <Image
+                src={logoURL}
+                alt="App Logo"
+                height={logoHeight}
+                width={logoWidth}
+                className="rounded-md"
+                priority
+              />
+            )}
+          </Link>
+        </div>
 
-        {/* LEFT — Logo or Placeholder */}
-        {logoURL ? (
-          <div className="flex items-center">
-            <Image
-              src={logoURL}
-              alt="Hotel Logo"
-              width={logoWidth}
-              height={logoHeight}
-              className="rounded-md object-contain"
-              style={{ width: 'auto', height: `${logoHeight}px`, maxHeight: '56px' }}
-              unoptimized={logoURL.startsWith("http") || logoURL.startsWith("data:")}
-            />
-          </div>
-        ) : (
-          <div className="flex items-center" style={{ width: '60px' }}></div>
-        )}
-
-        {/* RIGHT — Wishlist + Language + Currency + User */}
+        {/* RIGHT */}
         <div className="flex items-center justify-end gap-1 sm:gap-3">
-
-          {/* Wishlist */}
           <button
             onClick={onToggleWishlistAction}
-            className="
-          shrink-0
-          w-8 h-8 sm:w-10 sm:h-10
-          flex items-center justify-center
-          rounded-full bg-white hover:bg-white/100
-          transition-all duration-200 shadow-sm hover:shadow-md
-        "
+            className="shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white hover:bg-white/100 transition-all duration-200 shadow-sm hover:shadow-md"
             title="Wishlist"
             aria-label="Toggle wishlist"
           >
@@ -113,23 +82,18 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
             </svg>
           </button>
 
-          {/* Language Selector */}
           <div className="shrink-0 scale-90 sm:scale-100 origin-right">
             <LanguageSelector />
           </div>
 
-          {/* Currency Selector */}
           <div className="shrink-0 scale-90 sm:scale-100 origin-right">
             <CurrencySelector />
           </div>
-
-          {/* User Login */}
-          {/* <Link href="/login" className="shrink-0" aria-label="Login">
-        <CircleUserRound className="w-6 h-6 sm:w-8 sm:h-8 text-black hover:text-gray-700" />
-      </Link> */}
-
         </div>
       </div>
+
+      {/* debug if you want */}
+      {/* <pre className="text-xs text-white">{logoWidth} x {logoHeight}</pre> */}
     </nav>
   );
 }

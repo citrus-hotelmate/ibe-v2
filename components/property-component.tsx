@@ -43,7 +43,7 @@ export default function PropertyPage() {
   }, []);
 
   // Helper function to calculate minimum available rooms across dates
-  const calculateMinimumAvailability = (availability: Array<{date: string, count: number}>) => {
+  const calculateMinimumAvailability = (availability: Array<{ date: string, count: number }>) => {
     if (!availability || availability.length === 0) return 0;
     return Math.min(...availability.map(item => item.count));
   };
@@ -57,7 +57,7 @@ export default function PropertyPage() {
         to: bookingDetails.checkOut,
       });
     }
-    
+
     // Sync guests from booking context
     if (bookingDetails.adults !== undefined && bookingDetails.children !== undefined) {
       setGuests({
@@ -108,13 +108,13 @@ export default function PropertyPage() {
       try {
         const hotelData = JSON.parse(hotelDataString);
         const newHotelId = hotelData.id;
-        
+
         // Only update if hotel actually changed
         if (newHotelId !== currentHotelId) {
           console.log("🏨 Hotel changed from", currentHotelId, "to", newHotelId);
           console.log("🏨 Full hotel data from localStorage:", hotelData);
           setCurrentHotelId(newHotelId);
-          
+
           // Clear previous hotel data
           setRatePlans(null);
           setAvailableRooms(null);
@@ -134,11 +134,11 @@ export default function PropertyPage() {
         try {
           const hotelData = JSON.parse(hotelDataString);
           const newHotelId = hotelData.id;
-          
+
           if (newHotelId !== currentHotelId) {
             console.log("🏨 Hotel changed detected via polling:", currentHotelId, "→", newHotelId);
             setCurrentHotelId(newHotelId);
-            
+
             // Clear previous hotel data
             setRatePlans(null);
             setAvailableRooms(null);
@@ -152,7 +152,7 @@ export default function PropertyPage() {
 
     // Check every 500ms for hotel changes
     const interval = setInterval(checkForHotelChanges, 500);
-    
+
     return () => clearInterval(interval);
   }, [currentHotelId]);
 
@@ -160,10 +160,10 @@ export default function PropertyPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       if (!currentHotelId) return;
-      
+
       try {
         console.log("🔄 Fetching initial data for hotel ID:", currentHotelId);
-        
+
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
         if (!token) return;
 
@@ -186,7 +186,7 @@ export default function PropertyPage() {
         }, {});
         console.log('Final Images Map:', imagesMap);
         setRoomTypeImages(imagesMap);
-        
+
         console.log("✅ Initial data fetched successfully for hotel ID:", currentHotelId);
       } catch (error) {
         console.error("❌ Failed to fetch initial data:", error);
@@ -202,7 +202,7 @@ export default function PropertyPage() {
       alert("Please select check-in and check-out dates.");
       return;
     }
-    
+
     if (!ratePlans || ratePlans.length === 0) {
       alert("Hotel rate plans are still loading. Please try again in a moment.");
       return;
@@ -216,10 +216,10 @@ export default function PropertyPage() {
     // Since live filtering is already working, this is mainly for manual refresh
     console.log("🔄 Manual refresh triggered for hotel ID:", currentHotelId);
     setIsLoadingRooms(true);
-    
+
     try {
       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
-      
+
       if (!token) {
         alert("Configuration error. Please refresh the page.");
         return;
@@ -228,24 +228,24 @@ export default function PropertyPage() {
       const startDate = dateRange.from.toISOString().split("T")[0];
       const endDate = dateRange.to.toISOString().split("T")[0];
 
-        const rooms = await getHotelRatePlanAvailability({
-          hotelId: currentHotelId,
-          startDate,
-          endDate,
-          token,
-          rateCodeId: 2
-        });
-        
-        console.log("🔍 API Response:", rooms);
-        
-        // Handle empty response
-        if (!rooms || rooms.length === 0) {
-          console.log("⚠️ No rooms available for selected dates");
-          setAvailableRooms([]);
-          return;
-        }
-        
-        const totalGuestCount = guests.adults + guests.children;
+      const rooms = await getHotelRatePlanAvailability({
+        hotelId: currentHotelId,
+        startDate,
+        endDate,
+        token,
+        rateCodeId: 2
+      });
+
+      console.log("🔍 API Response:", rooms);
+
+      // Handle empty response
+      if (!rooms || rooms.length === 0) {
+        console.log("⚠️ No rooms available for selected dates");
+        setAvailableRooms([]);
+        return;
+      }
+
+      const totalGuestCount = guests.adults + guests.children;
 
       const filteredRooms = rooms
         .filter((item: any) => {
@@ -260,7 +260,7 @@ export default function PropertyPage() {
             minRoomsLeft: minAvailability,
           };
         });
-        
+
       const groupedRooms = Object.values(
         filteredRooms.reduce((acc: any, room: any) => {
           if (!acc[room.roomTypeId]) {
@@ -309,7 +309,7 @@ export default function PropertyPage() {
         !currentHotelId
       )
         return;
-      
+
       setIsLoadingRooms(true);
       let allRooms: any[] = [];
       try {
@@ -321,7 +321,7 @@ export default function PropertyPage() {
 
         console.log("🔄 Live filtering rooms for hotel ID:", currentHotelId, "dates:", startDate, "to", endDate);
         console.log("📋 Current availableRooms state before API call:", availableRooms?.length || 0, "rooms");
-        
+
         // Clear previous room data before making API call
         setAvailableRooms([]);
 
@@ -332,16 +332,16 @@ export default function PropertyPage() {
           token,
           rateCodeId: 2
         });
-        
+
         console.log("🔍 Live API Response:", rooms);
-        
+
         // Handle empty response
         if (!rooms || rooms.length === 0) {
           console.log("⚠️ No rooms available for selected dates");
           setAvailableRooms([]);
           return;
         }
-        
+
         allRooms = rooms;
 
         // Calculate total number of guests
@@ -382,7 +382,7 @@ export default function PropertyPage() {
             return acc;
           }, {})
         ) as AvailableRoom[];
-        
+
         console.log("✅ Live filtered rooms updated:", groupedRooms.length, "room types");
         console.log("Rooms types:", groupedRooms.map(room => room.roomType).join(", "));
         setAvailableRooms(groupedRooms);
@@ -455,7 +455,7 @@ export default function PropertyPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Guests</label>
-              <GuestSelector 
+              <GuestSelector
                 setGuestCount={setGuests}
                 onChange={(guestData) => {
                   // Update local state
@@ -548,8 +548,8 @@ export default function PropertyPage() {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
-                    {dateRange.from && dateRange.to 
-                      ? "No rooms available for the selected dates and guest count." 
+                    {dateRange.from && dateRange.to
+                      ? "No rooms available for the selected dates and guest count."
                       : "Please select check-in and check-out dates to view available rooms."}
                   </p>
                 </div>
@@ -611,7 +611,7 @@ export default function PropertyPage() {
                                   {room.roomName.toUpperCase()}
                                 </div>
                                 <div className="text-sm text-gray-600">
-                                   {room.quantity} room • {room.adults} adults • {room.children} children
+                                  {room.quantity} room • {room.adults} adults • {room.children} children
                                 </div>
                                 <div className="text-sm text-gray-600">
                                   Meal Plan:{" "}

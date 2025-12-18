@@ -91,7 +91,7 @@ export default function RootLayout({
                                 <main className="flex-1">{children}</main>
                                 {isMounted && <Footer hotelName={hotelName || undefined} />}
                             </div>
-                            
+
                             {/* Client-only floating buttons */}
                         </BookingProvider>
                     </CurrencyProvider>

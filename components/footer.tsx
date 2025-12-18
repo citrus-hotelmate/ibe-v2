@@ -12,9 +12,7 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
-import { usePathname, useParams } from "next/navigation";
-import { getAllHotels } from "@/controllers/ibeController";
-import { Hotel } from "@/types/ibe";
+import { usePathname } from "next/navigation";
 
 export function Footer({ hotelName }: { hotelName?: string }) {
   const currentYear = new Date().getFullYear();
@@ -24,100 +22,28 @@ export function Footer({ hotelName }: { hotelName?: string }) {
   const [logoWidth, setLogoWidth] = useState<number>(80);
   const [logoHeight, setLogoHeight] = useState<number>(80);
 
+  console.log("selectedHotel", selectedHotel);
+
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
     if (selectedHotelStr) {
       try {
         const hotelData = JSON.parse(selectedHotelStr);
         setSelectedHotel(hotelData);
+
+        console.log("hotelData", hotelData);
         if (hotelData.ibeHeaderColour) {
           setHeaderColor(hotelData.ibeHeaderColour);
         }
-        // Set logo dimensions if available
+        // Set logo dimensions if available (values are already in pixels)
         if (hotelData.logoWidth && hotelData.logoHeight) {
-          // Convert rem to pixels (assuming 1rem = 16px)
-          setLogoWidth(hotelData.logoWidth * 16);
-          setLogoHeight(hotelData.logoHeight * 16);
+          setLogoWidth(hotelData.logoWidth);
+          setLogoHeight(hotelData.logoHeight);
         }
       } catch (error) {
         console.error("Failed to parse selectedHotel from localStorage", error);
       }
     }
-  }, []);
-
-  const [contact, setContact] = useState({
-    email: "",
-    phone: "",
-    address: "",
-  });
-
-  const [hotelDisplayName, setHotelDisplayName] = useState("");
-
-  const [hotelDataVersion, setHotelDataVersion] = useState(0);
-
-  const params = useParams();
-  const hotelCodeFromParams = Array.isArray(params?.hotelCode)
-    ? params.hotelCode[0]
-    : params?.hotelCode;
-
-  useEffect(() => {
-    const fetchContact = async () => {
-      try {
-        const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-        const hotels: Hotel[] = await getAllHotels({ token });
-
-        let matchedHotel = hotels[0];
-        let code: string | null = null;
-        const storedHotel = localStorage.getItem("hotelData");
-        if (storedHotel) {
-          try {
-            const parsed = JSON.parse(storedHotel);
-            code = parsed?.hotelCode?.toString() || null;
-          } catch (e) {
-            console.error("Failed to parse hotelData from localStorage", e);
-          }
-        }
-        code = hotelCodeFromParams || code;
-        if (code) {
-          matchedHotel =
-            hotels.find((h) => h.hotelCode?.toString() === code) || hotels[0];
-        } else if (hotelName) {
-          matchedHotel =
-            hotels.find((h) => h.hotelName === hotelName) || hotels[0];
-        }
-
-        setContact({
-          email: matchedHotel.hotelEmail || "",
-          phone: matchedHotel.hotelPhone || "",
-          address: matchedHotel.city || "",
-        });
-        setHotelDisplayName(matchedHotel.hotelName || "");
-      } catch (err) {
-        console.error("Failed to fetch hotel contact info", err);
-      }
-    };
-
-    fetchContact();
-  }, [hotelCodeFromParams, hotelName, hotelDataVersion]);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setHotelDataVersion((prev) => prev + 1);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function (key, value) {
-      originalSetItem.apply(this, [key, value]);
-      if (key === "hotelData") {
-        handleStorageChange();
-      }
-    };
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
   }, []);
 
   return (
@@ -131,21 +57,24 @@ export function Footer({ hotelName }: { hotelName?: string }) {
             transition: "background-color 0.3s ease",
           }}
         >
-          <div className="container mx-auto">
-            <div className="p-6 border-b border-white/20">
+          <div className="container">
+            <div className="p-3 border-b border-white/20">
               <div className="flex flex-col items-center space-y-1">
                 {/* Hotel Logo */}
                 {selectedHotel.logoURL && (
-                  <div className="flex justify-center">
-                    <Image
-                      src={selectedHotel.logoURL.split("?")[0]}
-                      alt={`${selectedHotel.name} logo`}
-                      width={logoWidth}
-                      height={logoHeight}
-                      className="object-contain"
-                      style={{ width: 'auto', height: `${logoHeight}px`, maxHeight: '64px' }}
-                      unoptimized
-                    />
+                  <div className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2 font-semibold">
+                      {selectedHotel.logoURL && (
+                        <Image
+                          src={selectedHotel.logoURL}
+                          alt="App Logo"
+                          height={logoHeight}
+                          width={logoWidth}
+                          className="rounded-md"
+                          priority
+                        />
+                      )}
+                    </Link>
                   </div>
                 )}
 
