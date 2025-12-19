@@ -22,7 +22,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
   const [logoWidth, setLogoWidth] = useState<number>(80);
   const [logoHeight, setLogoHeight] = useState<number>(80);
 
-  console.log("selectedHotel", selectedHotel);
+  console.log("selectedHotel in footer", selectedHotel);
 
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
@@ -47,36 +47,34 @@ export function Footer({ hotelName }: { hotelName?: string }) {
   }, []);
 
   return (
-    <footer className="notranslate">
+    <footer className="notranslate no-print">
       {/* ====== HOTEL DETAIL SECTION (dynamic color) ====== */}
       {pathname !== "/" && selectedHotel && (
         <div
-          className="border-t text-white"
+          className="border-t text-white "
           style={{
             backgroundColor: headerColor,
             transition: "background-color 0.3s ease",
           }}
         >
-          <div className="container">
+          <div className="flex flex-col items-center text-center gap-3 ">
             <div className="p-3 border-b border-white/20">
               <div className="flex flex-col items-center space-y-1">
                 {/* Hotel Logo */}
-                {selectedHotel.logoURL && (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href="/"
-                      className="flex items-center gap-2 font-semibold"
-                    >
-                      {selectedHotel.logoURL && (
-                        <Image
-                          src={selectedHotel.logoURL}
-                          alt="App Logo"
-                          height={logoHeight}
-                          width={logoWidth}
-                          className="rounded-md"
-                          priority
-                        />
-                      )}
+                {selectedHotel.logoURL && logoWidth && logoHeight && (
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ height: `${logoHeight}px` }}
+                  >
+                    <Link href="/" className="h-full flex items-center">
+                      <Image
+                        src={selectedHotel.logoURL}
+                        alt="Hotel Logo"
+                        width={logoWidth}
+                        height={logoHeight}
+                        className="h-full w-auto object-contain rounded-md"
+                        priority
+                      />
                     </Link>
                   </div>
                 )}
@@ -124,9 +122,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                   {(selectedHotel.hotelWebsite || selectedHotel.website) && (
                     <div className="flex items-center space-x-2 notranslate">
                       <Link
-                        href={
-                          selectedHotel.hotelWebsite || selectedHotel.website
-                        }
+                        href={selectedHotel.hotelWebsite || selectedHotel.website}
                         target="_blank"
                         className="text-sm text-white hover:underline"
                       >

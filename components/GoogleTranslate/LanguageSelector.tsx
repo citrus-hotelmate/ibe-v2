@@ -9,6 +9,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePathname } from "next/navigation";
 
 declare global {
     interface Window {
@@ -45,8 +46,9 @@ const languages: Language[] = [
 const LanguageSelector: React.FC = () => {
     const [currentLanguage, setCurrentLanguage] = useState<Language>(languages[0]);
     const [isTranslateReady, setIsTranslateReady] = useState(false);
+    const pathname = usePathname();
 
-    // Clean URL hash function
+    // Clean URL hash function (kept for safety, but we now rely mainly on cookies + reload)
     const cleanUrlHash = () => {
         if (window.location.hash.includes('googtrans')) {
             const cleanUrl = window.location.href.split('#')[0];
@@ -60,7 +62,7 @@ const LanguageSelector: React.FC = () => {
         const autoCleanOnLoad = () => {
             if (window.location.hash.includes('googtrans')) {
                 console.log('🧹 Found hash on page load, scheduling cleanup');
-                
+
                 // Wait for translation to settle, then clean
                 setTimeout(cleanUrlHash, 3000);
                 // Backup cleanup
@@ -104,32 +106,57 @@ const LanguageSelector: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Load saved language and detect current state
+    // Load saved language preference into UI state
     useEffect(() => {
-        // Load saved language preference
         const savedLanguage = localStorage.getItem('selectedLanguage') || 'en';
         const lang = languages.find(l => l.code === savedLanguage);
         if (lang) {
             setCurrentLanguage(lang);
         }
-
-        // Check if URL already has translation hash
-        const hash = window.location.hash;
-        const hashMatch = hash.match(/googtrans\(en\|(\w+)\)/);
-        
-        if (hashMatch) {
-            const currentLangCode = hashMatch[1];
-            const detectedLang = languages.find(l => l.code === currentLangCode);
-            if (detectedLang) {
-                setCurrentLanguage(detectedLang);
-                localStorage.setItem('selectedLanguage', currentLangCode);
-            }
-        }
     }, []);
+
+    // Helper to apply a given language to the page without forcing a reload
+    const applyLanguageWithoutReload = (languageCode: string) => {
+        if (!isTranslateReady || languageCode === "en") return;
+
+        const tryApply = () => {
+            const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+            if (!combo) return false;
+
+            console.log('🌐 Re-applying saved language via combo:', languageCode);
+            combo.value = languageCode;
+            combo.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        };
+
+        if (tryApply()) return;
+
+        // If combo isn't ready yet, poll briefly
+        const start = Date.now();
+        const maxWaitMs = 4000;
+        const interval = setInterval(() => {
+            if (tryApply()) {
+                clearInterval(interval);
+                return;
+            }
+            if (Date.now() - start > maxWaitMs) {
+                clearInterval(interval);
+                console.warn('⚠️ Could not find .goog-te-combo to re-apply language');
+            }
+        }, 200);
+    };
+
+    // Whenever Google Translate is ready (or route changes), re-apply saved language
+    useEffect(() => {
+        if (!isTranslateReady) return;
+
+        const savedLanguage = localStorage.getItem('selectedLanguage') || 'en';
+        applyLanguageWithoutReload(savedLanguage);
+    }, [isTranslateReady, pathname]);
 
     const forceTranslation = (languageCode: string) => {
         console.log('🚀 FORCE TRANSLATING TO:', languageCode);
-        
+
         // Update UI and storage immediately
         const selectedLanguage = languages.find(lang => lang.code === languageCode);
         if (selectedLanguage) {
@@ -137,40 +164,37 @@ const LanguageSelector: React.FC = () => {
             localStorage.setItem('selectedLanguage', languageCode);
         }
 
-        // Method 1: Try combo element first (cleaner, no reload needed)
-        const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-        if (combo) {
-            console.log('📝 Using combo element (no reload)');
-            combo.value = languageCode;
-            combo.dispatchEvent(new Event('change', { bubbles: true }));
-            
-            // Clean URL after translation completes
-            setTimeout(cleanUrlHash, 2000);
-            setTimeout(cleanUrlHash, 5000); // Backup
-            return;
-        }
-
-        // Fallback: Use cookie method to apply translation without reload
+        // Tell Google Translate which language to use for this and future loads
         document.cookie = `googtrans=/en/${languageCode};path=/;`;
-        console.log('🍪 Cookie method used to trigger translation without reload');
+
+        // Automatically reload so translation applies without the user manually refreshing
+        // Small timeout to ensure cookie is written before reload
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
     };
 
     const resetToEnglish = () => {
         console.log('🔄 RESETTING TO ENGLISH');
-        
+
         // Clear all storage
         localStorage.removeItem('googtrans');
         localStorage.removeItem('googtrans/en');
         localStorage.setItem('selectedLanguage', 'en');
         sessionStorage.removeItem('justTranslated');
-        
+
         // Clear cookies
         document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        // Automatically reload to apply reset without manual refresh
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
     };
 
     const handleLanguageSelect = (languageCode: string) => {
         console.log('🎯 LANGUAGE SELECTED:', languageCode);
-        
+
         if (languageCode === 'en') {
             resetToEnglish();
         } else {
@@ -182,8 +206,8 @@ const LanguageSelector: React.FC = () => {
         <div className="relative">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         size="sm"
                         className="bg-white backdrop-blur-sm border-white/30 hover:bg-white/90 transition-all duration-200 shadow-lg notranslate flex items-center justify-center rounded-full w-10 h-10"
                         disabled={!isTranslateReady}
@@ -191,8 +215,8 @@ const LanguageSelector: React.FC = () => {
                         <Globe className="h-4 w-4 text-black" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                    align="end" 
+                <DropdownMenuContent
+                    align="end"
                     className="w-48 max-h-80 overflow-y-auto bg-white/95 backdrop-blur-sm border-white/30 notranslate"
                     sideOffset={8}
                 >
@@ -202,11 +226,10 @@ const LanguageSelector: React.FC = () => {
                             <DropdownMenuItem
                                 key={language.code}
                                 onClick={() => handleLanguageSelect(language.code)}
-                                className={`cursor-pointer rounded-md transition-colors ${
-                                    currentLanguage.code === language.code 
-                                        ? 'bg-primary/10 text-primary font-medium' 
+                                className={`cursor-pointer rounded-md transition-colors ${currentLanguage.code === language.code
+                                        ? 'bg-primary/10 text-primary font-medium'
                                         : 'hover:bg-gray-100'
-                                }`}
+                                    }`}
                             >
                                 <span className="mr-3 text-lg">{language.flag}</span>
                                 <span className="text-sm">{language.name}</span>

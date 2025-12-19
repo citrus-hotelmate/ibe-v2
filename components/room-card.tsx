@@ -8,6 +8,7 @@ import { MealPlan } from "@/types/mealPlan";
 import { GuestSelector } from "@/components/guest-selector";
 import { RoomGuestSelector } from "./room-guest-selector";
 import { useBooking, RoomBooking } from "./booking-context";
+import { useCurrency } from "@/components/currency-context";
 import { set } from "date-fns";
 import { ca, is } from "date-fns/locale";
 
@@ -60,6 +61,9 @@ export default function RoomCard({
   }, []);
   const [childAges, setChildAges] = useState<number[]>([]);
   const [price, setPrice] = useState<number>(100); // Default room price
+
+  // Currency conversion & formatting
+  const { convertPrice, formatPrice } = useCurrency();
 
   // Track the actual selected guest count (not room capacity)
   const [selectedAdults, setSelectedAdults] = useState<number>(2); // Default to 2 adults
@@ -244,16 +248,15 @@ export default function RoomCard({
                 <div className="text-right">
                   <div className="text-md font-bold">
                     {averageRate && bookingDetails.nights
-                      ? `$${(averageRate * bookingDetails.nights).toFixed(2)}`
-                      : `$${averageRate?.toFixed(2)}`}
+                      ? formatPrice(convertPrice(averageRate * bookingDetails.nights))
+                      : formatPrice(convertPrice(averageRate || 0))}
                     <span className="text-sm font-normal text-muted-foreground">
                       /period
                     </span>
                   </div>
                   {bookingDetails.nights > 0 && (
                     <div className="text-sm text-muted-foreground">
-                      {`($${averageRate?.toFixed(2)} = per night × ${bookingDetails.nights
-                        })`}
+                      {`(${formatPrice(convertPrice(averageRate || 0))} = per night × ${bookingDetails.nights})`}
                     </div>
                   )}
                   {/* {averageRate && averageRate > 100 && (
@@ -295,9 +298,11 @@ export default function RoomCard({
                     {mealPlans.length > 0 ? (
                       mealPlans.map((plan) => (
                         <option key={plan.mealPlanID} value={plan.mealPlanID}>
-                          {plan.mealPlan} - {averageRate && bookingDetails.nights
-                            ? `$${(averageRate * bookingDetails.nights).toFixed(2)}`
-                            : `$${averageRate?.toFixed(2)}`} /period
+                          {plan.mealPlan} -{" "}
+                          {averageRate && bookingDetails.nights
+                            ? formatPrice(convertPrice(averageRate * bookingDetails.nights))
+                            : formatPrice(convertPrice(averageRate || 0))}{" "}
+                          /period
                         </option>
                       ))
                     ) : (

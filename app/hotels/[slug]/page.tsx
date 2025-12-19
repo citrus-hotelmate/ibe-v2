@@ -27,6 +27,78 @@ import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
 import PropertyPage from "@/components/property-component";
 
+// Dedicated hero carousel component to keep hooks ordering stable
+function HeroCarousel({ images }: { images: HotelImage[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRefLocal = useRef<HTMLDivElement>(null);
+
+  if (images.length === 0) {
+    // When no images, add spacing to prevent hotel name overlap with search bar
+    return (
+      <div className="w-full sm:h-[2vh] md:h-[2vh] max-w-[98rem] mx-auto mb-4 sm:mb-6">
+        {/* Empty spacer div to prevent overlap */}
+      </div>
+    );
+  }
+
+  const handleNext = () => {
+    if (images.length === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    if (images.length === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] max-w-[98rem] w-full mx-auto mt-[-10px] sm:mt-[-25px] md:mt-[-22px] mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl md:rounded-[3rem] overflow-hidden z-15 group">
+      <div
+        ref={scrollRefLocal}
+        className="flex h-full w-full transition-transform duration-500"
+        style={{
+          transform: `translateX(-${currentIndex * 100}%)`,
+        }}
+      >
+        {images.map((img, index) => (
+          <div key={index} className="flex-shrink-0 w-full h-full">
+            <Image
+              src={img.imageFileName}
+              alt={img.description || `Hotel Image ${index + 1}`}
+              width={1600}
+              height={700}
+              className="object-cover w-full h-full"
+              priority={index === 0}
+            />
+          </div>
+        ))}
+      </div>
+      {/* Left arrow */}
+      <button
+        onClick={handlePrev}
+        className="hidden md:group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 left-2 sm:left-4"
+        aria-label="Previous image"
+      >
+        <ArrowLeft className="text-white w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
+      </button>
+
+      {/* Right arrow */}
+      <button
+        onClick={handleNext}
+        className="hidden md:group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 right-2 sm:right-4"
+        aria-label="Next image"
+      >
+        <ArrowRight className="text-white w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
+      </button>
+
+      {/* Subtle top glass overlay with fade-out mask */}
+      <div className="absolute inset-0 z-30 pointer-events-none">
+        <div className="w-full h-full bg-white/10" />
+      </div>
+    </div>
+  );
+}
+
 const generateHotelSlug = (hotelName: string, city: string) => {
   const slugify = (name: string) => {
     return name
@@ -538,6 +610,8 @@ export default function LandingPage() {
     description: string;
   }) => <p className="text-base font-urbanist mt-1">{description}</p>;
 
+  const isInitialLoading = isLoading && !currentHotel;
+
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -564,134 +638,16 @@ export default function LandingPage() {
 
       {/* Hero + SearchBar Wrapper */}
       <div className="relative w-full flex flex-col items-center mt-2">
-        {/* Hero Section */}
-        {(() => {
-          const [currentIndex, setCurrentIndex] = useState(0);
-          const scrollRefLocal = useRef<HTMLDivElement>(null);
-          const [hotelImages, setHotelImages] = useState<HotelImage[]>([]);
-
-          // useEffect(() => {
-          //   const fetchHotelImages = async () => {
-          //     try {
-          //       if (!currentHotel?.hotelID) return;
-
-          //       console.log("Fetching images for hotel:", currentHotel.hotelName);
-
-          //       const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
-          //       const response = await getHotelImagesByHotelId({
-          //         token,
-          //         hotelId: currentHotel.hotelID
-          //       });
-
-          //       console.log("Hotel images response:", response);
-
-          //       // ✅ Prefer isMain, else take the first image
-          //       let images: HotelImage[] = [];
-          //       const mainImage = response.find(img => img.isMain);
-
-          //       if (mainImage) {
-          //         images = response; // keep all, hero will naturally start with isMain
-          //       } else if (response.length > 0) {
-          //         images = [response[0], ...response.slice(1)]; // first image + rest
-          //       }
-
-          //       setHotelImages(images);
-          //     } catch (error) {
-          //       console.error("Error fetching hotel images:", error);
-          //     }
-          //   };
-
-          //   fetchHotelImages();
-          // }, [currentHotel]);
-
-          console.log("Fetched hotel images:", hotelImages);
-
-          const handleNext = () => {
-            if (hotelImages.length === 0) return;
-            setCurrentIndex((prev) => (prev + 1) % hotelImages.length);
-          };
-
-          // NEW: go left (wrap around)
-          const handlePrev = () => {
-            if (hotelImages.length === 0) return;
-            setCurrentIndex(
-              (prev) => (prev - 1 + hotelImages.length) % hotelImages.length
-            );
-          };
-
-          if (hotelImages.length === 0) {
-            // When no images, add spacing to prevent hotel name overlap with search bar
-            return (
-              <div className="w-full sm:h-[2vh] md:h-[2vh] max-w-[98rem] mx-auto mb-4 sm:mb-6">
-                {/* Empty spacer div to prevent overlap */}
-              </div>
-            );
-          }
-          // --- Scroll helpers for Featured Accommodation row ---
-          const featuredRowId = "featured-scroll";
-
-          const scrollByFeaturedCards = (dir: "left" | "right") => {
-            const row = document.getElementById(featuredRowId);
-            if (!row) return;
-            const first = row.querySelector<HTMLElement>("[data-card]");
-            const step = first ? first.offsetWidth + 16 /* gap-4 */ : 320;
-            row.scrollBy({
-              left: dir === "left" ? -step : step,
-              behavior: "smooth",
-            });
-          };
-
-          return (
-            <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] max-w-[98rem] w-full mx-auto mt-[-10px] sm:mt-[-25px] md:mt-[-22px] mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl md:rounded-[3rem] overflow-hidden z-15 group">
-              <div
-                ref={scrollRefLocal}
-                className="flex h-full w-full transition-transform duration-500"
-                style={{
-                  transform: `translateX(-${currentIndex * 100}%)`,
-                }}
-              >
-                {hotelImages.map((img, index) => (
-                  <div key={index} className="flex-shrink-0 w-full h-full">
-                    <Image
-                      src={img.imageFileName}
-                      alt={img.description || `Hotel Image ${index + 1}`}
-                      width={1600}
-                      height={700}
-                      className="object-cover w-full h-full"
-                      priority={index === 0}
-                    />
-                  </div>
-                ))}
-              </div>
-              {/* Left arrow */}
-              <button
-                onClick={handlePrev}
-                className="hidden md:group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 left-2 sm:left-4"
-                aria-label="Previous image"
-              >
-                <ArrowLeft className="text-white w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
-              </button>
-
-              {/* Right arrow (existing) */}
-              <button
-                onClick={handleNext}
-                className="hidden md:group-hover:flex items-center justify-center absolute top-1/2 -translate-y-1/2 right-2 sm:right-4"
-                aria-label="Next image"
-              >
-                <ArrowRight className="text-white w-6 h-6 sm:w-8 sm:h-8 drop-shadow-lg" />
-              </button>
-
-              {/* Subtle top glass overlay with fade-out mask */}
-              <div className="absolute inset-0 z-30 pointer-events-none">
-                <div className="w-full h-full bg-white/10" />
-              </div>
-            </div>
-          );
-        })()}
+        {/* Hero Section hidden (keep spacer for layout alignment) */}
+        <div className="w-full sm:h-[2vh] md:h-[2vh] max-w-[98rem] mx-auto mb-4 sm:mb-6" />
 
         {/* Floating Search Bar - Hidden when URL has params */}
         {!hasUrlParams && (
           <div className="absolute -bottom-[4px] sm:-bottom-[7px] w-full max-w-5xl px-2 sm:px-4 z-40 drop-shadow-xl">
+            {isInitialLoading ? (
+              // Skeleton search bar
+              <div className="w-full h-16 sm:h-20 rounded-3xl bg-white/70 border border-gray-200 animate-pulse" />
+            ) : (
             <RoomSearchBar
               onSearch={(checkIn, checkOut, adults, children, rooms) => {
                 console.log(
@@ -706,6 +662,7 @@ export default function LandingPage() {
                 refetchFeaturedRooms(checkIn, checkOut);
               }}
             />
+            )}
           </div>
         )}
       </div>
@@ -740,7 +697,17 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {featuredRooms.length > 0 && (
+            {isInitialLoading ? (
+              // Skeleton cards row
+              <div className="flex gap-4 px-4 pb-2 w-full">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="w-[252px] h-[260px] rounded-3xl bg-gray-200 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : featuredRooms.length > 0 && (
               <div
                 id={featuredRowId}
                 className="flex gap-4 px-4 pb-2 w-full overflow-x-auto scroll-smooth scrollbar-hide"
@@ -820,7 +787,18 @@ export default function LandingPage() {
       {/* Property Details Section */}
       <div className="mt-2 flex justify-center">
         <div className="w-full max-w-[98rem]">
+          {isInitialLoading ? (
+            // Skeleton for property list / room types
+            <div className="space-y-4">
+              <div className="h-24 rounded-xl bg-gray-200 animate-pulse" />
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="h-64 rounded-xl bg-gray-200 animate-pulse md:col-span-2" />
+                <div className="h-64 rounded-xl bg-gray-200 animate-pulse" />
+              </div>
+            </div>
+          ) : (
           <PropertyPage />
+          )}
         </div>
       </div>
     </div>

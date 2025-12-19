@@ -15,8 +15,12 @@
     --popover: 0 0% 100%;
     --popover-foreground: 208 20% 17%;
     
-    /* Primary theme color */
-    --primary: 33 100% 50%;
+    /* Primary theme color
+       NOTE: previously this was a bright orange (33 100% 50%), which caused
+       a visible orange flash before the brand colour from localStorage was applied.
+       We now use a more neutral base value so that the initial paint is closer
+       to the final header/button color and avoids the orange flash. */
+    --primary: 30 30% 35%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 50 10% 90%;

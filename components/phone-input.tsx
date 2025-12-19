@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -32,16 +32,18 @@ export function PhoneInput({
   dialCode: providedDialCode,
 }: PhoneInputProps) {
   const [currentDialCode, setCurrentDialCode] = useState(providedDialCode || "+1")
+  const prevDialCodeRef = useRef(providedDialCode)
 
   // Update dialCode when it changes from props
   useEffect(() => {
-    if (providedDialCode && providedDialCode !== currentDialCode) {
+    if (providedDialCode && providedDialCode !== prevDialCodeRef.current) {
+      prevDialCodeRef.current = providedDialCode
       setCurrentDialCode(providedDialCode)
       // Update phone number with new dial code
       const phoneOnly = value.replace(/^\+\d+\s*/, "")
       onChange(`${providedDialCode} ${phoneOnly}`)
     }
-  }, [providedDialCode, currentDialCode, value, onChange])
+  }, [providedDialCode, value])
 
   const phoneOnly = value.replace(/^\+\d+\s*/, "")
 

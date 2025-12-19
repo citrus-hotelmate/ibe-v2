@@ -11,7 +11,10 @@ type NavbarProps = {
   onToggleWishlistAction: () => void;
 };
 
-export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarProps) {
+export default function Navbar({
+  showWishlist,
+  onToggleWishlistAction,
+}: NavbarProps) {
   const [headerColor, setHeaderColor] = useState("");
   const [logoURL, setLogoURL] = useState<string>("");
   const [logoWidth, setLogoWidth] = useState<number>();
@@ -19,54 +22,52 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
 
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
-    if (selectedHotelStr) {
-      try {
-        const selectedHotel = JSON.parse(selectedHotelStr);
+    if (!selectedHotelStr) return;
 
-        setHeaderColor(selectedHotel.ibeHeaderColour || selectedHotel.headerColor || "");
+    try {
+      const selectedHotel = JSON.parse(selectedHotelStr);
 
-        if (selectedHotel.logoURL) {
-          const trimmedLogoURL = selectedHotel.logoURL.split("?")[0];
-          setLogoURL(trimmedLogoURL);
-        }
+      setHeaderColor(
+        selectedHotel.ibeHeaderColour || selectedHotel.headerColor || ""
+      );
 
-        // Set logo dimensions from selectedHotel
-        if (selectedHotel.logoWidth) {
-          setLogoWidth(selectedHotel.logoWidth);
-        }
-        if (selectedHotel.logoHeight) {
-          setLogoHeight(selectedHotel.logoHeight);
-        }
-      } catch (e) {
-        console.error("Failed to parse selectedHotel from localStorage", e);
+      if (selectedHotel.logoURL) {
+        setLogoURL(selectedHotel.logoURL.split("?")[0]);
       }
+
+      if (selectedHotel.logoWidth) setLogoWidth(selectedHotel.logoWidth);
+      if (selectedHotel.logoHeight) setLogoHeight(selectedHotel.logoHeight);
+    } catch (e) {
+      console.error("Failed to parse selectedHotel from localStorage", e);
     }
   }, []);
 
   return (
-    <nav className="w-full p-2" style={{ backgroundColor: headerColor }}>
-      <div className="flex h-full items-center justify-between w-full">
+    <nav
+      className="w-full h-16 px-4"
+      style={{ backgroundColor: headerColor }}
+    >
+      <div className="flex items-center justify-between h-full">
+
         {/* LEFT — Logo */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            {logoURL && (
-              <Image
-                src={logoURL}
-                alt="App Logo"
-                height={logoHeight}
-                width={logoWidth}
-                className="rounded-md"
-                priority
-              />
-            )}
-          </Link>
-        </div>
+        <Link href="/" className="h-full flex items-center">
+          {logoURL && logoWidth && logoHeight && (
+            <Image
+              src={logoURL}
+              alt="App Logo"
+              width={logoWidth}
+              height={logoHeight}
+              className="h-full w-auto object-contain"
+              priority
+            />
+          )}
+        </Link>
 
         {/* RIGHT */}
-        <div className="flex items-center justify-end gap-1 sm:gap-3">
+        <div className="flex items-center justify-end gap-1 sm:gap-3 h-full">
           <button
             onClick={onToggleWishlistAction}
-            className="shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white hover:bg-white/100 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white transition-all shadow-sm"
             title="Wishlist"
             aria-label="Toggle wishlist"
           >
@@ -91,9 +92,6 @@ export default function Navbar({ showWishlist, onToggleWishlistAction }: NavbarP
           </div>
         </div>
       </div>
-
-      {/* debug if you want */}
-      {/* <pre className="text-xs text-white">{logoWidth} x {logoHeight}</pre> */}
     </nav>
   );
 }

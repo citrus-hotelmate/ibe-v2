@@ -111,10 +111,13 @@ export default function PaymentPage() {
         updateBookingDetails({
           hotelId: hotelData.id.toString(),
           hotelName: hotelData.name,
-          hotelImageUrl: hotelData.image
+          hotelImageUrl: hotelData.image,
         });
 
-        console.log("Updated booking details with hotel ID:", hotelData.id.toString());
+        console.log(
+          "Updated booking details with hotel ID:",
+          hotelData.id.toString()
+        );
       } catch (e) {
         console.error("Failed to parse stored hotel details", e);
       }
@@ -126,11 +129,15 @@ export default function PaymentPage() {
         const token = process.env.NEXT_PUBLIC_ACCESS_TOKEN || "";
         // TESTING: Hardcode to hotel 0 which has CyberSource credentials
         const testHotelId = 0;
-        console.log("🔄 Fetching IPG credentials for hotel:", testHotelId, "(CyberSource test)");
+        console.log(
+          "🔄 Fetching IPG credentials for hotel:",
+          testHotelId,
+          "(CyberSource test)"
+        );
 
         const ipgData = await getHotelIPGByHotelId({
           token,
-          hotelId: testHotelId
+          hotelId: testHotelId,
         });
 
         if (ipgData && ipgData.length > 0) {
@@ -139,7 +146,7 @@ export default function PaymentPage() {
             ipgName: ipgData[0].ipgName,
             hasAccessKey: !!ipgData[0].accessKeyUSD,
             hasProfileId: !!ipgData[0].profileIdUSD,
-            hasSecretKey: !!ipgData[0].secretKey
+            hasSecretKey: !!ipgData[0].secretKey,
           });
           setIpgCredentials(ipgData[0]);
           setCurrentHotelId(testHotelId);
@@ -172,7 +179,7 @@ export default function PaymentPage() {
           try {
             const ipgData = await getHotelIPGByHotelId({
               token: token || "",
-              hotelId
+              hotelId,
             });
 
             if (ipgData && ipgData.length > 0) {
@@ -191,7 +198,6 @@ export default function PaymentPage() {
 
         // For now, always allow pay at property
         setAllowPayAtProperty(true);
-
       } catch (error) {
         console.error("Error fetching payment options:", error);
         // Set default values in case of error
@@ -215,7 +221,9 @@ export default function PaymentPage() {
   }
 
   interface BookingDetails {
-    selectedRooms: Array<RoomBooking & { price?: number; averageRate?: number }>;
+    selectedRooms: Array<
+      RoomBooking & { price?: number; averageRate?: number }
+    >;
     checkIn?: Date;
     checkOut?: Date;
     nights: number;
@@ -255,15 +263,20 @@ export default function PaymentPage() {
 
   // Calculate total price
   const roomsTotal = bookingDetails.selectedRooms.reduce((total, room) => {
-    return total + (room.averageRate ?? 0) * room.quantity * bookingDetails.nights;
+    return (
+      total + (room.averageRate ?? 0) * room.quantity * bookingDetails.nights
+    );
   }, 0);
   const baseTotal = roomsTotal;
 
   // Packages, promo, and final total calculations (from booking step)
   const packagesTotal =
-    bookingDetails.selectedPackages?.reduce((total: number, pkg: { Price: number }) => {
-      return total + pkg.Price;
-    }, 0) || 0;
+    bookingDetails.selectedPackages?.reduce(
+      (total: number, pkg: { Price: number }) => {
+        return total + pkg.Price;
+      },
+      0
+    ) || 0;
 
   const promoDiscount = bookingDetails.promoCode ? 0.15 * roomsTotal : 0;
   const finalTotal = roomsTotal + packagesTotal - promoDiscount;
@@ -303,27 +316,33 @@ export default function PaymentPage() {
           currency,
           children,
           adults,
-          hotelId
+          hotelId,
         } = bookingDetails;
 
         console.log("Hotel ID being used:", hotelId);
         console.log("Selected rooms data:", selectedRooms);
-        console.log("Room meal plan IDs:", selectedRooms.map(room => ({
-          roomId: room.roomId,
-          mealPlanId: room.mealPlanId,
-          parsedMealPlanId: parseInt(room.mealPlanId || "1") || 1
-        })));
+        console.log(
+          "Room meal plan IDs:",
+          selectedRooms.map((room) => ({
+            roomId: room.roomId,
+            mealPlanId: room.mealPlanId,
+            parsedMealPlanId: parseInt(room.mealPlanId || "1") || 1,
+          }))
+        );
 
         // Expand rooms with quantity > 1 into separate room entries
-        const expandedRooms = selectedRooms.reduce((acc: typeof selectedRooms, room) => {
-          for (let i = 0; i < room.quantity; i++) {
-            acc.push({
-              ...room,
-              quantity: 1 // Each expanded room has quantity 1
-            });
-          }
-          return acc;
-        }, []);
+        const expandedRooms = selectedRooms.reduce(
+          (acc: typeof selectedRooms, room) => {
+            for (let i = 0; i < room.quantity; i++) {
+              acc.push({
+                ...room,
+                quantity: 1, // Each expanded room has quantity 1
+              });
+            }
+            return acc;
+          },
+          []
+        );
 
         console.log("Expanded rooms for payload:", expandedRooms);
         console.log("Total rooms being booked:", expandedRooms.length);
@@ -342,7 +361,10 @@ export default function PaymentPage() {
                 services: [],
                 currency: "USD", // Always use USD for payment processing
                 amount: finalTotal.toFixed(2),
-                rate_code_id: expandedRooms.length > 0 ? parseInt(expandedRooms[0].roomId) : null,
+                rate_code_id:
+                  expandedRooms.length > 0
+                    ? parseInt(expandedRooms[0].roomId)
+                    : null,
                 created_by: name || "",
                 remarks_internal: "",
                 remarks_guest: specialRequests || "",
@@ -352,12 +374,17 @@ export default function PaymentPage() {
                 channel_id: "",
                 property_id: "",
                 hotel_id: parseInt(hotelId) || 0,
-                unique_id: (parseInt(bookingId?.replace(/\D/g, "").slice(0, 10) || "") || Date.now()).toString(),
+                unique_id: (
+                  parseInt(bookingId?.replace(/\D/g, "").slice(0, 10) || "") ||
+                  Date.now()
+                ).toString(),
                 system_id: "FIT",
                 ota_name: "HotelMateIBE",
                 booking_id: bookingId,
                 notes: specialRequests || "",
-                arrival_date: checkIn ? format(new Date(checkIn), "MM/dd/yyyy") : "",
+                arrival_date: checkIn
+                  ? format(new Date(checkIn), "MM/dd/yyyy")
+                  : "",
                 arrival_hour: "12:00 PM",
                 customer: {
                   meta: {
@@ -375,7 +402,9 @@ export default function PaymentPage() {
                   surname: "",
                   company: "",
                 },
-                departure_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
+                departure_date: checkOut
+                  ? format(new Date(checkOut), "MM/dd/yyyy")
+                  : "",
                 deposits: [],
                 ota_commission: "0",
                 ota_reservation_code: bookingId,
@@ -387,27 +416,36 @@ export default function PaymentPage() {
                   if (checkIn && checkOut) {
                     const checkInDate = new Date(checkIn);
                     const checkOutDate = new Date(checkOut);
-                    const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+                    const totalNights = Math.ceil(
+                      (checkOutDate.getTime() - checkInDate.getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    );
 
                     for (let i = 0; i < totalNights; i++) {
                       const currentDate = new Date(checkInDate);
                       currentDate.setDate(currentDate.getDate() + i);
-                      const dateStr = currentDate.toISOString().split('T')[0];
-                      const dailyRate = (room.averageRate || room.price || 0);
+                      const dateStr = currentDate.toISOString().split("T")[0];
+                      const dailyRate = room.averageRate || room.price || 0;
                       daysObj[dateStr] = dailyRate.toFixed(2);
                     }
                   }
 
-                  const roomAmount = Object.values(daysObj).reduce((sum, v) => sum + parseFloat(v), 0);
+                  const roomAmount = Object.values(daysObj).reduce(
+                    (sum, v) => sum + parseFloat(v),
+                    0
+                  );
 
                   // Ensure we have a valid rate plan ID (don't use 0 as it causes errors)
                   const validRatePlanId = parseInt(room.mealPlanId || "1") || 1;
                   if (validRatePlanId === 0) {
-                    console.warn(`Invalid rate plan ID (0) for room ${room.roomId}, using default value 1`);
+                    console.warn(
+                      `Invalid rate plan ID (0) for room ${room.roomId}, using default value 1`
+                    );
                   }
 
                   // Determine reservation status: 1 for card (cybersource), 2 for pay at property
-                  const reservationStatusId = bookingDetails.paymentMethod === "cybersource" ? 1 : 2;
+                  const reservationStatusId =
+                    bookingDetails.paymentMethod === "cybersource" ? 1 : 2;
 
                   return {
                     reservation_status_id: reservationStatusId,
@@ -425,12 +463,19 @@ export default function PaymentPage() {
                       ages: [],
                       infants: 0,
                     },
-                    rate_plan_id: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
+                    rate_plan_id: (validRatePlanId === 0
+                      ? 1
+                      : validRatePlanId
+                    ).toString(),
                     room_type_id: "0",
                     hotel_room_type_id: parseInt(room.roomId) || 0,
                     booking_room_id: `room-${idx}`,
-                    checkin_date: checkIn ? format(new Date(checkIn), "MM/dd/yyyy") : "",
-                    checkout_date: checkOut ? format(new Date(checkOut), "MM/dd/yyyy") : "",
+                    checkin_date: checkIn
+                      ? format(new Date(checkIn), "MM/dd/yyyy")
+                      : "",
+                    checkout_date: checkOut
+                      ? format(new Date(checkOut), "MM/dd/yyyy")
+                      : "",
                     is_cancelled: false,
                     ota_unique_id: "",
                     disc_percen: 0,
@@ -439,12 +484,21 @@ export default function PaymentPage() {
                     suppliment: 0,
                     net_rate: room.averageRate || room.price || 0,
                     is_day_room: false,
-                    parent_rate_plan_id: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
+                    parent_rate_plan_id: (validRatePlanId === 0
+                      ? 1
+                      : validRatePlanId
+                    ).toString(),
                     meta: {
                       meal_plan: room.mealPlanId || "BB",
                       mapping_id: `mapping-id-${idx}`,
-                      parent_rate_plan_id: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
-                      rate_plan_code: (validRatePlanId === 0 ? 1 : validRatePlanId).toString(),
+                      parent_rate_plan_id: (validRatePlanId === 0
+                        ? 1
+                        : validRatePlanId
+                      ).toString(),
+                      rate_plan_code: (validRatePlanId === 0
+                        ? 1
+                        : validRatePlanId
+                      ).toString(),
                       room_type_code: room.roomId,
                     },
                   };
@@ -469,7 +523,10 @@ export default function PaymentPage() {
               type: "booking_revision",
               relationships: {
                 data: {
-                  property: { id: hotelId?.toString() || "0", type: "property" },
+                  property: {
+                    id: hotelId?.toString() || "0",
+                    type: "property",
+                  },
                   booking: { id: bookingId, type: "booking" },
                 },
               },
@@ -489,11 +546,20 @@ export default function PaymentPage() {
           displayCurrency: currency,
           paymentCurrency: "USD",
           amount: finalTotal.toFixed(2),
-          note: "Payment always processes in USD regardless of display currency"
+          note: "Payment always processes in USD regardless of display currency",
         });
-        console.log("Full payload being sent:", JSON.stringify(payload, null, 2));
-        console.log("Total rooms in payload:", payload.data[0].attributes.rooms.length);
-        console.log("Room booking IDs:", payload.data[0].attributes.rooms.map(r => r.booking_room_id));
+        console.log(
+          "Full payload being sent:",
+          JSON.stringify(payload, null, 2)
+        );
+        console.log(
+          "Total rooms in payload:",
+          payload.data[0].attributes.rooms.length
+        );
+        console.log(
+          "Room booking IDs:",
+          payload.data[0].attributes.rooms.map((r) => r.booking_room_id)
+        );
 
         // Generate booking ID BEFORE API call
         const refNo = generateRefNo();
@@ -502,12 +568,18 @@ export default function PaymentPage() {
         // Store booking ID in localStorage with booking details
         localStorage.setItem("currentBookingId", refNo);
         const updatedBookingDetails = { ...bookingDetails, bookingId: refNo };
-        localStorage.setItem("bookingDetails", JSON.stringify(updatedBookingDetails));
+        localStorage.setItem(
+          "bookingDetails",
+          JSON.stringify(updatedBookingDetails)
+        );
+
+        localStorage.setItem("payment_collect", "hotelcollect");
 
         const response = await createBookingFeed({ token, payload });
         if (response) {
           localStorage.setItem("payment_collect", "later");
           router.push(`/tentative/${refNo}`);
+          return;
         } else {
           throw new Error("Failed to create booking");
         }
@@ -516,6 +588,7 @@ export default function PaymentPage() {
         setIsProcessing(false);
       }
     } else if (bookingDetails.paymentMethod === "cybersource") {
+      localStorage.setItem("payment_collect", "paid");
       try {
         if (!ipgCredentials) {
           alert("Payment gateway not configured for this hotel.");
@@ -525,27 +598,34 @@ export default function PaymentPage() {
 
         // TESTING: Use hardcoded hotel ID 0
         const testHotelId = 0;
-        console.log("💳 Processing CyberSource payment for hotel:", testHotelId);
+        console.log(
+          "💳 Processing CyberSource payment for hotel:",
+          testHotelId
+        );
 
         const finalBookingId = bookingDetails.bookingId || generateBookingId();
 
         // Calculate final total - USE CORRECT RATE WITH MEAL PLANS
         const nights = bookingDetails.nights || 0;
-        const roomSubtotal = bookingDetails.selectedRooms.reduce((total, room) => {
-          // Use averageRate which includes meal plans, or fall back to price
-          const perNight = room.averageRate || room.price || 0;
-          return total + (perNight * nights * room.quantity);
-        }, 0);
-
-        // Add packages if any
-        const packagesTotal = (bookingDetails.selectedPackages ?? []).reduce(
-          (total: number, pkg: any) => {
-            const q = Number(pkg.quantity) || 1;
-            const p = Number(pkg.Price) || 0;
-            return total + p * q;
+        const roomSubtotal = bookingDetails.selectedRooms.reduce(
+          (total, room) => {
+            // Use averageRate which includes meal plans, or fall back to price
+            const perNight = room.averageRate || room.price || 0;
+            return total + perNight * nights * room.quantity;
           },
           0
-        ) || 0;
+        );
+
+        // Add packages if any
+        const packagesTotal =
+          (bookingDetails.selectedPackages ?? []).reduce(
+            (total: number, pkg: any) => {
+              const q = Number(pkg.quantity) || 1;
+              const p = Number(pkg.Price) || 0;
+              return total + p * q;
+            },
+            0
+          ) || 0;
 
         const finalTotal = roomSubtotal + packagesTotal - voucherAmount;
 
@@ -555,12 +635,12 @@ export default function PaymentPage() {
           voucherAmount,
           finalTotal,
           nights,
-          rooms: bookingDetails.selectedRooms.map(r => ({
+          rooms: bookingDetails.selectedRooms.map((r) => ({
             name: r.roomName,
             averageRate: r.averageRate,
             price: r.price,
-            quantity: r.quantity
-          }))
+            quantity: r.quantity,
+          })),
         });
 
         // Prepare fields for CyberSource
@@ -568,7 +648,8 @@ export default function PaymentPage() {
           access_key: ipgCredentials.accessKeyUSD,
           profile_id: ipgCredentials.profileIdUSD,
           transaction_uuid: finalBookingId,
-          signed_field_names: "access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_address1,bill_city,bill_country",
+          signed_field_names:
+            "access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_address1,bill_city,bill_country",
           unsigned_field_names: "",
           signed_date_time: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
           locale: "en",
@@ -585,7 +666,7 @@ export default function PaymentPage() {
           displayCurrency: bookingDetails.currency,
           paymentCurrency: "USD",
           amount: finalTotal.toFixed(2),
-          note: "Payment gateway always processes in USD"
+          note: "Payment gateway always processes in USD",
         });
         console.log("🔄 Generating CyberSource signature...");
 
@@ -597,7 +678,9 @@ export default function PaymentPage() {
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to generate signature: ${response.statusText}`);
+          throw new Error(
+            `Failed to generate signature: ${response.statusText}`
+          );
         }
 
         const { signature, endpoint } = await response.json();
@@ -633,35 +716,40 @@ export default function PaymentPage() {
           bookingId: finalBookingId,
           endpoint: endpoint,
           formAction: form.action,
-          formMethod: form.method
+          formMethod: form.method,
         });
 
         document.body.appendChild(form);
         console.log("📋 Form appended to body, submitting now...");
         form.submit();
         console.log("✅ Form submitted to CyberSource");
-
+        setShowConfirmModal(false);
+        return;
       } catch (error) {
         console.error("❌ CyberSource payment error:", error);
-        alert(`Payment processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        alert(
+          `Payment processing failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
         setIsProcessing(false);
       }
     }
 
     // Generate booking ID BEFORE navigation
-    const refNo = generateRefNo();
-    console.log("Generated Booking ID (CyberSource):", refNo);
+    // const refNo = generateRefNo();
+    // console.log("Generated Booking ID (CyberSource):", refNo);
 
-    // Store booking ID in localStorage with booking details
-    localStorage.setItem("currentBookingId", refNo);
-    const updatedBookingDetails = { ...bookingDetails, bookingId: refNo };
-    localStorage.setItem("bookingDetails", JSON.stringify(updatedBookingDetails));
+    // // Store booking ID in localStorage with booking details
+    // localStorage.setItem("currentBookingId", refNo);
+    // const updatedBookingDetails = { ...bookingDetails, bookingId: refNo };
+    // localStorage.setItem("bookingDetails", JSON.stringify(updatedBookingDetails));
 
-    setTimeout(() => {
-      setIsProcessing(false);
-      localStorage.setItem("payment_collect", "paid");
-      router.push(`/tentative/${refNo}`);
-    }, 2000);
+    // setTimeout(() => {
+    //   setIsProcessing(false);
+    //   localStorage.setItem("payment_collect", "paid");
+    //   router.push(`/tentative/${refNo}`);
+    // }, 2000);
   };
 
   const formatCardNumber = (value: string) => {
@@ -693,7 +781,10 @@ export default function PaymentPage() {
 
   return (
     <>
-      <Navbar showWishlist={showWishlist} onToggleWishlistAction={handleToggleWishlist} />
+      <Navbar
+        showWishlist={showWishlist}
+        onToggleWishlistAction={handleToggleWishlist}
+      />
       <div className="container max-w-7xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-4 mt-2">
           <h2 className="text-3xl font-bold">Payment</h2>
@@ -786,7 +877,8 @@ export default function PaymentPage() {
                           />
                         </svg>
                         <span>
-                          Voucher applied: {formatPrice(convertPrice(voucherAmount))}
+                          Voucher applied:{" "}
+                          {formatPrice(convertPrice(voucherAmount))}
                         </span>
                       </div>
                     )}
@@ -828,19 +920,23 @@ export default function PaymentPage() {
                     <Button
                       type="submit"
                       className="w-full btn-dynamic"
-                      style={{ backgroundColor: headerColor, borderColor: headerColor }}
+                      style={{
+                        backgroundColor: headerColor,
+                        borderColor: headerColor,
+                      }}
                       disabled={isProcessing || !bookingDetails.paymentMethod}
                     >
                       {isProcessing
                         ? "Processing..."
                         : bookingDetails.paymentMethod === "arrival"
-                          ? "Get Booking Confirmation"
-                          : isMounted
-                            ? `Pay ${bookingDetails.currency === "LKR"
+                        ? "Get Booking Confirmation"
+                        : isMounted
+                        ? `Pay ${
+                            bookingDetails.currency === "LKR"
                               ? formatPrice(finalTotal)
                               : formatPrice(convertPrice(finalTotal))
-                            }`
-                            : `Pay $${finalTotal.toFixed(2)}`}
+                          }`
+                        : `Pay $${finalTotal.toFixed(2)}`}
                     </Button>
                   </div>
                 </CardFooter>
@@ -867,16 +963,24 @@ export default function PaymentPage() {
                   {bookingDetails.paymentMethod === "arrival" ? (
                     <Button
                       className="btn-dynamic"
-                      style={{ backgroundColor: headerColor, borderColor: headerColor }}
+                      style={{
+                        backgroundColor: headerColor,
+                        borderColor: headerColor,
+                      }}
                       onClick={handlePaymentSubmit}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? "Processing..." : "Confirm & Pay at Hotel"}
+                      {isProcessing
+                        ? "Processing..."
+                        : "Confirm & Pay at Hotel"}
                     </Button>
                   ) : (
                     <Button
                       className="btn-dynamic"
-                      style={{ backgroundColor: headerColor, borderColor: headerColor }}
+                      style={{
+                        backgroundColor: headerColor,
+                        borderColor: headerColor,
+                      }}
                       onClick={handlePaymentSubmit}
                       disabled={isProcessing}
                     >
@@ -908,11 +1012,13 @@ export default function PaymentPage() {
                       {roomBooking.adults}{" "}
                       {roomBooking.adults === 1 ? "adult" : "adults"}
                       {roomBooking.children > 0 &&
-                        `, ${roomBooking.children} ${roomBooking.children === 1 ? "child" : "children"
+                        `, ${roomBooking.children} ${
+                          roomBooking.children === 1 ? "child" : "children"
                         }`}
                     </p>
                     <div className="text-sm mt-1 text-muted-foreground">
-                      {formatPrice(convertPrice(roomBooking.averageRate ?? 0))} per night
+                      {formatPrice(convertPrice(roomBooking.averageRate ?? 0))}{" "}
+                      per night
                       {roomBooking.mealPlanId && (
                         <div className="text-xs mt-1">
                           Meal Plan: {roomBooking.mealPlanId}
@@ -968,14 +1074,16 @@ export default function PaymentPage() {
                           Packages
                         </div>
                         <ul className="text-sm text-muted-foreground space-y-1 mb-1">
-                          {(bookingDetails.selectedPackages || []).map((pkg, idx) => (
-                            <li key={idx} className="flex justify-between">
-                              <span>{pkg.Description}</span>
-                              <span className="text-sm font-medium text-foreground">
-                                {formatPrice(convertPrice(pkg.Price))}
-                              </span>
-                            </li>
-                          ))}
+                          {(bookingDetails.selectedPackages || []).map(
+                            (pkg, idx) => (
+                              <li key={idx} className="flex justify-between">
+                                <span>{pkg.Description}</span>
+                                <span className="text-sm font-medium text-foreground">
+                                  {formatPrice(convertPrice(pkg.Price))}
+                                </span>
+                              </li>
+                            )
+                          )}
                         </ul>
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">
@@ -1027,4 +1135,3 @@ export default function PaymentPage() {
     </>
   );
 }
-

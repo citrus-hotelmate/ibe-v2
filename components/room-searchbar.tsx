@@ -14,7 +14,7 @@ interface RoomSearchBarProps {
 
 export function RoomSearchBar({ onSearch }: RoomSearchBarProps) {
     const { bookingDetails, updateBookingDetails } = useBooking();
-    const [headerColor, setHeaderColor] = useState("#792868");
+    const [headerColor, setHeaderColor] = useState("");
     
     useEffect(() => {
         const selectedHotelStr = localStorage.getItem("selectedHotel");

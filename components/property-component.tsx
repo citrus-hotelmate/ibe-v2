@@ -249,7 +249,19 @@ export default function PropertyPage() {
 
       const filteredRooms = rooms
         .filter((item: any) => {
-          const roomTotalCapacity = item.adultCount + item.childCount;
+          // Some APIs return null for adultCount/childCount – treat that as "no capacity limit"
+          const hasCapacityData =
+            item.adultCount !== null &&
+            item.adultCount !== undefined &&
+            item.childCount !== null &&
+            item.childCount !== undefined;
+
+          if (!hasCapacityData) {
+            // If capacity isn't specified, don't exclude the room based on guests
+            return true;
+          }
+
+          const roomTotalCapacity = (item.adultCount || 0) + (item.childCount || 0);
           return roomTotalCapacity >= totalGuestCount;
         })
         .map((item: any) => {
@@ -350,7 +362,19 @@ export default function PropertyPage() {
         // Filter rooms that have sufficient capacity for all guests
         const filteredRooms = allRooms
           .filter((item: any) => {
-            const roomTotalCapacity = item.adultCount + item.childCount;
+            // Some APIs return null for adultCount/childCount – treat that as "no capacity limit"
+            const hasCapacityData =
+              item.adultCount !== null &&
+              item.adultCount !== undefined &&
+              item.childCount !== null &&
+              item.childCount !== undefined;
+
+            if (!hasCapacityData) {
+              // If capacity isn't specified, don't exclude the room based on guests
+              return true;
+            }
+
+            const roomTotalCapacity = (item.adultCount || 0) + (item.childCount || 0);
             return roomTotalCapacity >= totalGuestCount;
           })
           .map((item: any) => {

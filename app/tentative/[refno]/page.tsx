@@ -39,6 +39,8 @@ export default function TentativeBookingPage({
   const [logoWidth, setLogoWidth] = useState<number>();
   const [logoHeight, setLogoHeight] = useState<number>();
 
+
+
   const router = useRouter();
   const { currency, convertPrice } = useCurrency();
 
@@ -154,6 +156,8 @@ export default function TentativeBookingPage({
     fetchData();
   }, [params.refno]);
 
+  console.log("hoteldetails in tentative", hotelDetails);
+
   useEffect(() => {
     // Hide confetti after 5 seconds
     const timer = setTimeout(() => {
@@ -232,122 +236,93 @@ export default function TentativeBookingPage({
   const totalAmount = bookingDetails.totalPrice ?? bookingDetails.total ?? 0;
 
   return (
-    <div className="container max-w-2xl mx-auto py-12 px-4">
-      {showConfetti && <Confetti width={width} height={height} numberOfPieces={300} recycle={false} />}
+    <>
+      <style jsx global>{`
+        @page {
+          margin: 0;
+        }
+        @media print {
+          .no-print,
+          footer {
+            display: none !important;
+          }
+          body {
+            margin: 1.6cm;
+          }
+        }
+      `}</style>
 
-      <Card className="border border-green-500 shadow-lg">
-        {logoURL && (
-          <div className="flex justify-center mt-4">
-            <Image
-              src={logoURL}
-              width={logoWidth}
-              height={logoHeight}
-              alt="Hotel Logo"
-              className="rounded-md shadow object-contain"
-            />
-          </div>
-        )}
-
-        <CardHeader className="text-center space-y-3">
-          <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-          <CardTitle className="text-2xl font-bold">
-            Booking Confirmed!
-          </CardTitle>
-          <p className="text-muted-foreground">
-            Thanks <strong>{bookingDetails.name}</strong>, your booking at{" "}
-            <strong>{selectedHotel?.name || "Hotel"}</strong> has been confirmed.
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Confirmation #: <strong>{bookingId}</strong>
-          </p>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          <ReservationDetails booking={bookingDetails} bookingId={bookingId} />
-          <RoomDetails
-            bookingDetails={bookingDetails}
-            totalAmount={totalAmount}
-            formatPrice={formatPrice}
-            convertPrice={convertPrice}
-            formatPriceUSD={formatPriceUSD}
-          />
-          <ContactDetails hotelDetails={hotelDetails} />
-          <PaymentInfo paymentCollect={paymentCollect} />
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-3">
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => window.print()}
-          >
-            Print Confirmation
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full flex items-center gap-2"
-            onClick={downloadPDF}
-          >
-            <Download className="w-4 h-4" /> Download as PDF
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full flex items-center gap-2"
-            onClick={() => router.push("/")}
-          >
-            Book Another Room
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {/* Hidden div for PDF printing */}
-      <div
-        ref={printRef}
-        style={{
-          position: "absolute",
-          top: "-9999px",
-          left: "-9999px",
-          width: "750px",
-          background: "white",
-        }}
-      >
-        <div style={{ pageBreakInside: "avoid" }}>
-          <Card className="border border-green-500">
-            <CardHeader
-              className="text-center space-y-2"
-              style={{
-                marginTop: 0,
-                paddingTop: "8px",
-                paddingBottom: "8px",
-              }}
-            >
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-              <CardTitle className="text-2xl font-bold">
-                Booking Confirmed
-              </CardTitle>
-              <p className="text-muted-foreground">
-                Thanks <strong>{bookingDetails.name}</strong>, your booking is confirmed.
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Confirmation #: <strong>{bookingId}</strong>
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ReservationDetails booking={bookingDetails} bookingId={bookingId} />
-              <RoomDetails
-                bookingDetails={bookingDetails}
-                totalAmount={totalAmount}
-                formatPrice={formatPrice}
-                convertPrice={convertPrice}
-                formatPriceUSD={formatPriceUSD}
-              />
-              <ContactDetails hotelDetails={hotelDetails} />
-              <PaymentInfo paymentCollect={paymentCollect} />
-            </CardContent>
-          </Card>
+      <div className="container max-w-2xl mx-auto py-12 px-4">
+        <div className="no-print">
+          {showConfetti && <Confetti width={width} height={height} numberOfPieces={300} recycle={false} />}
         </div>
+
+        <Card className="border border-green-500 shadow-lg">
+          {logoURL && (
+            <div className="flex justify-center mt-4">
+              <Image
+                src={logoURL}
+                width={logoWidth}
+                height={logoHeight}
+                alt="Hotel Logo"
+                className="rounded-md shadow object-contain"
+              />
+            </div>
+          )}
+
+          <CardHeader className="text-center space-y-3">
+            <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+            <CardTitle className="text-2xl font-bold">
+              Booking Confirmed!
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Thanks <strong>{bookingDetails.name}</strong>, your booking at{" "}
+              <strong>{selectedHotel?.name || "Hotel"}</strong> has been confirmed.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Confirmation #: <strong>{bookingId}</strong>
+            </p>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <ReservationDetails booking={bookingDetails} bookingId={bookingId} />
+            <RoomDetails
+              bookingDetails={bookingDetails}
+              totalAmount={totalAmount}
+              formatPrice={formatPrice}
+              convertPrice={convertPrice}
+              formatPriceUSD={formatPriceUSD}
+            />
+            <ContactDetails hotelDetails={hotelDetails} />
+            <PaymentInfo paymentCollect={paymentCollect} />
+          </CardContent>
+
+          <CardFooter className="flex flex-col gap-3 no-print">
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => window.print()}
+            >
+              Print Confirmation
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full flex items-center gap-2"
+              onClick={downloadPDF}
+            >
+              <Download className="w-4 h-4" /> Download as PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full flex items-center gap-2"
+              onClick={() => router.push(selectedHotel?.slug ? `/hotels/${selectedHotel.slug}` : "/")}
+            >
+              Book Another Room
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -410,7 +385,7 @@ function RoomDetails({ bookingDetails, totalAmount, formatPrice, convertPrice, f
             <div className="text-muted-foreground">Meal Plan: {room.mealPlanId}</div>
           )}
           <div className="text-muted-foreground">
-            {formatPriceUSD(room.averageRate ?? 0)} per night
+            {formatPrice(convertPrice(room.averageRate ?? 0))} per night
           </div>
         </div>
       ))}
@@ -422,7 +397,7 @@ function RoomDetails({ bookingDetails, totalAmount, formatPrice, convertPrice, f
           {bookingDetails.selectedPackages.map((pkg: any, idx: number) => (
             <div key={idx} className="text-sm flex justify-between mb-1">
               <span>{pkg.Description}</span>
-              <span>{formatPriceUSD(pkg.Price)}</span>
+              <span>{formatPrice(convertPrice(pkg.Price))}</span>
             </div>
           ))}
         </div>
@@ -433,7 +408,7 @@ function RoomDetails({ bookingDetails, totalAmount, formatPrice, convertPrice, f
         <div className="mt-4 border-t pt-4">
           <div className="text-sm flex justify-between text-green-600">
             <span>Promo ({bookingDetails.promoCode})</span>
-            <span>-{formatPriceUSD(bookingDetails.discount || 0)}</span>
+            <span>-{formatPrice(convertPrice(bookingDetails.discount || 0))}</span>
           </div>
         </div>
       )}
@@ -443,37 +418,70 @@ function RoomDetails({ bookingDetails, totalAmount, formatPrice, convertPrice, f
           Total Price
         </div>
         <div className="text-2xl font-bold text-green-700 mt-1">
-          {formatPriceUSD(totalAmount)}
+          {formatPrice(convertPrice(totalAmount))}
+        </div>
+        <div className="text-xs text-muted-foreground mt-2">
+          * All payments are processed in USD
         </div>
       </div>
     </div>
   );
 }
 
-function ContactDetails({ hotelDetails }: any) {
+
+function ContactDetails() {
+  const [contactHotel, setContactHotel] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const hotelStr = localStorage.getItem("selectedHotel");
+      if (!hotelStr) return;
+
+      const hotelObj = JSON.parse(hotelStr);
+      setContactHotel(hotelObj);
+    } catch (e) {
+      console.error("Failed to parse selectedHotel from localStorage", e);
+      setContactHotel(null);
+    }
+  }, []);
+
+  if (!contactHotel) return null;
+
+  // NOTE: Your stored object might be Phone/Email/Address OR phone/email/address.
+  const phone = contactHotel.Phone ?? contactHotel.phone ?? contactHotel.tel;
+  const email = contactHotel.Email ?? contactHotel.email;
+  const address = contactHotel.Address ?? contactHotel.address;
+
   return (
     <div className="bg-gray-50 border rounded-md p-4 space-y-3">
       <h3 className="font-semibold text-sm text-muted-foreground uppercase">
         Contact Hotel
       </h3>
-      <div className="text-sm">
-        {hotelDetails?.Phone && (
+
+      <div className="text-sm space-y-2">
+        {phone && (
           <div>
             <span className="text-muted-foreground">Phone:</span>{" "}
-            <span className="font-medium">{hotelDetails.Phone}</span>
+            <span className="font-medium">{phone}</span>
           </div>
         )}
-        {hotelDetails?.Email && (
+
+        {email && (
           <div>
             <span className="text-muted-foreground">Email:</span>{" "}
-            <span className="font-medium">{hotelDetails.Email}</span>
+            <span className="font-medium">{email}</span>
           </div>
         )}
-        {hotelDetails?.Address && (
+
+        {address && (
           <div>
             <span className="text-muted-foreground">Address:</span>{" "}
-            <span className="font-medium">{hotelDetails.Address}</span>
+            <span className="font-medium">{address}</span>
           </div>
+        )}
+
+        {!phone && !email && !address && (
+          <div className="text-muted-foreground">No contact details available.</div>
         )}
       </div>
     </div>
@@ -489,7 +497,7 @@ function PaymentInfo({ paymentCollect }: any) {
         <CreditCard className="w-5 h-5 mt-0.5 flex-shrink-0" />
         <div className="text-sm">
           <span className="font-semibold">Payment Status:</span>{" "}
-          {paymentCollect === "paid" ? "Paid Online" : "Pay at Hotel"}
+          {(paymentCollect === "hotelcollect" || paymentCollect === "later" || paymentCollect === "property") ? "Pay at Hotel" : "Paid Online"}
         </div>
       </div>
     </div>

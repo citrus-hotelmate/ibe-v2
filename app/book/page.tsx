@@ -6,8 +6,7 @@ import type React from "react"
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 import { useEffect, useState } from "react"
 import { fetchCountries } from "@/lib/utils" // Adjust path as needed
-import { useRouter } from "next/navigation"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,49 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns"
 import { AlertCircle, Calendar, CheckCircle, Minus, Plus } from "lucide-react"
 import { RoomBooking, useBooking } from "@/components/booking-context"
-
-function SearchParamLoader({ onLoaded }: { onLoaded: (params: URLSearchParams) => void }) {
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    onLoaded(searchParams);
-  }, [searchParams, onLoaded]);
-  return null;
-}
-
-function RoomTypeLoader({ onLoaded }: { onLoaded: (roomTypeNames: string[]) => void }) {
-  const [params, setParams] = useState<URLSearchParams | null>(null);
-
-  useEffect(() => {
-    if (params) {
-      const roomTypeNames = params.get("roomTypes")?.split(",") || [];
-      onLoaded(roomTypeNames);
-    }
-  }, [params, onLoaded]);
-
-  return (
-    <Suspense fallback={null}>
-      <SearchParamLoader onLoaded={setParams} />
-    </Suspense>
-  );
-}
-
-function UrlParamChecker({ onHasParams }: { onHasParams: (hasParams: boolean) => void }) {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const hasUrlParams = Boolean(
-      searchParams.get("email") ||
-      searchParams.get("name") ||
-      searchParams.get("contact")
-    );
-    onHasParams(hasUrlParams);
-  }, [searchParams, onHasParams]);
-
-  return null;
-}
-
-
-
 // Define RoomType interface (update fields as needed to match your data)
 interface RoomType {
   id: string
@@ -109,6 +65,7 @@ interface BookingDetails {
 
 function BookPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams();
   const [headerColor, setHeaderColor] = useState("#792868")
   const [roomTypeNames, setRoomTypeNames] = useState<string[]>([])
   const [hasUrlParams, setHasUrlParams] = useState(false)
@@ -133,6 +90,22 @@ function BookPageContent() {
   // Restore reservation summary from localStorage if available
   const { bookingDetails, updateBookingDetails, updateRoom, incrementRoomQuantity, decrementRoomQuantity } =
     useBooking()
+
+  // Derive URL-based flags and room types from search parameters
+  useEffect(() => {
+    if (!searchParams) return;
+
+    const hasParams = Boolean(
+      searchParams.get("email") ||
+      searchParams.get("name") ||
+      searchParams.get("contact")
+    );
+    setHasUrlParams(hasParams);
+
+    const roomTypesParam = searchParams.get("roomTypes");
+    const types = roomTypesParam ? roomTypesParam.split(",") : [];
+    setRoomTypeNames(types);
+  }, [searchParams]);
 
   useEffect(() => {
     // Only restore from localStorage if there are no URL params (to avoid overriding them)
@@ -340,9 +313,6 @@ function BookPageContent() {
 
   return (
     <>
-      <Suspense fallback={null}>
-        <UrlParamChecker onHasParams={setHasUrlParams} />
-      </Suspense>
       <Navbar
         showWishlist={showWishlist}
         onToggleWishlistAction={() => setShowWishlist(!showWishlist)}
@@ -356,10 +326,6 @@ function BookPageContent() {
           </div>
           {/* <CurrencySelector /> */}
         </div>
-
-        <Suspense fallback={null}>
-          <RoomTypeLoader onLoaded={setRoomTypeNames} />
-        </Suspense>
 
         {Object.keys(formErrors).length > 0 && (
           <Alert variant="destructive" className="mb-6">
@@ -510,6 +476,7 @@ function BookPageContent() {
                   <div className="grid gap-2">
                     <Label htmlFor="nationality">Nationality</Label>
                     <Select
+                      key={`nationality-${bookingDetails.nationality}`}
                       value={bookingDetails.nationality}
                       onValueChange={(value) => {
                         const selectedCountry = countries.find(c => c.countryId.toString() === value);
@@ -536,6 +503,7 @@ function BookPageContent() {
                   <div className="grid gap-2">
                     <Label htmlFor="phone">Phone</Label>
                     <PhoneInput
+                      key={`phone-${bookingDetails.dialCode}`}
                       id="phone"
                       value={bookingDetails.phone}
                       onChange={(value) => updateBookingDetails({ phone: value })}
@@ -777,9 +745,5 @@ function BookPageContent() {
 }
 
 export default function BookPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-      <BookPageContent />
-    </Suspense>
-  )
+  return <BookPageContent />
 }
