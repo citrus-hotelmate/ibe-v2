@@ -1,92 +1,75 @@
 // @ts-nocheck
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import type React from "react";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-import { useEffect, useState } from "react";
-import { fetchCountries } from "@/lib/utils"; // Adjust path as needed
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { format } from "date-fns";
-import { AlertCircle, Calendar, CheckCircle, Minus, Plus } from "lucide-react";
-import { RoomBooking, useBooking } from "@/components/booking-context";
+import { Suspense } from "react"
+import type React from "react"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+import { useEffect, useState } from "react"
+import { fetchCountries } from "@/lib/utils" // Adjust path as needed
+import { useRouter, useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { format } from "date-fns"
+import { AlertCircle, Calendar, CheckCircle, Minus, Plus } from "lucide-react"
+import { RoomBooking, useBooking } from "@/components/booking-context"
 // Define RoomType interface (update fields as needed to match your data)
 interface RoomType {
-  id: string;
-  roomName: string;
-  bedType: string;
-  price: number;
-  availability: number;
+  id: string
+  roomName: string
+  bedType: string
+  price: number
+  availability: number
   // Add other fields as needed
 }
 
-import { Country } from "@/types/country";
-import { getCountries } from "@/controllers/countryController";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PhoneInput } from "@/components/phone-input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import Navbar from "@/components/navbar";
-import { useCurrency } from "@/components/currency-context";
-import { CurrencySelector } from "@/components/currency-selector";
+import { Country } from "@/types/country"
+import { getCountries } from "@/controllers/countryController"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { PhoneInput } from "@/components/phone-input"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import Navbar from "@/components/navbar"
+import { useCurrency } from "@/components/currency-context"
+import { CurrencySelector } from "@/components/currency-selector"
 
 interface FormErrors {
-  name?: string;
-  email?: string;
-  phone?: string;
-  specialRequests?: string;
-  terms?: string;
+  name?: string
+  email?: string
+  phone?: string
+  specialRequests?: string
+  terms?: string
 }
 
 // Make sure BookingDetails includes specialRequests
 // If BookingDetails is imported from elsewhere, update it there instead:
 // Extend BookingDetails to support promoCode and promoDetails
 interface BookingDetails {
-  name: string;
-  email: string;
-  phone: string;
-  nationality: string;
-  dialCode: string;
-  checkIn: Date | null;
-  checkOut: Date | null;
-  nights: number;
-  selectedRooms: any[];
-  specialRequests?: string;
-  promoCode?: string;
-  promoDetails?: any;
-  selectedPackages?: any[];
+  name: string
+  email: string
+  phone: string
+  nationality: string
+  dialCode: string
+  checkIn: Date | null
+  checkOut: Date | null
+  nights: number
+  selectedRooms: any[]
+  specialRequests?: string
+  promoCode?: string
+  promoDetails?: any
+  selectedPackages?: any[]
 }
 
 function BookPageContent() {
-  const router = useRouter();
+  const router = useRouter()
   const searchParams = useSearchParams();
-  const [headerColor, setHeaderColor] = useState("#792868");
-  const [roomTypeNames, setRoomTypeNames] = useState<string[]>([]);
-  const [hasUrlParams, setHasUrlParams] = useState(false);
-  const [showWishlist, setShowWishlist] = useState(false);
+  const [headerColor, setHeaderColor] = useState("#792868")
+  const [roomTypeNames, setRoomTypeNames] = useState<string[]>([])
+  const [hasUrlParams, setHasUrlParams] = useState(false)
+  const [showWishlist, setShowWishlist] = useState(false)
 
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
 
@@ -102,16 +85,11 @@ function BookPageContent() {
         console.error("Failed to parse selectedHotel from localStorage", error);
       }
     }
-  }, []);
+  }, [])
 
   // Restore reservation summary from localStorage if available
-  const {
-    bookingDetails,
-    updateBookingDetails,
-    updateRoom,
-    incrementRoomQuantity,
-    decrementRoomQuantity,
-  } = useBooking();
+  const { bookingDetails, updateBookingDetails, updateRoom, incrementRoomQuantity, decrementRoomQuantity } =
+    useBooking()
 
   // Derive URL-based flags and room types from search parameters
   useEffect(() => {
@@ -119,8 +97,8 @@ function BookPageContent() {
 
     const hasParams = Boolean(
       searchParams.get("email") ||
-        searchParams.get("name") ||
-        searchParams.get("contact")
+      searchParams.get("name") ||
+      searchParams.get("contact")
     );
     setHasUrlParams(hasParams);
 
@@ -152,9 +130,7 @@ function BookPageContent() {
         }
       }
     } else {
-      console.log(
-        "📧 URL params detected, preserving them instead of localStorage"
-      );
+      console.log("📧 URL params detected, preserving them instead of localStorage");
     }
     // eslint-disable-next-line
   }, [hasUrlParams]);
@@ -162,26 +138,24 @@ function BookPageContent() {
   useEffect(() => {
     const fetchRoomDetails = async () => {
       try {
-        const response = await fetch("/api/rooms"); // replace with actual endpoint
-        const data: RoomType[] = await response.json();
-        const filteredRooms = data.filter((room) =>
-          roomTypeNames.includes(room.roomName)
-        );
-        setRoomTypes(filteredRooms);
+        const response = await fetch("/api/rooms") // replace with actual endpoint
+        const data: RoomType[] = await response.json()
+        const filteredRooms = data.filter(room => roomTypeNames.includes(room.roomName))
+        setRoomTypes(filteredRooms)
       } catch (error) {
-        console.error("Error fetching room types:", error);
+        console.error("Error fetching room types:", error)
       }
-    };
+    }
 
     if (roomTypeNames.length > 0) {
-      fetchRoomDetails();
+      fetchRoomDetails()
     }
-  }, [roomTypeNames]);
-  const { convertPrice, formatPrice } = useCurrency();
-  const [isMounted, setIsMounted] = useState(false);
+  }, [roomTypeNames])
+  const { convertPrice, formatPrice } = useCurrency()
+  const [isMounted, setIsMounted] = useState(false)
 
   // Countries state and fetch
-  const [countries, setCountries] = useState<Country[]>([]);
+  const [countries, setCountries] = useState<Country[]>([])
   useEffect(() => {
     const fetchCountries = async () => {
       try {
@@ -194,16 +168,16 @@ function BookPageContent() {
     };
 
     fetchCountries();
-  }, []);
+  }, [])
 
   // Hotel policies state - load from selectedHotel localStorage
   const [hotelPolicies, setHotelPolicies] = useState<{
-    CancellationPolicy?: string;
-    ChildPolicy?: string;
-    Taxation?: string;
-    Phone?: string;
-    WhatsAppNo?: string;
-  }>({});
+    CancellationPolicy?: string
+    ChildPolicy?: string
+    Taxation?: string
+    Phone?: string
+    WhatsAppNo?: string
+  }>({})
 
   useEffect(() => {
     // Load hotel policies from selectedHotel localStorage
@@ -212,15 +186,9 @@ function BookPageContent() {
       try {
         const selectedHotel = JSON.parse(selectedHotelStr);
         setHotelPolicies({
-          CancellationPolicy:
-            selectedHotel.cancellationPolicy ||
-            "Cancellation policy information will be available soon.",
-          ChildPolicy:
-            selectedHotel.childPolicy ||
-            "Child policy details will be available soon.",
-          Taxation:
-            selectedHotel.taxPolicy ||
-            "Taxation details will be available soon.",
+          CancellationPolicy: selectedHotel.cancellationPolicy || "Cancellation policy information will be available soon.",
+          ChildPolicy: selectedHotel.childPolicy || "Child policy details will be available soon.",
+          Taxation: selectedHotel.taxPolicy || "Taxation details will be available soon.",
           Phone: selectedHotel.phone || "",
           WhatsAppNo: selectedHotel.phone || "", // Using phone as WhatsApp if available
         });
@@ -228,54 +196,56 @@ function BookPageContent() {
         console.error("Failed to parse selectedHotel from localStorage", error);
       }
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    setIsMounted(true)
+  }, [])
 
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [checkedTerms, setCheckedTerms] = useState(false);
-  const [specialRequests, setSpecialRequests] = useState("");
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
+  const [checkedTerms, setCheckedTerms] = useState(false)
+  const [specialRequests, setSpecialRequests] = useState("")
+
+
 
   const validateEmail = (email: string): boolean => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return re.test(email)
+  }
 
   const validatePhone = (phone: string): boolean => {
     // Basic validation for phone number (at least 5 digits after country code)
-    return /\+\d+\s\d{5,}/.test(phone);
-  };
+    return /\+\d+\s\d{5,}/.test(phone)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Validate form
-    const errors: FormErrors = {};
+    const errors: FormErrors = {}
 
     if (!bookingDetails.name || bookingDetails.name.trim().length < 3) {
-      errors.name = "Please enter your full name (at least 3 characters)";
+      errors.name = "Please enter your full name (at least 3 characters)"
     }
 
     if (!bookingDetails.email || !validateEmail(bookingDetails.email)) {
-      errors.email = "Please enter a valid email address";
+      errors.email = "Please enter a valid email address"
     }
 
     if (!bookingDetails.phone || !validatePhone(bookingDetails.phone)) {
-      errors.phone = "Please enter a valid phone number with country code";
+      errors.phone = "Please enter a valid phone number with country code"
     }
 
     if (!checkedTerms) {
-      errors.terms = "You must agree to the terms and conditions";
+      errors.terms = "You must agree to the terms and conditions"
     }
 
     if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
+      setFormErrors(errors)
+      return
     }
 
-    updateBookingDetails({ specialRequests: specialRequests });
+    updateBookingDetails({ specialRequests: specialRequests })
 
     // Normalize phone number by removing spaces between country code and number
     const cleanedPhone = bookingDetails.phone.replace(/\s+/g, "");
@@ -287,43 +257,39 @@ function BookPageContent() {
       promoCode: bookingDetails.promoCode,
       selectedPackages: bookingDetails.selectedPackages,
     };
-    localStorage.setItem(
-      "reservationSummary",
-      JSON.stringify(reservationSummary)
-    );
+    localStorage.setItem("reservationSummary", JSON.stringify(reservationSummary));
 
     // Clear errors and proceed
-    setFormErrors({});
-    router.push("/payment");
-  };
+    setFormErrors({})
+    router.push("/payment")
+  }
 
   // Calculate meal plan costs for each room
   interface RoomBooking {
-    roomId: string;
-    roomName: string;
-    price: number;
-    quantity: number;
-    adults: number;
-    children: number;
-    mealPlanId?: string;
+    roomId: string
+    roomName: string
+    price: number
+    quantity: number
+    adults: number
+    children: number
+    mealPlanId?: string
   }
 
   interface MealPlan {
-    id: string;
-    name: string;
-    priceAdult: number;
-    priceChild: number;
-    minChildren?: number;
+    id: string
+    name: string
+    priceAdult: number
+    priceChild: number
+    minChildren?: number
   }
 
   // Calculate totals
   const baseTotal = bookingDetails.selectedRooms.reduce((total, room) => {
-    return total + room.averageRate * room.quantity * bookingDetails.nights;
-  }, 0);
-  const packagesTotal =
-    bookingDetails.selectedPackages?.reduce((total, pkg) => {
-      return total + pkg.Price;
-    }, 0) || 0;
+    return total + room.averageRate * room.quantity * bookingDetails.nights
+  }, 0)
+  const packagesTotal = bookingDetails.selectedPackages?.reduce((total, pkg) => {
+    return total + pkg.Price;
+  }, 0) || 0;
   // Example promo: 15% off baseTotal if promoCode exists
   const promoDiscount = bookingDetails.promoCode ? 0.15 * baseTotal : 0;
   const finalTotal = baseTotal + packagesTotal - promoDiscount;
@@ -340,10 +306,10 @@ function BookPageContent() {
     }
   }, [isMounted, finalTotal]);
 
+
+
   // Check if same-day booking is available
-  const isSameDay =
-    new Date().toDateString() ===
-    (bookingDetails.checkIn?.toDateString() || "");
+  const isSameDay = new Date().toDateString() === (bookingDetails.checkIn?.toDateString() || "")
 
   return (
     <>
@@ -356,9 +322,7 @@ function BookPageContent() {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-3xl font-bold">Complete Your Booking</h1>
-            <p className="text-sm text-muted-foreground">
-              Please fill in your details to proceed with your reservation
-            </p>
+            <p className="text-sm text-muted-foreground">Please fill in your details to proceed with your reservation</p>
           </div>
           {/* <CurrencySelector /> */}
         </div>
@@ -387,34 +351,22 @@ function BookPageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {bookingDetails.selectedRooms.map((roomBooking) => {
-                    const room: RoomType | undefined = roomTypes.find(
-                      (r: RoomType) => r.id === roomBooking.roomId
-                    );
-                    if (!room) return null;
+                    const room: RoomType | undefined = roomTypes.find((r: RoomType) => r.id === roomBooking.roomId)
+                    if (!room) return null
 
                     function calculateMealPlanCost(roomBooking: RoomBooking) {
-                      throw new Error("Function not implemented.");
+                      throw new Error("Function not implemented.")
                     }
 
                     return (
-                      <div
-                        key={roomBooking.roomId}
-                        className="border rounded-md p-4"
-                      >
+                      <div key={roomBooking.roomId} className="border rounded-md p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h3 className="font-medium">
-                              {roomBooking.roomName}
-                            </h3>
+                            <h3 className="font-medium">{roomBooking.roomName}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {room.bedType} • {roomBooking.adults}{" "}
-                              {roomBooking.adults === 1 ? "adult" : "adults"}
+                              {room.bedType} • {roomBooking.adults} {roomBooking.adults === 1 ? "adult" : "adults"}
                               {roomBooking.children > 0 &&
-                                `, ${roomBooking.children} ${
-                                  roomBooking.children === 1
-                                    ? "child"
-                                    : "children"
-                                }`}
+                                `, ${roomBooking.children} ${roomBooking.children === 1 ? "child" : "children"}`}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -422,26 +374,18 @@ function BookPageContent() {
                               variant="outline"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() =>
-                                decrementRoomQuantity(roomBooking.roomId)
-                              }
+                              onClick={() => decrementRoomQuantity(roomBooking.roomId)}
                               disabled={roomBooking.quantity <= 1}
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
-                            <span className="w-8 text-center">
-                              {roomBooking.quantity}
-                            </span>
+                            <span className="w-8 text-center">{roomBooking.quantity}</span>
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() =>
-                                incrementRoomQuantity(roomBooking.roomId)
-                              }
-                              disabled={
-                                roomBooking.quantity >= room.availability
-                              }
+                              onClick={() => incrementRoomQuantity(roomBooking.roomId)}
+                              disabled={roomBooking.quantity >= room.availability}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
@@ -449,23 +393,14 @@ function BookPageContent() {
                         </div>
 
                         <div className="mb-3">
-                          <Label
-                            htmlFor={`mealPlan-${roomBooking.roomId}`}
-                            className="text-sm"
-                          >
+                          <Label htmlFor={`mealPlan-${roomBooking.roomId}`} className="text-sm">
                             Meal Plan
                           </Label>
                           <Select
                             value={roomBooking.mealPlanId}
-                            onValueChange={(value) =>
-                              updateRoom(roomBooking.roomId, {
-                                mealPlanId: value,
-                              })
-                            }
+                            onValueChange={(value) => updateRoom(roomBooking.roomId, { mealPlanId: value })}
                           >
-                            <SelectTrigger
-                              id={`mealPlan-${roomBooking.roomId}`}
-                            >
+                            <SelectTrigger id={`mealPlan-${roomBooking.roomId}`}>
                               <SelectValue placeholder="Select a meal plan" />
                             </SelectTrigger>
                           </Select>
@@ -473,52 +408,33 @@ function BookPageContent() {
 
                         <div className="text-sm text-right">
                           <div>
-                            Room:{" "}
-                            {formatPrice(
-                              convertPrice(
-                                roomBooking.price * roomBooking.quantity
-                              )
-                            )}{" "}
-                            x {bookingDetails.nights} nights
+                            Room: {formatPrice(convertPrice(roomBooking.price * roomBooking.quantity))} x{" "}
+                            {bookingDetails.nights} nights
                           </div>
                         </div>
                       </div>
-                    );
+                    )
                   })}
 
                   <div className="grid gap-2">
                     <Label>Stay Dates (Selected from Property Page)</Label>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="border rounded-md p-3 bg-muted flex items-center">
-                        <Calendar
-                          className="h-4 w-4 mr-2"
-                          style={{ color: headerColor }}
-                        />
+                        <Calendar className="h-4 w-4 mr-2" style={{ color: headerColor }} />
                         <div>
-                          <div className="text-xs text-muted-foreground">
-                            Check-in Date
-                          </div>
+                          <div className="text-xs text-muted-foreground">Check-in Date</div>
                           <div>
-                            {bookingDetails.checkIn
-                              ? format(bookingDetails.checkIn, "MMM d, yyyy")
-                              : "Not selected"}
+                            {bookingDetails.checkIn ? format(bookingDetails.checkIn, "MMM d, yyyy") : "Not selected"}
                           </div>
                         </div>
                       </div>
 
                       <div className="border rounded-md p-3 bg-muted flex items-center">
-                        <Calendar
-                          className="h-4 w-4 mr-2"
-                          style={{ color: headerColor }}
-                        />
+                        <Calendar className="h-4 w-4 mr-2" style={{ color: headerColor }} />
                         <div>
-                          <div className="text-xs text-muted-foreground">
-                            Check-out Date
-                          </div>
+                          <div className="text-xs text-muted-foreground">Check-out Date</div>
                           <div>
-                            {bookingDetails.checkOut
-                              ? format(bookingDetails.checkOut, "MMM d, yyyy")
-                              : "Not selected"}
+                            {bookingDetails.checkOut ? format(bookingDetails.checkOut, "MMM d, yyyy") : "Not selected"}
                           </div>
                         </div>
                       </div>
@@ -529,9 +445,7 @@ function BookPageContent() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-xl">
-                    Personal Information
-                  </CardTitle>
+                  <CardTitle className="text-xl">Personal Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
@@ -539,15 +453,11 @@ function BookPageContent() {
                     <Input
                       id="name"
                       value={bookingDetails.name}
-                      onChange={(e) =>
-                        updateBookingDetails({ name: e.target.value })
-                      }
+                      onChange={(e) => updateBookingDetails({ name: e.target.value })}
                       className={formErrors.name ? "border-red-500" : ""}
                       required
                     />
-                    {formErrors.name && (
-                      <p className="text-xs text-red-500">{formErrors.name}</p>
-                    )}
+                    {formErrors.name && <p className="text-xs text-red-500">{formErrors.name}</p>}
                   </div>
 
                   <div className="grid gap-2">
@@ -556,15 +466,11 @@ function BookPageContent() {
                       id="email"
                       type="email"
                       value={bookingDetails.email}
-                      onChange={(e) =>
-                        updateBookingDetails({ email: e.target.value })
-                      }
+                      onChange={(e) => updateBookingDetails({ email: e.target.value })}
                       className={formErrors.email ? "border-red-500" : ""}
                       required
                     />
-                    {formErrors.email && (
-                      <p className="text-xs text-red-500">{formErrors.email}</p>
-                    )}
+                    {formErrors.email && <p className="text-xs text-red-500">{formErrors.email}</p>}
                   </div>
 
                   <div className="grid gap-2">
@@ -573,12 +479,10 @@ function BookPageContent() {
                       key={`nationality-${bookingDetails.nationality}`}
                       value={bookingDetails.nationality}
                       onValueChange={(value) => {
-                        const selectedCountry = countries.find(
-                          (c) => c.countryId.toString() === value
-                        );
+                        const selectedCountry = countries.find(c => c.countryId.toString() === value);
                         updateBookingDetails({
                           nationality: value,
-                          dialCode: selectedCountry?.dialCode || "",
+                          dialCode: selectedCountry?.dialCode || ''
                         });
                       }}
                     >
@@ -587,11 +491,9 @@ function BookPageContent() {
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
                         {countries.map((country) => (
-                          <SelectItem
-                            key={country.countryId}
-                            value={country.countryId.toString()}
-                          >
+                          <SelectItem key={country.countryId} value={country.countryId.toString()}>
                             <span className="mr-2">{country.country}</span>
+
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -604,23 +506,17 @@ function BookPageContent() {
                       key={`phone-${bookingDetails.dialCode}`}
                       id="phone"
                       value={bookingDetails.phone}
-                      onChange={(value) =>
-                        updateBookingDetails({ phone: value })
-                      }
+                      onChange={(value) => updateBookingDetails({ phone: value })}
                       countryCode={bookingDetails.nationality}
                       dialCode={bookingDetails.dialCode}
                       error={formErrors.phone}
                       required
                     />
-                    {formErrors.phone && (
-                      <p className="text-xs text-red-500">{formErrors.phone}</p>
-                    )}
+                    {formErrors.phone && <p className="text-xs text-red-500">{formErrors.phone}</p>}
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="specialRequests">
-                      Special Requests (optional)
-                    </Label>
+                    <Label htmlFor="specialRequests">Special Requests (optional)</Label>
                     <Textarea
                       id="specialRequests"
                       placeholder="Any special requests or preferences?"
@@ -641,28 +537,19 @@ function BookPageContent() {
                     <AccordionItem value="cancellation">
                       <AccordionTrigger>Cancellation Policy</AccordionTrigger>
                       <AccordionContent>
-                        <p className="text-sm whitespace-pre-line">
-                          {hotelPolicies.CancellationPolicy ||
-                            "Cancellation policy information will be available soon."}
-                        </p>
+                        <p className="text-sm whitespace-pre-line">{hotelPolicies.CancellationPolicy || "Cancellation policy information will be available soon."}</p>
                       </AccordionContent>
                     </AccordionItem>
                     <AccordionItem value="children">
                       <AccordionTrigger>Child Policy</AccordionTrigger>
                       <AccordionContent>
-                        <p className="text-sm whitespace-pre-line">
-                          {hotelPolicies.ChildPolicy ||
-                            "Child policy details will be available soon."}
-                        </p>
+                        <p className="text-sm whitespace-pre-line">{hotelPolicies.ChildPolicy || "Child policy details will be available soon."}</p>
                       </AccordionContent>
                     </AccordionItem>
                     <AccordionItem value="taxation">
                       <AccordionTrigger>Taxation Policy</AccordionTrigger>
                       <AccordionContent>
-                        <p className="text-sm whitespace-pre-line">
-                          {hotelPolicies.Taxation ||
-                            "Taxation details will be available soon."}
-                        </p>
+                        <p className="text-sm whitespace-pre-line">{hotelPolicies.Taxation || "Taxation details will be available soon."}</p>
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
@@ -672,30 +559,22 @@ function BookPageContent() {
                       <Checkbox
                         id="terms"
                         checked={checkedTerms}
-                        onCheckedChange={(checked) =>
-                          setCheckedTerms(checked === true)
-                        }
+                        onCheckedChange={(checked) => setCheckedTerms(checked === true)}
                         className={formErrors.terms ? "border-red-500" : ""}
                       />
                       <div className="grid gap-1.5 leading-none">
                         <label
                           htmlFor="terms"
-                          className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                            formErrors.terms ? "text-red-500" : ""
-                          }`}
+                          className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${formErrors.terms ? "text-red-500" : ""
+                            }`}
                         >
                           I agree to the terms and conditions
                         </label>
                         <p className="text-sm text-muted-foreground">
-                          By checking this box, I confirm that I have read and
-                          agree to the booking policies, cancellation policy,
-                          and hotel rules.
+                          By checking this box, I confirm that I have read and agree to the booking policies,
+                          cancellation policy, and hotel rules.
                         </p>
-                        {formErrors.terms && (
-                          <p className="text-xs text-red-500">
-                            {formErrors.terms}
-                          </p>
-                        )}
+                        {formErrors.terms && <p className="text-xs text-red-500">{formErrors.terms}</p>}
                       </div>
                     </div>
                   </div>
@@ -723,30 +602,18 @@ function BookPageContent() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   {bookingDetails.selectedRooms.map((roomBooking) => (
-                    <div
-                      key={roomBooking.roomId}
-                      className="mb-4 p-3 bg-muted rounded-md"
-                    >
+                    <div key={roomBooking.roomId} className="mb-4 p-3 bg-muted rounded-md">
                       <h3 className="font-medium">{roomBooking.roomName}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {roomBooking.quantity}{" "}
-                        {roomBooking.quantity === 1 ? "room" : "rooms"} •{" "}
-                        {bookingDetails.nights}{" "}
-                        {bookingDetails.nights === 1 ? "night" : "nights"} •
-                        {roomBooking.adults}{" "}
-                        {roomBooking.adults === 1 ? "adult" : "adults"}
+                        {roomBooking.quantity} {roomBooking.quantity === 1 ? "room" : "rooms"} • {bookingDetails.nights} {bookingDetails.nights === 1 ? "night" : "nights"} •
+                        {roomBooking.adults} {roomBooking.adults === 1 ? "adult" : "adults"}
                         {roomBooking.children > 0 &&
-                          `, ${roomBooking.children} ${
-                            roomBooking.children === 1 ? "child" : "children"
-                          }`}
+                          `, ${roomBooking.children} ${roomBooking.children === 1 ? "child" : "children"}`}
                       </p>
                       <div className="text-sm mt-1 text-muted-foreground">
-                        {formatPrice(convertPrice(roomBooking.averageRate))} per
-                        night
+                        {formatPrice(convertPrice(roomBooking.averageRate))} per night
                         {roomBooking.mealPlanId && (
-                          <div className="text-xs mt-1">
-                            Meal Plan: {roomBooking.mealPlanId}
-                          </div>
+                          <div className="text-xs mt-1">Meal Plan: {roomBooking.mealPlanId}</div>
                         )}
                       </div>
                     </div>
@@ -755,82 +622,54 @@ function BookPageContent() {
                   <div className="space-y-4">
                     {/* Check-in Date */}
                     <div className="flex justify-between items-center">
-                      <div className="text-sm font-medium text-muted-foreground">
-                        Check-in Date
-                      </div>
+                      <div className="text-sm font-medium text-muted-foreground">Check-in Date</div>
                       <span className="text-sm font-medium text-foreground">
-                        {bookingDetails.checkIn
-                          ? format(bookingDetails.checkIn, "MMM d, yyyy")
-                          : "Not selected"}
+                        {bookingDetails.checkIn ? format(bookingDetails.checkIn, "MMM d, yyyy") : "Not selected"}
                       </span>
                     </div>
                     {/* Check-out Date */}
                     <div className="flex justify-between items-center">
-                      <div className="text-sm font-medium text-muted-foreground">
-                        Check-out Date
-                      </div>
+                      <div className="text-sm font-medium text-muted-foreground">Check-out Date</div>
                       <span className="text-sm font-medium text-foreground">
-                        {bookingDetails.checkOut
-                          ? format(bookingDetails.checkOut, "MMM d, yyyy")
-                          : "Not selected"}
+                        {bookingDetails.checkOut ? format(bookingDetails.checkOut, "MMM d, yyyy") : "Not selected"}
                       </span>
                     </div>
 
                     <div className="border-t pt-4 mt-4">
                       {/* Room charges */}
-                      <div className="text-sm font-semibold text-foreground mt-4 mb-2">
-                        Room charges
-                      </div>
+                      <div className="text-sm font-semibold text-foreground mt-4 mb-2">Room charges</div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">
-                          Subtotal
-                        </span>
+                        <span className="text-sm text-muted-foreground">Subtotal</span>
                         <span className="text-sm font-medium text-foreground">
-                          {isMounted
-                            ? formatPrice(convertPrice(baseTotal))
-                            : `$${baseTotal.toFixed(2)}`}
+                          {isMounted ? formatPrice(convertPrice(baseTotal)) : `$${baseTotal.toFixed(2)}`}
                         </span>
                       </div>
                       {/* Packages */}
                       {bookingDetails.selectedPackages?.length > 0 && (
                         <>
-                          <div className="text-sm font-semibold text-foreground mt-4 mb-2">
-                            Packages
-                          </div>
+                          <div className="text-sm font-semibold text-foreground mt-4 mb-2">Packages</div>
                           <ul className="text-sm text-muted-foreground space-y-1 mb-1">
                             {bookingDetails.selectedPackages.map((pkg, idx) => (
                               <li key={idx} className="flex justify-between">
                                 <span>{pkg.Description}</span>
-                                <span className="text-sm font-medium text-foreground">
-                                  {formatPrice(convertPrice(pkg.Price))}
-                                </span>
+                                <span className="text-sm font-medium text-foreground">{formatPrice(convertPrice(pkg.Price))}</span>
                               </li>
                             ))}
                           </ul>
                           <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              Total Package Cost
-                            </span>
-                            <span className="text-sm font-medium text-foreground">
-                              {formatPrice(convertPrice(packagesTotal))}
-                            </span>
+                            <span className="text-sm text-muted-foreground">Total Package Cost</span>
+                            <span className="text-sm font-medium text-foreground">{formatPrice(convertPrice(packagesTotal))}</span>
                           </div>
                         </>
                       )}
                       {/* Promo */}
                       {bookingDetails.promoCode && (
-                        <div className="text-sm font-semibold text-foreground mt-4 mb-2">
-                          Promo
-                        </div>
+                        <div className="text-sm font-semibold text-foreground mt-4 mb-2">Promo</div>
                       )}
                       {bookingDetails.promoCode && (
                         <div className="flex justify-between mb-2 text-green-600">
-                          <span className="text-sm font-medium">
-                            Promo ({bookingDetails.promoCode})
-                          </span>
-                          <span className="text-sm font-medium">
-                            -{formatPrice(convertPrice(promoDiscount))}
-                          </span>
+                          <span className="text-sm font-medium">Promo ({bookingDetails.promoCode})</span>
+                          <span className="text-sm font-medium">-{formatPrice(convertPrice(promoDiscount))}</span>
                         </div>
                       )}
                     </div>
@@ -863,8 +702,7 @@ function BookPageContent() {
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <AlertTitle>Rooms Available Today!</AlertTitle>
                         <AlertDescription className="text-xs">
-                          Your booking is for check-in today. We have confirmed
-                          availability for your selected rooms.
+                          Your booking is for check-in today. We have confirmed availability for your selected rooms.
                         </AlertDescription>
                       </Alert>
                     </div>
@@ -878,24 +716,15 @@ function BookPageContent() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Our customer support team is available 24/7 to assist you
-                    with your booking.
+                    Our customer support team is available 24/7 to assist you with your booking.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <a
-                      href={
-                        hotelPolicies.WhatsAppNo
-                          ? `https://wa.me/${hotelPolicies.WhatsAppNo}`
-                          : "#"
-                      }
+                      href={hotelPolicies.WhatsAppNo ? `https://wa.me/${hotelPolicies.WhatsAppNo}` : "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        disabled={!hotelPolicies.WhatsAppNo}
-                      >
+                      <Button variant="outline" className="w-full" disabled={!hotelPolicies.WhatsAppNo}>
                         WhatsApp
                       </Button>
                     </a>
@@ -912,7 +741,7 @@ function BookPageContent() {
         </div>
       </div>
     </>
-  );
+  )
 }
 
 export default function BookPage() {
@@ -920,5 +749,5 @@ export default function BookPage() {
     <Suspense fallback={null}>
       <BookPageContent />
     </Suspense>
-  );
+  )
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import LanguageSelector from "@/components/GoogleTranslate/LanguageSelector";
 import { CurrencySelector } from "@/components/currency-selector";
@@ -21,25 +20,50 @@ export default function Navbar({
   const [logoHeight, setLogoHeight] = useState<number>();
 
   useEffect(() => {
-    const selectedHotelStr = localStorage.getItem("selectedHotel");
-    if (!selectedHotelStr) return;
+    const loadHotelData = () => {
+      const selectedHotelStr = localStorage.getItem("selectedHotel");
+      if (!selectedHotelStr) return;
 
-    try {
-      const selectedHotel = JSON.parse(selectedHotelStr);
+      try {
+        const selectedHotel = JSON.parse(selectedHotelStr);
 
-      setHeaderColor(
-        selectedHotel.ibeHeaderColour || selectedHotel.headerColor || ""
-      );
+        setHeaderColor(
+          selectedHotel.ibeHeaderColour || selectedHotel.headerColor || ""
+        );
 
-      if (selectedHotel.logoURL) {
-        setLogoURL(selectedHotel.logoURL.split("?")[0]);
+        if (selectedHotel.logoURL) {
+          setLogoURL(selectedHotel.logoURL.split("?")[0]);
+        }
+
+        if (selectedHotel.logoWidth) setLogoWidth(selectedHotel.logoWidth);
+        if (selectedHotel.logoHeight) setLogoHeight(selectedHotel.logoHeight);
+      } catch (e) {
+        console.error("Failed to parse selectedHotel from localStorage", e);
       }
+    };
 
-      if (selectedHotel.logoWidth) setLogoWidth(selectedHotel.logoWidth);
-      if (selectedHotel.logoHeight) setLogoHeight(selectedHotel.logoHeight);
-    } catch (e) {
-      console.error("Failed to parse selectedHotel from localStorage", e);
-    }
+    // Load immediately
+    loadHotelData();
+
+    // Listen for storage changes (from other tabs/windows)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "selectedHotel") {
+        loadHotelData();
+      }
+    };
+
+    // Listen for custom event (from same window)
+    const handleHotelUpdate = () => {
+      loadHotelData();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("hotelDataUpdated", handleHotelUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("hotelDataUpdated", handleHotelUpdate);
+    };
   }, []);
 
   return (
@@ -50,7 +74,7 @@ export default function Navbar({
       <div className="flex items-center justify-between h-full">
 
         {/* LEFT — Logo */}
-        <Link href="/" className="h-full flex items-center">
+        <div className="h-full flex items-center">
           {logoURL && logoWidth && logoHeight && (
             <Image
               src={logoURL}
@@ -61,7 +85,7 @@ export default function Navbar({
               priority
             />
           )}
-        </Link>
+        </div>
 
         {/* RIGHT */}
         <div className="flex items-center justify-end gap-1 sm:gap-3 h-full">

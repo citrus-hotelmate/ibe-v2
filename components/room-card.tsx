@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bed, Users, Maximize, Baby, Minus, Plus } from "lucide-react";
+import { Bed, Users, Maximize, Baby, Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getMealPlanById } from "@/controllers/mealPlanController";
 import { MealPlan } from "@/types/mealPlan";
@@ -24,6 +24,7 @@ interface RoomCardProps {
   roomTypeId?: number;
   showQuantitySelector?: boolean;
   imageUrl?: string;
+  allImages?: Array<{ imageURL: string; description: string; isMain: boolean }>;
 }
 
 export default function RoomCard({
@@ -38,10 +39,13 @@ export default function RoomCard({
   roomTypeId,
   showQuantitySelector,
   imageUrl,
+  allImages = [],
 }: RoomCardProps) {
   const [headerColor, setHeaderColor] = useState("");
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [childPolicy, setChildPolicy] = useState<string>("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isImageHovered, setIsImageHovered] = useState(false);
 
   useEffect(() => {
     const selectedHotelStr = localStorage.getItem("selectedHotel");
@@ -59,6 +63,14 @@ export default function RoomCard({
       }
     }
   }, []);
+
+  // Set initial image index to the main image
+  useEffect(() => {
+    if (allImages && allImages.length > 0) {
+      const mainImageIndex = allImages.findIndex(img => img.isMain);
+      setCurrentImageIndex(mainImageIndex >= 0 ? mainImageIndex : 0);
+    }
+  }, [allImages]);
   const [childAges, setChildAges] = useState<number[]>([]);
   const [price, setPrice] = useState<number>(100); // Default room price
 
@@ -213,18 +225,61 @@ export default function RoomCard({
     <div className="overflow-hidden rounded-md m-3 md:mx-8 lg:mx-4 xl:mx-0 max-w-[1200px] mx-auto">
       <Card className="rounded-b-none border-none w-full">
         <div className="grid md:grid-cols-5 gap-4 relative">
-          <div className="md:col-span-2 relative min-h-[300px] h-full">
+          <div 
+            className="md:col-span-2 relative min-h-[300px] h-full"
+            onMouseEnter={() => setIsImageHovered(true)}
+            onMouseLeave={() => setIsImageHovered(false)}
+          >
             <div className="absolute inset-0">
-              <img
-                src={imageUrl || "/placeholder.svg?height=300&width=500"}
-                alt={roomName}
-                className="object-cover w-full h-full "
-                style={{ objectFit: "cover" }}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/placeholder.svg?height=300&width=500";
-                }}
-              />
+              {allImages && allImages.length > 0 ? (
+                <>
+                  <img
+                    src={allImages[currentImageIndex]?.imageURL || "/placeholder.svg?height=300&width=500"}
+                    alt={allImages[currentImageIndex]?.description || roomName}
+                    className="object-cover w-full h-full"
+                    style={{ objectFit: "cover" }}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/placeholder.svg?height=300&width=500";
+                    }}
+                  />
+                  {allImages.length > 1 && (
+                    <>
+                      {/* Previous Button */}
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1))}
+                        className={`absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all ${isImageHovered ? 'opacity-100' : 'opacity-0'}`}
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      {/* Next Button */}
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1))}
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all ${isImageHovered ? 'opacity-100' : 'opacity-0'}`}
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                      {/* Image Counter */}
+                      <div className={`absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm transition-all ${isImageHovered ? 'opacity-100' : 'opacity-0'}`}>
+                        {currentImageIndex + 1} / {allImages.length}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <img
+                  src={imageUrl || "/placeholder.svg?height=300&width=500"}
+                  alt={roomName}
+                  className="object-cover w-full h-full"
+                  style={{ objectFit: "cover" }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/placeholder.svg?height=300&width=500";
+                  }}
+                />
+              )}
             </div>
             {/* <Badge className="absolute top-2 left-2" variant="secondary">
               Popular Choice

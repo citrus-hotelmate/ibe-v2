@@ -349,6 +349,9 @@ export default function LandingPage() {
 
       console.log("💾 Saving hotel details to localStorage:", hotelToSave);
       localStorage.setItem("selectedHotel", JSON.stringify(hotelToSave));
+      
+      // Dispatch custom event to notify components about hotel data update
+      window.dispatchEvent(new Event("hotelDataUpdated"));
 
       setCurrentHotel(matchedHotel);
 

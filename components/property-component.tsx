@@ -88,7 +88,7 @@ export default function PropertyPage() {
     null
   );
   const [isLoadingRooms, setIsLoadingRooms] = useState<boolean>(false);
-  const [roomTypeImages, setRoomTypeImages] = useState<Record<number, string>>({});
+  const [roomTypeImages, setRoomTypeImages] = useState<Record<number, { mainImage: string; allImages: Array<{ imageURL: string; description: string; isMain: boolean }> }>>({});
   const [currentHotelId, setCurrentHotelId] = useState<number | null>(null);
   const [guests, setGuests] = useState<{
     adults: number;
@@ -174,13 +174,30 @@ export default function PropertyPage() {
         // Fetch room type images
         const imagesData = await getHotelRoomTypeImagesByHotelId({ hotelId: currentHotelId, token });
         console.log('Room Type Images Data:', imagesData);
-        const imagesMap = imagesData.reduce((acc: Record<number, string>, img) => {
-          // Check if it's the main image and has a URL
-          if (img.hotelRoomTypeID && img.isMain && img.imageURL) {
+        const imagesMap = imagesData.reduce((acc: Record<number, { mainImage: string; allImages: Array<{ imageURL: string; description: string; isMain: boolean }> }>, img) => {
+          if (img.hotelRoomTypeID && img.imageURL) {
+            // Initialize room type entry if not exists
+            if (!acc[img.hotelRoomTypeID]) {
+              acc[img.hotelRoomTypeID] = {
+                mainImage: '',
+                allImages: []
+              };
+            }
+            
             // Trim the URL to remove query parameters
             const trimmedUrl = img.imageURL.split('?')[0];
-            console.log('Room Type ID:', img.hotelRoomTypeID, 'Original URL:', img.imageURL, 'Trimmed URL:', trimmedUrl);
-            acc[img.hotelRoomTypeID] = trimmedUrl;
+            
+            // Add to all images array
+            acc[img.hotelRoomTypeID].allImages.push({
+              imageURL: trimmedUrl,
+              description: img.description || '',
+              isMain: img.isMain
+            });
+            
+            // Set as main image if isMain is true
+            if (img.isMain) {
+              acc[img.hotelRoomTypeID].mainImage = trimmedUrl;
+            }
           }
           return acc;
         }, {});
@@ -560,7 +577,8 @@ export default function PropertyPage() {
                     adultCount={roomGroup.adultCount}
                     childCount={roomGroup.childCount}
                     roomTypeId={roomGroup.roomTypeID}
-                    imageUrl={roomTypeImages[roomGroup.roomTypeID]}
+                    imageUrl={roomTypeImages[roomGroup.roomTypeID]?.mainImage}
+                    allImages={roomTypeImages[roomGroup.roomTypeID]?.allImages || []}
                     showQuantitySelector={
                       Array.isArray(bookingDetails.selectedRooms) &&
                       bookingDetails.selectedRooms.some(

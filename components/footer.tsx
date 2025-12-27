@@ -25,25 +25,50 @@ export function Footer({ hotelName }: { hotelName?: string }) {
   console.log("selectedHotel in footer", selectedHotel);
 
   useEffect(() => {
-    const selectedHotelStr = localStorage.getItem("selectedHotel");
-    if (selectedHotelStr) {
-      try {
-        const hotelData = JSON.parse(selectedHotelStr);
-        setSelectedHotel(hotelData);
+    const loadHotelData = () => {
+      const selectedHotelStr = localStorage.getItem("selectedHotel");
+      if (selectedHotelStr) {
+        try {
+          const hotelData = JSON.parse(selectedHotelStr);
+          setSelectedHotel(hotelData);
 
-        console.log("hotelData", hotelData);
-        if (hotelData.ibeHeaderColour) {
-          setHeaderColor(hotelData.ibeHeaderColour);
+          console.log("hotelData", hotelData);
+          if (hotelData.ibeHeaderColour) {
+            setHeaderColor(hotelData.ibeHeaderColour);
+          }
+          // Set logo dimensions if available (values are already in pixels)
+          if (hotelData.logoWidth && hotelData.logoHeight) {
+            setLogoWidth(hotelData.logoWidth);
+            setLogoHeight(hotelData.logoHeight);
+          }
+        } catch (error) {
+          console.error("Failed to parse selectedHotel from localStorage", error);
         }
-        // Set logo dimensions if available (values are already in pixels)
-        if (hotelData.logoWidth && hotelData.logoHeight) {
-          setLogoWidth(hotelData.logoWidth);
-          setLogoHeight(hotelData.logoHeight);
-        }
-      } catch (error) {
-        console.error("Failed to parse selectedHotel from localStorage", error);
       }
-    }
+    };
+
+    // Load immediately
+    loadHotelData();
+
+    // Listen for storage changes (from other tabs/windows)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "selectedHotel") {
+        loadHotelData();
+      }
+    };
+
+    // Listen for custom event (from same window)
+    const handleHotelUpdate = () => {
+      loadHotelData();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("hotelDataUpdated", handleHotelUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("hotelDataUpdated", handleHotelUpdate);
+    };
   }, []);
 
   return (
