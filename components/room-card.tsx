@@ -339,10 +339,10 @@ export default function RoomCard({
                 </div> */}
               </div>
 
-              <div className="mb-4 flex items-start gap-2 text-xs bg-blue-50 p-2 rounded">
+              {/* <div className="mb-4 flex items-start gap-2 text-xs bg-blue-50 p-2 rounded">
                 <Baby className="h-4 w-4 text-blue-500 mt-0.5" />
                 <span>{childPolicy || "No child policy available."}</span>
-              </div>
+              </div> */}
 
               <>
                 <div className="mb-2">

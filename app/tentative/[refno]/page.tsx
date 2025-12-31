@@ -233,7 +233,7 @@ export default function TentativeBookingPage({
     return <div className="text-center py-12">No booking found.</div>;
   }
 
-  const totalAmount = bookingDetails.totalPrice ?? bookingDetails.total ?? 0;
+  const totalAmount = bookingDetails.total ?? bookingDetails.totalPrice ?? 0;
 
   return (
     <>

@@ -21,6 +21,7 @@ import RoomCard from "@/components/room-card";
 import { HotelRatePlan } from "@/types/hotelRatePlans";
 import { useBooking } from "@/components/booking-context";
 import { useCurrency } from "@/components/currency-context";
+import { calculateMinimumAvailability } from "@/lib/availability-utils";
 
 export default function PropertyPage() {
   // Get booking context
@@ -41,12 +42,6 @@ export default function PropertyPage() {
       }
     }
   }, []);
-
-  // Helper function to calculate minimum available rooms across dates
-  const calculateMinimumAvailability = (availability: Array<{ date: string, count: number }>) => {
-    if (!availability || availability.length === 0) return 0;
-    return Math.min(...availability.map(item => item.count));
-  };
 
   // Initialize local state from booking context if available and keep them in sync
   useEffect(() => {

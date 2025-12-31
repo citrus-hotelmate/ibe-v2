@@ -26,6 +26,7 @@ import HotelMap from "@/components/hotel-map";
 import { useBooking } from "@/components/booking-context";
 import { RoomSearchBar } from "@/components/room-searchbar";
 import PropertyPage from "@/components/property-component";
+import { calculateMinimumAvailability } from "@/lib/availability-utils";
 
 // Dedicated hero carousel component to keep hooks ordering stable
 function HeroCarousel({ images }: { images: HotelImage[] }) {
@@ -414,12 +415,13 @@ export default function LandingPage() {
       ratePlansData.forEach((ratePlan: any) => {
         const roomTypeId = ratePlan.roomTypeId;
         if (!roomMap.has(roomTypeId)) {
+          const minAvailability = calculateMinimumAvailability(ratePlan.availability);
           roomMap.set(roomTypeId, {
             id: roomTypeId,
             name: ratePlan.roomType,
             adultCapacity: ratePlan.adultCount,
             childCapacity: ratePlan.childCount,
-            totalRooms: 10, // Mock total rooms
+            totalRooms: minAvailability,
             image:
               roomTypeImagesMap[roomTypeId] ||
               "/placeholder.svg?height=300&width=500",
@@ -522,12 +524,13 @@ export default function LandingPage() {
       ratePlansData.forEach((ratePlan: any) => {
         const roomTypeId = ratePlan.roomTypeId;
         if (!roomMap.has(roomTypeId)) {
+          const minAvailability = calculateMinimumAvailability(ratePlan.availability);
           roomMap.set(roomTypeId, {
             id: roomTypeId,
             name: ratePlan.roomType,
             adultCapacity: ratePlan.adultCount,
             childCapacity: ratePlan.childCount,
-            totalRooms: 10,
+            totalRooms: minAvailability,
             image:
               roomTypeImagesMap[roomTypeId] ||
               "/placeholder.svg?height=300&width=500",
