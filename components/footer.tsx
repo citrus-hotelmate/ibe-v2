@@ -3,15 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-  Linkedin,
-  Mail,
-  Phone,
-  MapPin,
-} from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export function Footer({ hotelName }: { hotelName?: string }) {
@@ -36,28 +28,27 @@ export function Footer({ hotelName }: { hotelName?: string }) {
           if (hotelData.ibeHeaderColour) {
             setHeaderColor(hotelData.ibeHeaderColour);
           }
-          // Set logo dimensions if available (values are already in pixels)
           if (hotelData.logoWidth && hotelData.logoHeight) {
             setLogoWidth(hotelData.logoWidth);
             setLogoHeight(hotelData.logoHeight);
           }
         } catch (error) {
-          console.error("Failed to parse selectedHotel from localStorage", error);
+          console.error(
+            "Failed to parse selectedHotel from localStorage",
+            error
+          );
         }
       }
     };
 
-    // Load immediately
     loadHotelData();
 
-    // Listen for storage changes (from other tabs/windows)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "selectedHotel") {
         loadHotelData();
       }
     };
 
-    // Listen for custom event (from same window)
     const handleHotelUpdate = () => {
       loadHotelData();
     };
@@ -85,13 +76,13 @@ export function Footer({ hotelName }: { hotelName?: string }) {
           <div className="flex flex-col items-center text-center gap-3 ">
             <div className="p-3 border-b border-white/20">
               <div className="flex flex-col items-center space-y-1">
-                {/* Hotel Logo */}
+                {/* Hotel Logo (NO LINK) */}
                 {selectedHotel.logoURL && logoWidth && logoHeight && (
                   <div
                     className="flex items-center justify-center"
                     style={{ height: `${logoHeight}px` }}
                   >
-                    <Link href="/" className="h-full flex items-center">
+                    <div className="h-full flex items-center">
                       <Image
                         src={selectedHotel.logoURL}
                         alt="Hotel Logo"
@@ -100,7 +91,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                         className="h-full w-auto object-contain rounded-md"
                         priority
                       />
-                    </Link>
+                    </div>
                   </div>
                 )}
 
@@ -109,7 +100,7 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                   {selectedHotel.name}
                 </h3>
 
-                {/* Hotel Contact Details — stacked vertically, tighter gap */}
+                {/* Hotel Contact Details */}
                 <div className="flex flex-col items-center">
                   {selectedHotel.address && (
                     <div className="flex items-center space-x-2 notranslate">
@@ -147,7 +138,9 @@ export function Footer({ hotelName }: { hotelName?: string }) {
                   {(selectedHotel.hotelWebsite || selectedHotel.website) && (
                     <div className="flex items-center space-x-2 notranslate">
                       <Link
-                        href={selectedHotel.hotelWebsite || selectedHotel.website}
+                        href={
+                          selectedHotel.hotelWebsite || selectedHotel.website
+                        }
                         target="_blank"
                         className="text-sm text-white hover:underline"
                       >
@@ -161,18 +154,12 @@ export function Footer({ hotelName }: { hotelName?: string }) {
           </div>
         </div>
       )}
+
       {/* ====== CONTACT + SOCIAL + COPYRIGHT SECTION (constant #D3D3D3) ====== */}
       <div className="border-t" style={{ backgroundColor: "#D3D3D3" }}>
         <div className="w-full notranslate">
           <div className=" py-6 text-sm text-gray-800">
-            {/* BOTTOM ROW: Logo Left + Copyright Right */}
-            <div
-              className="
-        flex flex-col sm:flex-row 
-        justify-between items-center
-        w-full
-      "
-            >
+            <div className="flex flex-col sm:flex-row justify-between items-center w-full">
               {/* LEFT — Logo */}
               <div className="flex items-center pl-4 sm:pl-8">
                 <Image
